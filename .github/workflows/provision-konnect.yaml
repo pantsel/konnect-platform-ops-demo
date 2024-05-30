@@ -13,6 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Generate demo certificates
+        run: |
+          ./gencers.sh
+
       - name: List Directory Contents
         run: ls -l
 
@@ -31,4 +35,5 @@ jobs:
           cd terraform
           terraform apply -auto-approve
         env:
-          TF_VAR_some_variable: ${{ secrets.TF_VAR_SOME_VARIABLE }}  # Example of passing secret variables
+          TF_VAR_konnect_personal_access_token: ${{ secrets.TF_VAR_konnect_personal_access_token }}
+          TF_VAR_konnect_server_url: "https://eu.api.konghq.com"
