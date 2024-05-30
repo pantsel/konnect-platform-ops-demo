@@ -1,0 +1,34 @@
+name: Provision Konnect
+
+on:
+  push:
+    branches:
+      - main  # Adjust branch name as needed
+
+jobs:
+  terraform_apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: List Directory Contents
+        run: ls -l
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.0  # Specify the Terraform version you want to usec
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve
+        env:
+          TF_VAR_some_variable: ${{ secrets.TF_VAR_SOME_VARIABLE }}  # Example of passing secret variables
