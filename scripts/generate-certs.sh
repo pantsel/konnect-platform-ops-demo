@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 
 # Set variables
 CA_DIR="../.tls"
