@@ -19,6 +19,14 @@ on:
         description: 'TLS key'
         required: true
         type: string
+      kong_image_repo:
+        description: 'Kong image repository'
+        default: 'kong/kong-gateway'
+        type: string
+      kong_image_tag:
+        description: 'Kong image tag'
+        default: '3.7.0.0'
+        type: string
 
 jobs: 
   deploy-dp:
