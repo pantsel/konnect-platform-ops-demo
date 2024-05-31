@@ -25,6 +25,10 @@ vault-secrets:
 
 act:
 	@echo "Running github workflows.."
-	@act --env GITHUB_REPOSITORY=me/me   
+	@act --env GITHUB_REPOSITORY=me/me --input action=provision workflow_dispatch
 
-.PHONY: prepare gencerts prep-secrets docker vault-secrets act
+destroy:
+	@echo "Running github workflows.."
+	@act --env GITHUB_REPOSITORY=me/me --input action=destroy workflow_dispatch    
+
+.PHONY: prepare gencerts prep-secrets docker vault-secrets act destroy

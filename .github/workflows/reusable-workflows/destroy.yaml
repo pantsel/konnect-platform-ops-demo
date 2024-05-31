@@ -1,0 +1,90 @@
+name: Provision Konnect
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        description: 'Kubernetes namespace'
+        required: true
+        type: string
+      konnect_pat:
+        description: 'Kong Konnect Personal Access Token'
+        required: true
+        type: string
+      konnect_server_url:
+        description: 'Kong Konnect Server URL'
+        required: true
+        type: string
+        default: "https://eu.api.konghq.com"
+      s3_access_key:
+        description: 'S3 Access Key'
+        required: true
+        type: string
+      s3_secret_key:
+        description: 'S3 Secret Key'
+        required: true
+        type: string
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      vault_token:
+        description: 'Vault Token'
+        default: 'root'
+        type: string
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_konnect_personal_access_token: ${{ inputs.konnect_pat }}
+      TF_VAR_konnect_server_url:  ${{ inputs.konnect_server_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 'latest'
+      
+      - name: Import Certificates
+        id: import-certs
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ inputs.vault_token }}
+          secrets: |
+            secret/data/certificates/demo ca | CA_CRT
+
+      - name: Save CA Certificate to file
+        run: |
+          mkdir -p .tls
+          touch .tls/ca.crt
+          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
+
+      - name: Terraform Init
+        run: |
+          terraform init -backend-config=config.s3.tfbackend \
+            -backend-config="bucket=tfstate" \
+            -backend-config="key=konnect.tfstate" \
+            -backend-config="region=main" \
+            -backend-config="access_key=${{ inputs.s3_access_key }}" \
+            -backend-config="secret_key=${{ inputs.s3_secret_key }}"
+        working-directory: terraform
+
+      - name: Terraform destroy
+        run: |
+          terraform destroy -auto-approve
+        working-directory: terraform
+
+      - name: Remove Dataplane namespace
+        run: |
+          kubectl delete namespace ${{ inputs.namespace }}

@@ -40,6 +40,16 @@ To create your `s3 access key` and `s3 access secret`:
 
 # Run Github Actions
 
+Provision Konnect and deploy DP 
+
 ```bash
 $ make act
+```
+
+# Destroy 
+
+Clean up everything on Konnect and K8s
+
+```bash
+$ make destroy
 ```
