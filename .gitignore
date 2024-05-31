@@ -41,3 +41,5 @@ terraform.rc
 .env
 .envrc
 .tls/
+.tmp/
+*.secrets

@@ -1,0 +1,1 @@
+act --secret-file act.secrets -P ubuntu-latest=-self-hosted --env GITHUB_REPOSITORY=me/me --artifact-server-path .tmp

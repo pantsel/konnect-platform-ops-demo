@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e
-namespace="kong"
-control_plane_endpoint=$(terraform output -json kong_gateway_control_plane_info | jq -r '.config.control_plane_endpoint' | sed 's|https://||')
-telemetry_endpoint=$(terraform output -json kong_gateway_control_plane_info | jq -r '.config.telemetry_endpoint' | sed 's|https://||')
 
+namespace="kong"
+control_plane_endpoint=$1
+telemetry_endpoint=$2
+
+echo "Deploying Kong Data Plane"
+echo "========================="
+echo "Namespace: $namespace"
 echo "Control Plane Endpoint: $control_plane_endpoint"
 echo "Telemetry endpoint: $telemetry_endpoint"
+echo "========================="
 
 # Create Kong namespace
 kubectl create namespace $namespace --dry-run=client -o yaml | kubectl apply -f -

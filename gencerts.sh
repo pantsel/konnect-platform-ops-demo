@@ -14,11 +14,18 @@ CLIENT_CN="kong_dp"
 # Create directories
 mkdir -p "$CA_DIR" "$CLIENT_DIR"
 
-# Generate CA private key
-openssl genpkey -algorithm RSA -out "$CA_KEY"
+# Generate CA private key and certificate if they don't exist
+if [ -f "$CA_KEY" ] && [ -f "$CA_CERT" ]; then
+    echo "CA private key and certificate already exist."
+else
+    echo "Generating CA private key and certificate..."
+    # Generate CA private key
+    openssl genpkey -algorithm RSA -out "$CA_KEY"
 
-# Generate CA self-signed certificate
-openssl req -new -x509 -key "$CA_KEY" -out "$CA_CERT" -subj "/CN=KonnectDemoCA"
+    # Generate CA self-signed certificate
+    openssl req -new -x509 -key "$CA_KEY" -out "$CA_CERT" -subj "/CN=KonnectDemoCA"
+fi
+
 
 # Generate client private key
 openssl genpkey -algorithm RSA -out "$CLIENT_KEY"

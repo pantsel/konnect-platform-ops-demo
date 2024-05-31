@@ -1,0 +1,31 @@
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  minio:
+    image: 'bitnami/minio:latest'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=minio-root-user
+      - MINIO_ROOT_PASSWORD=minio-root-password
+      - MINIO_DEFAULT_BUCKETS=tfstate
+    volumes:
+      - minio_data:/bitnami/minio/data
+    networks:
+      - app-tier
+
+  artifact-server:
+    image: ghcr.io/jefuller/artifact-server:latest
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - '8080:8080'
+    environment:
+      AUTH_KEY: foo
+
+volumes:
+  minio_data:
+    driver: local

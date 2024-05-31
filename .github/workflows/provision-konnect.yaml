@@ -3,37 +3,130 @@ name: Provision Konnect
 on:
   push:
     branches:
-      - main  # Adjust branch name as needed
+      - main
 
 jobs:
-  terraform_apply:
+  provision-konnect:
     runs-on: ubuntu-latest
+
+    outputs:
+      tf_output: ${{ steps.tfapply.outputs.tf_output }}
+      tls_cert: ${{ steps.tlscert.outputs.tls_cert }}
+      tls_key: ${{ steps.tlskey.outputs.tls_key }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate demo certificates
         run: |
-          ./gencers.sh
+          ./gencerts.sh
+      
+      - name: Save tls cert as output variable
+        id: tlscert
+        run: |
+          echo "tls_cert=$(cat .tls/tls.crt | base64)" >> "$GITHUB_OUTPUT"
+
+      - name: Save tls key as output variable
+        id: tlskey
+        run: |
+          echo "tls_key=$(cat .tls/tls.key | base64)" >> "$GITHUB_OUTPUT"
 
       - name: List Directory Contents
         run: ls -l
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.1.0  # Specify the Terraform version you want to usec
-
+          terraform_version: 1.8
+     
       - name: Terraform Init
         run: |
           cd terraform
-          terraform init
+          terraform init -backend-config=config.s3.tfbackend \
+            -backend-config="bucket=tfstate" \
+            -backend-config="key=konnect.tfstate" \
+            -backend-config="region=main" \
+            -backend-config="access_key=${{ secrets.TF_VAR_s3_backend_config_access_key }}" \
+            -backend-config="secret_key=${{ secrets.TF_VAR_s3_backend_config_secret_key }}"
 
-      - name: Terraform Apply
+      - name: Terraform Plan
         run: |
           cd terraform
-          terraform apply -auto-approve
+          terraform plan -out=tfplan
         env:
           TF_VAR_konnect_personal_access_token: ${{ secrets.TF_VAR_konnect_personal_access_token }}
           TF_VAR_konnect_server_url: "https://eu.api.konghq.com"
+
+      - name: Terraform Apply
+        id: tfapply
+        run: |
+          cd terraform
+          terraform apply -auto-approve tfplan
+          echo "tf_output=$(terraform-bin output -json kong_gateway_control_plane_info)" >> "$GITHUB_OUTPUT"
+        env:
+          TF_VAR_konnect_personal_access_token: ${{ secrets.TF_VAR_konnect_personal_access_token }}
+          TF_VAR_konnect_server_url: "https://eu.api.konghq.com"
+
+  deploy-cp:
+    runs-on: ubuntu-latest
+    needs: provision-konnect
+    env:
+      K8S_NAMESPACE: kong
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Create Kong namespace if not exists
+        run: |
+          kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Add Kong Helm Repository
+        run: |
+          helm repo add kong https://charts.konghq.com
+          helm repo update
+      
+      - name: Create kong-cluster-cert secret if not exists
+        run: |
+
+          echo "$TLS_CERT" | base64 --decode > tls.crt
+          echo "$TLS_KEY" | base64 --decode > tls.key
+
+          kubectl create secret tls kong-cluster-cert \
+              -n $K8S_NAMESPACE \
+              --dry-run=client \
+              --cert=tls.crt --key=tls.key -o yaml \
+              | kubectl apply -f -
+
+        env:
+          TLS_CERT: ${{needs.provision-konnect.outputs.tls_cert}}
+          TLS_KEY: ${{needs.provision-konnect.outputs.tls_key}}
+
+      - name: Deploy Kong Data Plane
+        run: |
+          CONTROL_PLANE_ENDPOINT=$(echo $TF_OUTPUT | jq -r .config.control_plane_endpoint | sed 's|https://||')
+          TELEMETRY_ENDPOINT=$(echo $TF_OUTPUT | jq -r .config.telemetry_endpoint | sed 's|https://||')
+          
+          helm upgrade --install kong-dp kong/kong \
+            -n $K8S_NAMESPACE --create-namespace \
+            --values ./k8s/values.yaml \
+            --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
+            --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
+            --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
+            --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
+            --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
+            --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
+        env:
+          TF_OUTPUT: ${{needs.provision-konnect.outputs.tf_output}}
+
