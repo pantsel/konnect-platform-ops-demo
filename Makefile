@@ -1,5 +1,9 @@
 # Description: Makefile for setting up the project
-prepare: gencerts docker
+
+export VAULT_ADDR=http://localhost:8300
+export VAULT_TOKEN=root
+
+prepare: gencerts docker vault-secrets
 	@echo "Creating required files and directories.."
 	@mkdir -p .tmp
 	@if [ ! -f act.secrets ]; then \
@@ -19,8 +23,13 @@ docker:
 	@echo "Spinning up containers"
 	@docker-compose up -d
 
+vault-secrets:
+	@echo "Setting up vault secrets.."
+	@vault kv put secret/certificates/demo tls_crt=@.tls/tls.crt tls_key=@.tls/tls.key ca=@.tls/ca.crt
+	@echo "Vault secrets setup completed"
+
 act:
 	@echo "Running github workflows.."
 	@act --env GITHUB_REPOSITORY=me/me   
 
-.PHONY: prepare gencerts docker act
+.PHONY: prepare gencerts docker vault-secrets act

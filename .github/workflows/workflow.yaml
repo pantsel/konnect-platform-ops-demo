@@ -28,5 +28,3 @@ jobs:
       kong_image_repo: ${{ env.KONG_IMAGE_REPO }}
       kong_image_tag: ${{ env.KONG_IMAGE_TAG }}
       tf_output: ${{ needs.provision-konnect.outputs.tf_output }}
-      tls_cert: ${{ needs.provision-konnect.outputs.tls_cert }}
-      tls_key: ${{ needs.provision-konnect.outputs.tls_key }}

@@ -20,16 +20,18 @@ on:
         description: 'S3 Secret Key'
         required: true
         type: string
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      vault_token:
+        description: 'Vault Token'
+        default: 'root'
+        type: string
     outputs:
-      tf_output:
+      tf_output: 
         description: 'Terraform output'
         value: ${{ jobs.provision-konnect.outputs.tf_output }}
-      tls_cert:
-        description: 'TLS certificate'
-        value: ${{ jobs.provision-konnect.outputs.tls_cert }}
-      tls_key:
-        description: 'TLS key'
-        value: ${{ jobs.provision-konnect.outputs.tls_key }}
 
 jobs:
   provision-konnect:
@@ -41,33 +43,30 @@ jobs:
 
     outputs:
       tf_output: ${{ steps.tfapply.outputs.tf_output }}
-      tls_cert: ${{ steps.tlscert.outputs.tls_cert }}
-      tls_key: ${{ steps.tlskey.outputs.tls_key }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Generate demo certificates
-        run: |
-          ./generate-certs.sh
-        working-directory: scripts
-      
-      - name: Save tls cert as output variable
-        id: tlscert
-        run: |
-          echo "tls_cert=$(cat .tls/tls.crt | base64)" >> "$GITHUB_OUTPUT"
-
-      - name: Save tls key as output variable
-        id: tlskey
-        run: |
-          echo "tls_key=$(cat .tls/tls.key | base64)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 'latest'
       
+      - name: Import Certificates
+        id: import-certs
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ inputs.vault_token }}
+          secrets: |
+            secret/data/certificates/demo ca | CA_CRT
+
+      - name: Save CA Certificate to file
+        run: |
+          mkdir -p .tls
+          touch .tls/ca.crt
+          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
 
       - name: Terraform Init
         run: |

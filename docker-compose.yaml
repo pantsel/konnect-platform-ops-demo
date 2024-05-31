@@ -17,6 +17,27 @@ services:
     networks:
       - app-tier
 
+  vault:
+    image: hashicorp/vault
+    command: server -dev -dev-root-token-id="root"
+    ports:
+      - '8300:8300'
+    healthcheck:
+      retries: 5
+    environment:
+      VAULT_ADDR: 'https://0.0.0.0:8300'
+      VAULT_DEV_ROOT_TOKEN_ID: 'root'
+      VAULT_TOKEN: 'root'
+      VAULT_LOCAL_CONFIG: |-
+        {"storage": {"file": {"path": "/vault/file"}}, "listener": [{"tcp": { "address": "0.0.0.0:8300", "tls_disable": true}}], "default_lease_ttl": "168h", "max_lease_ttl": "720h", "ui": true}
+    cap_add:
+        - IPC_LOCK
+    volumes:
+      - vault_data:/data
+    networks:
+      - app-tier
 volumes:
   minio_data:
+    driver: local
+  vault_data:
     driver: local

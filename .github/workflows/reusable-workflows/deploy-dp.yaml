@@ -11,14 +11,6 @@ on:
         description: 'Terraform output'
         required: true
         type: string
-      tls_cert:
-        description: 'TLS certificate'
-        required: true
-        type: string
-      tls_key:
-        description: 'TLS key'
-        required: true
-        type: string
       kong_image_repo:
         description: 'Kong image repository'
         default: 'kong/kong-gateway'
@@ -26,6 +18,14 @@ on:
       kong_image_tag:
         description: 'Kong image tag'
         default: '3.7.0.0'
+        type: string
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      vault_token:
+        description: 'Vault Token'
+        default: 'root'
         type: string
 
 jobs: 
@@ -50,6 +50,15 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Import Certificates
+        id: import-certs
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ inputs.vault_token }}
+          secrets: |
+            secret/data/certificates/demo * | DP_
+
       - name: Create Kong namespace if not exists
         run: |
           kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -62,8 +71,8 @@ jobs:
       - name: Create kong-cluster-cert secret if not exists
         run: |
 
-          echo "$TLS_CERT" | base64 --decode > tls.crt
-          echo "$TLS_KEY" | base64 --decode > tls.key
+          echo "$TLS_CERT" > tls.crt
+          echo "$TLS_KEY" > tls.key
 
           kubectl create secret tls kong-cluster-cert \
               -n $NAMESPACE \
@@ -72,8 +81,8 @@ jobs:
               | kubectl apply -f -
 
         env:
-          TLS_CERT: ${{inputs.tls_cert}}
-          TLS_KEY: ${{inputs.tls_key}}
+          TLS_CERT: ${{ steps.import-certs.outputs.DP_TLS_CRT }}
+          TLS_KEY: ${{ steps.import-certs.outputs.DP_TLS_KEY }}
 
       - name: Deploy Kong Data Plane
         run: |
