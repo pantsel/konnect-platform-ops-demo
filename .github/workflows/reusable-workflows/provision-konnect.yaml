@@ -1,0 +1,92 @@
+name: Provision Konnect
+
+on:
+  workflow_call:
+    inputs:
+      konnect_pat:
+        description: 'Kong Konnect Personal Access Token'
+        required: true
+        type: string
+      konnect_server_url:
+        description: 'Kong Konnect Server URL'
+        required: true
+        type: string
+        default: "https://eu.api.konghq.com"
+      s3_access_key:
+        description: 'S3 Access Key'
+        required: true
+        type: string
+      s3_secret_key:
+        description: 'S3 Secret Key'
+        required: true
+        type: string
+    outputs:
+      tf_output:
+        description: 'Terraform output'
+        value: ${{ jobs.provision-konnect.outputs.tf_output }}
+      tls_cert:
+        description: 'TLS certificate'
+        value: ${{ jobs.provision-konnect.outputs.tls_cert }}
+      tls_key:
+        description: 'TLS key'
+        value: ${{ jobs.provision-konnect.outputs.tls_key }}
+
+jobs:
+  provision-konnect:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_konnect_personal_access_token: ${{ inputs.konnect_pat }}
+      TF_VAR_konnect_server_url:  ${{ inputs.konnect_server_url }}
+
+    outputs:
+      tf_output: ${{ steps.tfapply.outputs.tf_output }}
+      tls_cert: ${{ steps.tlscert.outputs.tls_cert }}
+      tls_key: ${{ steps.tlskey.outputs.tls_key }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate demo certificates
+        run: |
+          ./generate-certs.sh
+        working-directory: scripts
+      
+      - name: Save tls cert as output variable
+        id: tlscert
+        run: |
+          echo "tls_cert=$(cat .tls/tls.crt | base64)" >> "$GITHUB_OUTPUT"
+
+      - name: Save tls key as output variable
+        id: tlskey
+        run: |
+          echo "tls_key=$(cat .tls/tls.key | base64)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 'latest'
+      
+
+      - name: Terraform Init
+        run: |
+          terraform init -backend-config=config.s3.tfbackend \
+            -backend-config="bucket=tfstate" \
+            -backend-config="key=konnect.tfstate" \
+            -backend-config="region=main" \
+            -backend-config="access_key=${{ inputs.s3_access_key }}" \
+            -backend-config="secret_key=${{ inputs.s3_secret_key }}"
+        working-directory: terraform
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -out=tfplan
+        working-directory: terraform
+
+      - name: Terraform Apply
+        id: tfapply
+        run: |
+          terraform apply -auto-approve tfplan
+          echo "tf_output=$(terraform-bin output -json kong_gateway_control_plane_info)" >> "$GITHUB_OUTPUT"
+        working-directory: terraform
