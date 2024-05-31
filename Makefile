@@ -3,7 +3,7 @@
 export VAULT_ADDR=http://localhost:8300
 export VAULT_TOKEN=root
 
-prepare: prep-secrets gencerts docker vault-secrets
+prepare: gencerts docker prep-secrets vault-secrets
 
 gencerts:
 	@echo "Generating certificates..."
