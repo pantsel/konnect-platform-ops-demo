@@ -19,6 +19,7 @@ docker:
 
 vault-secrets:
 	@echo "Setting up vault secrets.."
+	@./scripts/check-vault.sh
 	@vault kv put secret/certificates/demo tls_crt=@.tls/tls.crt tls_key=@.tls/tls.key ca=@.tls/ca.crt
 	@echo "Vault secrets setup completed"
 
