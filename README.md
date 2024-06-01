@@ -21,6 +21,8 @@ Services:
 - MinIO: http://localhost:9000
 - Hashicorp Vault: http://localhost:8300
 
+To spin-up and prepare your local environment, execute the following command: 
+
 ```bash
 $ make prepare
 ```
