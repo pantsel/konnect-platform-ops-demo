@@ -43,6 +43,23 @@ def get_workspaces_from_dumps_dir(dumps_dir):
                 workspaces.append(workspace_name)
     return workspaces
 
+def validate_config(config):
+    if "teams" not in config:
+        logging.error("Config file should have a 'teams' key.")
+        exit(1)
+    team_names = set()
+    for team in config["teams"]:
+        if "name" not in team or "description" not in team:
+            logging.error("Every team should have a 'name' and a 'description' key.")
+            exit(1)
+        if not isinstance(team["name"], str) or not isinstance(team["description"], str):
+            logging.error("Every team name and description should be a string.")
+            exit(1)
+        if team["name"] in team_names:
+            logging.error("Team names should be unique.")
+            exit(1)
+        team_names.add(team["name"])
+
 def provision_teams(args):
     logging.info("Provisioning teams in Konnect...")
     logging.info(args)
@@ -51,9 +68,9 @@ def provision_teams(args):
     with open(args.config_file, "r") as file:
         config = json.load(file)
 
-    logging.info("Teams:")
-    logging.info(json.dumps(config, indent=2))
+    validate_config(config)
 
+    # Get all the teams in Konnect
     existing_teams = Konnect.get_all_teams(args)
 
     # Delete teams that are not in the config
