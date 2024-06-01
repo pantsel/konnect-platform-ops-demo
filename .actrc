@@ -1,3 +1,4 @@
 --artifact-server-path=.tmp
 --secret-file=act.secrets
 --platform=ubuntu-latest=-self-hosted
+--container-architecture=linux/amd64

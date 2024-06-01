@@ -24,7 +24,17 @@ while [[ -z "$s3_secret_key" ]]; do
     read -s -p $'\n'"s3 secret key cannot be empty. Please enter again: " s3_secret_key
 done
 
-if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
+read -s -p $'\n'"Enter Docker username: " docker_username
+while [[ -z "$docker_username" ]]; do
+    read -s -p $'\n'"Docker username cannot be empty. Please enter again: " docker_username
+done
+
+read -s -p $'\n'"Enter Docker password: " docker_password
+while [[ -z "$docker_password" ]]; do
+    read -s -p $'\n'"Docker password cannot be empty. Please enter again: " docker_password
+done
+
+if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" || -z "$docker_username" || -z "$docker_password" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."
     exit 1
 fi
@@ -33,4 +43,6 @@ cat << EOF > "$secret_file"
 KONNECT_PAT=$konnect_token
 S3_ACCESS_KEY=$s3_access_key
 S3_SECRET_KEY=$s3_secret_key
+DOCKER_USERNAME=$docker_username
+DOCKER_PASSWORD=$docker_password
 EOF

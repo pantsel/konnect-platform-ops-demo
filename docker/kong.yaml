@@ -1,0 +1,14 @@
+_format_version: "3.0"
+services:
+  - name: service
+    url: http://test.local
+    plugins:
+      - name: request-termination
+        config:
+          status_code: 200
+          message: "OK"
+          echo: true
+    routes:
+      - name: service-route
+        paths:
+          - /
