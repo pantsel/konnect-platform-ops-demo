@@ -20,7 +20,7 @@ env:
 
 jobs:
   provision-konnect:
-    if: ${{ github.event.inputs.action == 'provision' }}
+    if: github.event.inputs.action == 'provision'
     uses: ./.github/workflows/provision-konnect.yaml
     with:
       konnect_pat: ${{ secrets.KONNECT_PAT }}
@@ -30,9 +30,9 @@ jobs:
       config_file: ${{ github.event.inputs.config_file }}
 
   deploy-cp:
-    if: ${{ github.event.inputs.action == 'provision' }}
     uses: ./.github/workflows/deploy-dp.yaml
     needs: provision-konnect
+    if: github.event.inputs.action == 'provision' && needs.provision-konnect.result == 'success'
     with:
       namespace: ${{ env.KONG_K8S_NAMESPACE }}
       kong_image_repo: ${{ env.KONG_IMAGE_REPO }}
@@ -40,7 +40,7 @@ jobs:
       tf_output: ${{ needs.provision-konnect.outputs.tf_output }}
 
   destroy:
-    if: ${{ github.event.inputs.action == 'destroy' }}
+    if: github.event.inputs.action == 'destroy'
     uses: ./.github/workflows/destroy.yaml
     with:
       namespace: ${{ env.KONG_K8S_NAMESPACE }}
