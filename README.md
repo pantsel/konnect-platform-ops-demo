@@ -26,7 +26,6 @@ to provide your `konnect access token`, `s3 access key` and `s3 access secret`.
 
 To get your `konnect access token`, login to your Konnect organization, navigate to the `Personal Access Tokens` page and click `Generate Token`.
 
-
 ![Konnect](./images/konnect_pat.png)
 
 To create your `s3 access key` and `s3 access secret`: 
@@ -36,6 +35,10 @@ To create your `s3 access key` and `s3 access secret`:
 4. `Create Access Key`
 
 ![Minio Console](./images/minio.png)
+
+Components:
+- MinIO: http://localhost:9000
+- Hashicorp Vault: http://localhost:8300
 
 # Using the environment
 
