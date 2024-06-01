@@ -24,22 +24,22 @@ jobs:
       s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
       s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
 
-  deploy-cp:
-    if: ${{ github.event.inputs.action == 'provision' }}
-    uses: ./.github/workflows/reusable-workflows/deploy-dp.yaml
-    needs: provision-konnect
-    with:
-      namespace: ${{ env.KONG_K8S_NAMESPACE }}
-      kong_image_repo: ${{ env.KONG_IMAGE_REPO }}
-      kong_image_tag: ${{ env.KONG_IMAGE_TAG }}
-      tf_output: ${{ needs.provision-konnect.outputs.tf_output }}
+  # deploy-cp:
+  #   if: ${{ github.event.inputs.action == 'provision' }}
+  #   uses: ./.github/workflows/reusable-workflows/deploy-dp.yaml
+  #   needs: provision-konnect
+  #   with:
+  #     namespace: ${{ env.KONG_K8S_NAMESPACE }}
+  #     kong_image_repo: ${{ env.KONG_IMAGE_REPO }}
+  #     kong_image_tag: ${{ env.KONG_IMAGE_TAG }}
+  #     tf_output: ${{ needs.provision-konnect.outputs.tf_output }}
 
-  destroy:
-    if: ${{ github.event.inputs.action == 'destroy' }}
-    uses: ./.github/workflows/reusable-workflows/destroy.yaml
-    with:
-      namespace: ${{ env.KONG_K8S_NAMESPACE }}
-      konnect_pat: ${{ secrets.KONNECT_PAT }}
-      konnect_server_url: ${{ env.KONNECT_SERVER_URL }}
-      s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
-      s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+  # destroy:
+  #   if: ${{ github.event.inputs.action == 'destroy' }}
+  #   uses: ./.github/workflows/reusable-workflows/destroy.yaml
+  #   with:
+  #     namespace: ${{ env.KONG_K8S_NAMESPACE }}
+  #     konnect_pat: ${{ secrets.KONNECT_PAT }}
+  #     konnect_server_url: ${{ env.KONNECT_SERVER_URL }}
+  #     s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
+  #     s3_secret_key: ${{ secrets.S3_SECRET_KEY }}

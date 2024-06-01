@@ -68,6 +68,18 @@ jobs:
           touch .tls/ca.crt
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
 
+      - name: Provision teams
+        id: provision-teams
+        run: |
+          output=$(python3 main.py --config-file=../../resources/teams.json)
+          echo "$output" > ../../terraform/teams.json
+          cat ../../terraform/teams.json
+        working-directory: scripts/teams
+        env:
+          KONNECT_ACCESS_TOKEN: ${{ inputs.konnect_pat }}
+          KONNECT_ADDRESS: https://global.api.konghq.com
+
+
       - name: Terraform Init
         run: |
           terraform init -backend-config=config.s3.tfbackend \
@@ -88,4 +100,28 @@ jobs:
         run: |
           terraform apply -auto-approve tfplan
           echo "tf_output=$(terraform-bin output -json kong_gateway_control_plane_info)" >> "$GITHUB_OUTPUT"
+          echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: terraform
+
+      - name: Store System Account tokens in Vault
+        run: |
+          # Use jq to parse JSON and iterate over each secret
+          for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
+
+            # Extract secret data from JSON
+            secret_name=$(_jq '.name')
+            secret_value=$(_jq '.token')
+
+            # Store the secret in Vault
+            vault kv put secret/${secret_name} value=${secret_value}
+
+            # Optionally, you can add some logging
+            echo "Stored secret ${secret_name} in Vault."
+          done
+        working-directory: terraform
+        env:
+          VAULT_ADDR: ${{ inputs.vault_addr }}
+          VAULT_TOKEN: ${{ inputs.vault_token }}

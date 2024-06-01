@@ -1,0 +1,20 @@
+{
+  "teams": [
+    {
+      "name": "Platform",
+      "description": "The Platform team is responsible for the development and maintenance of the API Management platform."
+    },
+    {
+      "name": "Team 1",
+      "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
+    },
+    {
+      "name": "Team 2",
+      "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
+    },
+    {
+      "name": "Team 3",
+      "description": "Team 3 is responsible for the development and maintenance of their respective APIs."
+    }
+  ]
+}

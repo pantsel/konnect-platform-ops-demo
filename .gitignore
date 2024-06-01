@@ -38,6 +38,16 @@ terraform.rc
 
 # Ignore hcl file
 .terraform.lock.hcl
+
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+
 .env
 .envrc
 .tls/
