@@ -37,19 +37,59 @@ To create your `s3 access key` and `s3 access secret`:
 
 ![Minio Console](./images/minio.png)
 
+# Using the environment
 
-# Run Github Actions
+The provisioning and deployment process is based on required resources, defined in `config/resources.json`. 
 
-Provision Konnect and deploy DP 
+### Teams Configuration
 
-```bash
-$ make act
+```json
+{
+  "teams": [
+    {
+      "name": "Platform",
+      "description": "The Platform team is responsible for the development and maintenance of the API Management platform."
+    },
+    {
+      "name": "Team 1",
+      "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
+    },
+    {
+      "name": "Team 2",
+      "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
+    },
+   ...
+  ]
+}
 ```
 
-# Destroy 
+The provisioning process includes the following steps:
 
-Clean up everything on Konnect and K8s
+- Creation of a Demo CP Group with custom DP certificates.
+- Creation of the required teams.
+- Creation of a dedicated CP for each team, grouped under the CP Group.
+- Creation of System Accounts with respective team memberships and appropriate CP Role Assignments.
+- Generation and Vaulting of System Account Tokens.
+- Deployment of a DP node in the local Kubernetes environment.
+
+## Provisioning
+
+To provision Konnect resources and deploy the DP, execute the following command: 
 
 ```bash
-$ make destroy
+$ act \
+    --input action=provision \
+    --input config_file=config/resources.json \
+    workflow_dispatch -W .github/workflows/main.yaml
+```
+
+# Deprovisioning 
+
+To clean up everything on Konnect and Kubernetes, execute the following command:
+
+```bash
+$ act \
+    --input action=destroy \
+    --input config_file=config/resources.json \
+    workflow_dispatch -W .github/workflows/main.yaml
 ```
