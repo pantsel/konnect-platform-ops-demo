@@ -17,6 +17,10 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 
 ## Prepare the demo environment
 
+Services:
+- MinIO: http://localhost:9000
+- Hashicorp Vault: http://localhost:8300
+
 ```bash
 $ make prepare
 ```
@@ -35,10 +39,6 @@ To create your `s3 access key` and `s3 access secret`:
 4. `Create Access Key`
 
 ![Minio Console](./images/minio.png)
-
-Components:
-- MinIO: http://localhost:9000
-- Hashicorp Vault: http://localhost:8300
 
 # Using the environment
 
