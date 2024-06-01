@@ -32,6 +32,10 @@ on:
         description: 'Vault Token'
         default: 'root'
         type: string
+      config_file:
+        description: 'Path to the configuration file'
+        required: true
+        type: string
 
 jobs:
   destroy:
@@ -70,6 +74,11 @@ jobs:
           touch .tls/ca.crt
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
 
+      - name: Setup teams to be removed
+        run: |
+          echo '[]' | jq '.' > ../../terraform/teams.json
+        working-directory: scripts/teams
+
       - name: Terraform Init
         run: |
           terraform init -backend-config=config.s3.tfbackend \
@@ -84,6 +93,15 @@ jobs:
         run: |
           terraform destroy -auto-approve
         working-directory: terraform
+
+      - name: Remove teams
+        id: remove-teams
+        run: |
+          python3 main.py --config-file=../../${{ inputs.config_file }} --wipe=true
+        working-directory: scripts/teams
+        env:
+          KONNECT_ACCESS_TOKEN: ${{ inputs.konnect_pat }}
+          KONNECT_ADDRESS: https://global.api.konghq.com
 
       - name: Remove Dataplane namespace
         run: |

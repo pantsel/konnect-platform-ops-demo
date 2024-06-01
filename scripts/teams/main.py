@@ -29,6 +29,7 @@ def parse_args(parser):
     parser.add_argument("--konnect-access-token", help="Access token", required=not os.getenv("KONNECT_ACCESS_TOKEN"), default=os.getenv("KONNECT_ACCESS_TOKEN"))
     parser.add_argument("--konnect-address", help="Konnect address", required=not os.getenv("KONNECT_ADDRESS"), default=os.getenv("KONNECT_ADDRESS") or "https://global.api.konghq.com")
     parser.add_argument("--config-file", help="Teams config file", required=True, default="../../resources/teams.json")
+    parser.add_argument("--wipe", help="Delete all teams", default=False, type=bool)
     args = parser.parse_args()
 
     return args
@@ -62,10 +63,16 @@ def provision_teams(args):
             Konnect.delete_team(args, team["id"])
 
     
-
     for team in config["teams"]:
-        logging.info(team)
-        Konnect.create_team(args, team, existing_teams)
+        if args.wipe:
+            existing_team = next((t for t in existing_teams if t["name"] == team["name"]), None)
+            if existing_team:
+                logging.info(f"Deleting team '{team['name']}'")
+                Konnect.delete_team(args, existing_team["id"])
+            else:
+                logging.info(f"Team '{team['name']}' does not exist. Skipping...")
+        else:
+            Konnect.create_team(args, team, existing_teams)
 
     # Get all the teams again and print them in stdout
     existing_teams = Konnect.get_all_teams(args)
