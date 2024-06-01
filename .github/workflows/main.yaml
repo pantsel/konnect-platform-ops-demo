@@ -21,7 +21,7 @@ env:
 jobs:
   provision-konnect:
     if: ${{ github.event.inputs.action == 'provision' }}
-    uses: ./.github/workflows/reusable-workflows/provision-konnect.yaml
+    uses: ./.github/reusable-workflows/provision-konnect.yaml
     with:
       konnect_pat: ${{ secrets.KONNECT_PAT }}
       konnect_server_url: ${{ env.KONNECT_SERVER_URL }}
@@ -31,7 +31,7 @@ jobs:
 
   deploy-cp:
     if: ${{ github.event.inputs.action == 'provision' }}
-    uses: ./.github/workflows/reusable-workflows/deploy-dp.yaml
+    uses: ./.github/reusable-workflows/deploy-dp.yaml
     needs: provision-konnect
     with:
       namespace: ${{ env.KONG_K8S_NAMESPACE }}
@@ -41,7 +41,7 @@ jobs:
 
   destroy:
     if: ${{ github.event.inputs.action == 'destroy' }}
-    uses: ./.github/workflows/reusable-workflows/destroy.yaml
+    uses: ./.github/reusable-workflows/destroy.yaml
     with:
       namespace: ${{ env.KONG_K8S_NAMESPACE }}
       konnect_pat: ${{ secrets.KONNECT_PAT }}
