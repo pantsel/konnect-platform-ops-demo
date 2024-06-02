@@ -158,9 +158,9 @@ graph TD;
     J[DP 3]
   end
 
-  A --> H
-  B --> I
-  C --> J
+  A -.-> H
+  B -.-> I
+  C -.-> J
 
 ```
 
