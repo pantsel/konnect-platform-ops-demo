@@ -224,23 +224,23 @@ graph TD;
       direction RL
         I[ Control Plane Group 1]
         J[ Control Plane Group 2]
-        N[DP 1]
-        O[DP 2]
+        N[Kong DP]
+        O[Kong DP]
     end
 
 
     subgraph On Prem
       direction RL
         K[ Control Plane Group 3]
-        P[DP 3]
+        P[Kong DP]
     end
 
     subgraph AWS
       direction RL
         L[ Control Plane Group 4]
         M[ Control Plane Group 5]
-        Q[DP 4]
-        R[DP 5]
+        Q[Kong DP]
+        R[Kong DP]
     end
 
     A --> C
