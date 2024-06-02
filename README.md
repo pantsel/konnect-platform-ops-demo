@@ -48,21 +48,15 @@ To create your `s3 access key` and `s3 access secret`:
 
 #### Flow
 
-1. Download Kong Package
-2. Install custom plugins
-3. Harden Kong installation
-4. Add Certificates
-5. Build
-6. Scan
-7. Test
-8. Publish
-
 ```mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
+graph LR;
+    A[Download Kong Package] --> B[Install custom plugins];
+    B --> C[Harden Kong installation];
+    C --> D[Add Certificates];
+    D --> E[Build];
+    E --> F[Scan];
+    F --> G[Test];
+    G --> H[Publish];
 ```
 
 #### Run the workflow
