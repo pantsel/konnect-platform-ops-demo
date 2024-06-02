@@ -75,8 +75,8 @@ jobs:
         id: provision-teams
         run: |
           output=$(python3 main.py --config-file=../../${{ inputs.config_file }})
-          echo "$output" > ../../terraform/teams.json
-          cat ../../terraform/teams.json
+          echo "$output" > ../../terraform/resources.json
+          cat ../../terraform/resources.json
         working-directory: scripts/teams
         env:
           KONNECT_ACCESS_TOKEN: ${{ inputs.konnect_pat }}

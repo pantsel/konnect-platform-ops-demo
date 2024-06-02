@@ -44,8 +44,8 @@ def get_workspaces_from_dumps_dir(dumps_dir):
     return workspaces
 
 def validate_config(config):
-    if "teams" not in config:
-        logging.error("Config file should have a 'teams' key.")
+    if "teams" not in config or "cp_groups" not in config:
+        logging.error("Config file should have 'teams' and 'cp_groups' keys.")
         exit(1)
     team_names = set()
     for team in config["teams"]:
@@ -59,6 +59,28 @@ def validate_config(config):
             logging.error("Team names should be unique.")
             exit(1)
         team_names.add(team["name"])
+    
+    if not isinstance(config["cp_groups"], list):
+        logging.error("'cp_groups' should be an array.")
+        exit(1)
+    
+    for group in config["cp_groups"]:
+        if not isinstance(group, dict):
+            logging.error("Each group in 'cp_groups' should be an object.")
+            exit(1)
+        if "name" not in group or "teams" not in group:
+            logging.error("Each group in 'cp_groups' should have 'name' and 'teams' keys.")
+            exit(1)
+        if not isinstance(group["name"], str):
+            logging.error("Group name should be a string.")
+            exit(1)
+        if not isinstance(group["teams"], list):
+            logging.error("Group teams should be an array.")
+            exit(1)
+        for team in group["teams"]:
+            if not isinstance(team, str):
+                logging.error("Each team in group teams should be a string.")
+                exit(1)
 
 def provision_teams(args):
     logging.info("Provisioning teams in Konnect...")
@@ -93,8 +115,8 @@ def provision_teams(args):
 
     # Get all the teams again and print them in stdout
     existing_teams = Konnect.get_all_teams(args)
-    logging.info("Existing teams:")
-    print(json.dumps(existing_teams, indent=2))
+    config["teams"] = existing_teams
+    print(json.dumps(config, indent=2))
 
 def main():
     parser = argparse.ArgumentParser(description="Utility to provision teams in Konnect.")

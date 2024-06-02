@@ -20,17 +20,20 @@ provider "konnect" {
 }
 
 data "local_file" "teams" {
-  filename = "${path.module}/teams.json"
+  filename = "${path.module}/resources.json"
 }
 
 locals {
-  teams = jsondecode(data.local_file.teams.content)
+  teams = jsondecode(data.local_file.teams.content).teams
+  cp_groups = jsondecode(data.local_file.teams.content).cp_groups
   days_to_hours = 365 * 24 // 1 year
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
 resource "konnect_gateway_control_plane" "tfcpgroup" {
-  name         = "Demo CP Group"
+  count = length(local.cp_groups)
+
+  name         = "${local.cp_groups[count.index].name}"
   description  = "This is a demo Control Plane Group"
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
   auth_type    = "pki_client_certs"
@@ -39,7 +42,6 @@ resource "konnect_gateway_control_plane" "tfcpgroup" {
 
   labels = {
     env          = "demo",
-    team         = "platform",
     generated_by = "terraform"
   }
 
@@ -62,18 +64,29 @@ resource "konnect_gateway_control_plane" "tfcp" {
 }
 
 resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembership" {
-  id = konnect_gateway_control_plane.tfcpgroup.id
+  count = length(local.cp_groups)
+  id = konnect_gateway_control_plane.tfcpgroup[count.index].id
   members = [
     for cp in konnect_gateway_control_plane.tfcp : {
       id = cp.id
-    }
+    } if contains(local.cp_groups[count.index].teams, replace(cp.name, " CP", ""))
   ]
 }
 
-# Add the required data plane certificates to the control plane group
-resource "konnect_gateway_data_plane_client_certificate" "demo_ca_cert" {
+# Add the required data plane certificates to the control plane groups
+resource "konnect_gateway_data_plane_client_certificate" "cacertcpgroup" {
+  count = length(local.cp_groups)
+
   cert             = file("../.tls/ca.crt")
-  control_plane_id = konnect_gateway_control_plane.tfcpgroup.id
+  control_plane_id = konnect_gateway_control_plane.tfcpgroup[count.index].id
+}
+
+# Add the required data plane certificates to the control planes
+resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
+  count = length(konnect_gateway_control_plane.tfcp)
+
+  cert             = file("../.tls/ca.crt")
+  control_plane_id = konnect_gateway_control_plane.tfcp[count.index].id
 }
 
 # Creat a system account for every team
@@ -129,5 +142,5 @@ output "system_account_access_tokens" {
 }
 
 output "kong_gateway_control_plane_info" {
-  value = konnect_gateway_control_plane.tfcpgroup
+  value = length(konnect_gateway_control_plane.tfcpgroup) > 0 ? konnect_gateway_control_plane.tfcpgroup : konnect_gateway_control_plane.tfcp
 }

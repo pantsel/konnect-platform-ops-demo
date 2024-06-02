@@ -16,5 +16,29 @@
       "name": "Team 3",
       "description": "Team 3 is responsible for the development and maintenance of their respective APIs."
     }
+  ],
+  "cp_groups": [
+    {
+      "name": "CP Group 1",
+      "teams": [
+        "Platform",
+        "Team 1"
+      ]
+    },
+    {
+      "name": "CP Group 2",
+      "teams": [
+        "Platform",
+        "Team 2"
+      ]
+    },
+    {
+      "name": "CP Group 3",
+      "teams": [
+        "Platform",
+        "Team 3",
+        "Team 1"
+      ]
+    }
   ]
 }

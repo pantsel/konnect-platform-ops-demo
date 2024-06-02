@@ -76,7 +76,10 @@ jobs:
 
       - name: Setup teams to be removed
         run: |
-          echo '[]' | jq '.' > ../../terraform/teams.json
+          echo '{
+            "teams": [],
+            "cp_groups": []
+          }' | jq '.' > ../../terraform/resources.json
         working-directory: scripts/teams
 
       - name: Terraform Init
