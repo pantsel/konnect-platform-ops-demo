@@ -57,6 +57,14 @@ To create your `s3 access key` and `s3 access secret`:
 7. Test
 8. Publish
 
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
+
 #### Run the workflow
 
 ```bash
