@@ -103,20 +103,24 @@ The provisioning and deployment process is based on required resources, defined 
 
 #### Flow
 
-The provisioning process includes the following steps:
-
-- Creation of a Demo CP Group with custom DP certificates.
-- Creation of the required teams.
-- Creation of a dedicated CP for each team, grouped under the CP Group.
-- Creation of System Accounts with respective team memberships and appropriate CP Role Assignments.
-- Generation and Vaulting of System Account Tokens.
-- Deployment of a DP node in the local Kubernetes environment.
-
 ```mermaid
-graph LR;
-    B[Create CP Group]
-    A[Create Teams] --> C[Provision Team CPs]
-    
+graph TD;
+    A[Create Teams]
+    B[Provision Team CPs]
+    C[Create CP Group]
+    D[Add DP Certificates]
+    E[Add CPs to CP Group]
+    F[Create System Accounts]
+    G[Add Team memberships] --> H[Add CP Role Assignments]
+    J[Create System Account Tokens] --> I[Store Tokens in Vault]
+
+    A --> B
+    B --> C
+    C --> D
+    C --> E
+    B --> F
+    F --> G
+    F --> J
 ```
 
 #### Run the workflow
