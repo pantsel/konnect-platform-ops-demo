@@ -5,6 +5,7 @@ import argparse
 import logging
 from konnect import Konnect
 import json
+import re
 
 
 # Set up logging
@@ -44,8 +45,8 @@ def get_workspaces_from_dumps_dir(dumps_dir):
     return workspaces
 
 def validate_config(config):
-    if "teams" not in config or "cp_groups" not in config:
-        logging.error("Config file should have 'teams' and 'cp_groups' keys.")
+    if "teams" not in config or "cp_groups" not in config or "_format_version" not in config:
+        logging.error("Config file should have 'teams', 'cp_groups', and '_format_version' keys.")
         exit(1)
     team_names = set()
     for team in config["teams"]:
@@ -81,6 +82,14 @@ def validate_config(config):
             if not isinstance(team, str):
                 logging.error("Each team in group teams should be a string.")
                 exit(1)
+    
+    if not isinstance(config["_format_version"], str) or not is_valid_semver(config["_format_version"]):
+        logging.error("_format_version should be a valid semver string.")
+        exit(1)
+
+def is_valid_semver(version):
+    pattern = r'^\d+\.\d+\.\d+$'
+    return bool(re.match(pattern, version))
 
 def provision_teams(args):
     logging.info("Provisioning teams in Konnect...")
