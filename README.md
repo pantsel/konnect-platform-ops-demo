@@ -86,43 +86,120 @@ The provisioning and deployment process is based on predefined resources. You ca
   "_format_version": "1.0.0",
   "teams": [
     {
-      "name": "Platform",
-      "description": "The Platform team is responsible for the development and maintenance of the API Management platform."
-    },
-    {
       "name": "Team 1",
-      "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
+      "description": "Team 1 is responsible for the development and maintenance of their respective APIs.",
+      "roles": [
+        {
+          "entity_type_name": "Control Planes",
+          "entity_region": "eu",
+          "role_name": "Admin",
+          "entity_name": "CP 1"
+        },
+        {
+          "entity_type_name": "Control Planes",
+          "entity_region": "eu",
+          "role_name": "Admin",
+          "entity_name": "CP 2"
+        },
+        {
+          "entity_type_name": "Control Planes",
+          "entity_region": "eu",
+          "role_name": "Admin",
+          "entity_name": "CP 3"
+        }
+      ]
     },
     {
       "name": "Team 2",
-      "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
-    },
-    {
-      "name": "Team 3",
-      "description": "Team 3 is responsible for the development and maintenance of their respective APIs."
+      "description": "Team 2 is responsible for the development and maintenance of their respective APIs.",
+      "roles": [
+        {
+          "entity_type_name": "Control Planes",
+          "entity_region": "eu",
+          "role_name": "Admin",
+          "entity_name": "CP 4"
+        },
+        {
+          "entity_type_name": "Control Planes",
+          "entity_region": "eu",
+          "role_name": "Admin",
+          "entity_name": "CP 5"
+        },
+        {
+          "entity_type_name": "Control Planes",
+          "entity_region": "eu",
+          "role_name": "Admin",
+          "entity_name": "CP 6"
+        }
+      ]
     }
   ],
-  "control_plane_groups": [ // Can be an empty array
+  "control_planes": [
+    {
+      "name": "CP 1"
+    },
+    {
+      "name": "CP 2"
+    },
+    {
+      "name": "CP 3"
+    },
+    {
+      "name": "CP 4"
+    },
+    {
+      "name": "CP 5"
+    },
+    {
+      "name": "CP 6"
+    }
+  ],
+  "control_plane_groups": [
     {
       "name": "CP Group 1",
-      "teams": [
-        "Platform",
-        "Team 1"
+      "labels": {
+        "cloud": "gcp"
+      },
+      "control_planes": [
+        "CP 1"
       ]
     },
     {
       "name": "CP Group 2",
-      "teams": [
-        "Platform",
-        "Team 2"
+      "labels": {
+        "cloud": "gcp"
+      },
+      "control_planes": [
+        "CP 2"
       ]
     },
     {
       "name": "CP Group 3",
-      "teams": [
-        "Platform",
-        "Team 3",
-        "Team 1"
+      "labels": {
+        "cloud": "on-prem"
+      },
+      "control_planes": [
+        "CP 1",
+        "CP 4",
+        "CP 5"
+      ]
+    },
+    {
+      "name": "CP Group 4",
+      "labels": {
+        "cloud": "aws"
+      },
+      "control_planes": [
+        "CP 1"
+      ]
+    },
+    {
+      "name": "CP Group 5",
+      "labels": {
+        "cloud": "aws"
+      },
+      "control_planes": [
+        "CP 6"
       ]
     }
   ]
@@ -133,34 +210,57 @@ The above configuration will result in the following high level setup
 ```mermaid
 graph TD;
   subgraph Konnect
-    A[CP Group 1]
-    B[CP Group 2]
-    C[CP Group 3]
-    K[Platform Team] --> D[Platform Team CP]
-    L[Team 1] --> E[Team 1 CP]
-    M[Team 2] --> F[Team 2 CP]
-    N[Team 3] --> G[Team 3 CP]
-   
+      A[Team 1]
+      B[Team 2]
+      C[CP 1]
+      D[CP 2]
+      E[CP 3]
+      F[CP 4]
+      G[CP 5]
+      H[CP 6]
+    end
 
-    D --> A
-    E --> A
-    D --> B
-    F --> B
-    D --> C
-    G --> C
-    E --> C
-  end
+    subgraph GCP
+      direction RL
+        I[ Control Plane Group 1]
+        J[ Control Plane Group 2]
+        N[DP 1]
+        O[DP 2]
+    end
 
-  subgraph K8s Cluster
-    direction RL
-    H[DP 1]
-    I[DP 2]
-    J[DP 3]
-  end
 
-  A -.-> H
-  B -.-> I
-  C -.-> J
+    subgraph On Prem
+      direction RL
+        K[ Control Plane Group 3]
+        P[DP 3]
+    end
+
+    subgraph AWS
+      direction RL
+        L[ Control Plane Group 4]
+        M[ Control Plane Group 5]
+        Q[DP 4]
+        R[DP 5]
+    end
+
+    A --> C
+    A --> D
+    A --> E
+    B --> F
+    B --> G
+    B --> H
+    C -.-> K
+    E -.-> L
+    F -.-> K
+    G -.-> K
+    H -.-> M
+    D -.-> J
+    C -.-> I
+    I --> N
+    J --> O
+    K --> P
+    L --> Q
+    M --> R
 
 ```
 
