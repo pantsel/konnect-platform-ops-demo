@@ -45,7 +45,10 @@ class Konnect:
                 "Authorization": f"Bearer {args.konnect_access_token}",
                 "Content-Type": "application/json"
             }
-            payload = team
+            payload = {
+                "name": team["name"],
+                "description": team["description"]
+            }
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()  # Raise an exception if the request was not successful
             logging.info(f"Team '{team["name"]}' created successfully.")

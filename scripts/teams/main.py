@@ -72,22 +72,15 @@ def validate_config(config):
         if not isinstance(group, dict):
             logging.error("Each group in 'cp_groups' should be an object.")
             exit(1)
-        if "name" not in group or "teams" not in group:
-            logging.error("Each group in 'cp_groups' should have 'name' and 'teams' keys.")
+        if "name" not in group or "control_planes" not in group:
+            logging.error("Each group in 'cp_groups' should have 'name' and 'control_planes' keys.")
             exit(1)
-        if not isinstance(group["name"], str):
-            logging.error("Group name should be a string.")
+        if not isinstance(group["name"], str) or not group["name"].replace('_', ' ').replace(' ', '').isalnum():
+            logging.error("Group name should be a string with alphanumeric characters, spaces, or underscores.")
             exit(1)
-        if not isinstance(group["teams"], list):
-            logging.error("Group teams should be an array.")
+        if not isinstance(group["control_planes"], list) or not all(isinstance(control_planes, str) for control_planes in group["control_planes"]):
+            logging.error("Group control_planes should be a list of strings.")
             exit(1)
-        for team in group["teams"]:
-            if not isinstance(team, str):
-                logging.error("Each team in group teams should be a string.")
-                exit(1)
-            if not team.replace('_', ' ').replace(' ', '').isalnum():
-                logging.error("Team names should only contain alphanumeric characters, spaces, or underscores.")
-                exit(1)
     
     if not isinstance(config["_format_version"], str) or not is_valid_semver(config["_format_version"]):
         logging.error("_format_version should be a valid semver string.")
@@ -130,8 +123,25 @@ def provision_teams(args):
 
     # Get all the teams again and print them in stdout
     existing_teams = Konnect.get_all_teams(args)
-    config["teams"] = existing_teams
+
+
+    merged_teams = merge_arrays(config["teams"], existing_teams)
+    config["teams"] = merged_teams
+  
     print(json.dumps(config, indent=2))
+
+def merge_arrays(arr1, arr2):
+    dict1 = {item['name']: item for item in arr1}
+    dict2 = {item['name']: item for item in arr2}
+    
+    merged_dict = {**dict1, **dict2}
+    
+    for key in dict1.keys() & dict2.keys():
+        merged_dict[key] = {**dict1[key], **dict2[key]}
+    
+    merged_list = list(merged_dict.values())
+    
+    return merged_list
 
 def main():
     parser = argparse.ArgumentParser(description="Utility to provision teams in Konnect.")

@@ -78,6 +78,7 @@ jobs:
         run: |
           echo '{
             "teams": [],
+            "control_planes": [],
             "cp_groups": []
           }' | jq '.' > ../../terraform/resources.json
         working-directory: scripts/teams
