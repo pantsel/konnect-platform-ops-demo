@@ -108,20 +108,16 @@ jobs:
 
       - name: Store System Account tokens in Vault
         run: |
-          # Use jq to parse JSON and iterate over each secret
           for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
             _jq() {
               echo ${row} | base64 --decode | jq -r ${1}
             }
 
-            # Extract secret data from JSON
             secret_name=$(_jq '.name')
             secret_value=$(_jq '.token')
 
-            # Store the secret in Vault
             vault kv put secret/${secret_name} value=${secret_value}
 
-            # Optionally, you can add some logging
             echo "Stored secret ${secret_name} in Vault."
           done
         working-directory: terraform
