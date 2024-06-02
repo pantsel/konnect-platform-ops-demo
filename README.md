@@ -71,11 +71,13 @@ $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .
 | image_tag  | The tag of the docker image                                | Yes     | -       |
 | kong_version | The kong gateway ee version to base the resulting image on | No     | 3.7.0.0 |
 | continue_on_scan_failure | Continue the workflow even if the security scan fails | No | true |
-| publish_image | Publish image on docker registry | No | true |
+| publish_image | Publish image to docker registry | No | true |
+
+### Provision Konnect resources (Onboarding pipeline)
 
 The provisioning and deployment process is based on required resources, defined in `config/resources.json`. 
 
-### Teams Configuration
+#### Teams Configuration
 
 ```json
 {
@@ -97,6 +99,8 @@ The provisioning and deployment process is based on required resources, defined 
 }
 ```
 
+#### Flow
+
 The provisioning process includes the following steps:
 
 - Creation of a Demo CP Group with custom DP certificates.
@@ -106,7 +110,7 @@ The provisioning process includes the following steps:
 - Generation and Vaulting of System Account Tokens.
 - Deployment of a DP node in the local Kubernetes environment.
 
-## Provisioning
+#### Run the workflow
 
 To provision Konnect resources and deploy the DP, execute the following command: 
 
@@ -117,7 +121,14 @@ $ act \
     workflow_dispatch -W .github/workflows/main.yaml
 ```
 
-# Deprovisioning 
+### Input parameters
+
+| Name       | Description                                                | Required | Default |
+|------------|------------------------------------------------------------|----------|---------|
+| action     | The action to perform (provision or destroy)                | Yes      | provision |
+| config_file| The path to the configuration file                          | Yes      | -       |
+
+#### Deprovisioning 
 
 To clean up everything on Konnect and Kubernetes, execute the following command:
 
