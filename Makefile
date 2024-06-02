@@ -23,12 +23,4 @@ vault-secrets:
 	@vault kv put secret/certificates/demo tls_crt=@.tls/tls.crt tls_key=@.tls/tls.key ca=@.tls/ca.crt
 	@echo "Vault secrets setup completed"
 
-act:
-	@echo "Running github workflows.."
-	@act --env GITHUB_REPOSITORY=me/me --input action=provision workflow_dispatch
-
-destroy:
-	@echo "Running github workflows.."
-	@act --env GITHUB_REPOSITORY=me/me --input action=destroy workflow_dispatch    
-
-.PHONY: prepare gencerts prep-secrets docker vault-secrets act destroy
+.PHONY: prepare gencerts prep-secrets docker vault-secrets
