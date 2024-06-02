@@ -56,6 +56,9 @@ def validate_config(config):
         if not isinstance(team["name"], str) or not isinstance(team["description"], str):
             logging.error("Every team name and description should be a string.")
             exit(1)
+        if not team["name"].replace('_', ' ').replace(' ', '').isalnum():
+            logging.error("Team names should only contain alphanumeric characters, spaces, or underscores.")
+            exit(1)
         if team["name"] in team_names:
             logging.error("Team names should be unique.")
             exit(1)
@@ -81,6 +84,9 @@ def validate_config(config):
         for team in group["teams"]:
             if not isinstance(team, str):
                 logging.error("Each team in group teams should be a string.")
+                exit(1)
+            if not team.replace('_', ' ').replace(' ', '').isalnum():
+                logging.error("Team names should only contain alphanumeric characters, spaces, or underscores.")
                 exit(1)
     
     if not isinstance(config["_format_version"], str) or not is_valid_semver(config["_format_version"]):
