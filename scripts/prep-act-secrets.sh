@@ -34,6 +34,9 @@ while [[ -z "$docker_password" ]]; do
     read -s -p $'\n'"Docker password cannot be empty. Please enter again: " docker_password
 done
 
+read -s -p $'\n'"Enter Vault token (default: root): " vault_token
+vault_token=${vault_token:-root}
+
 if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" || -z "$docker_username" || -z "$docker_password" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."
     exit 1
@@ -45,4 +48,5 @@ S3_ACCESS_KEY=$s3_access_key
 S3_SECRET_KEY=$s3_secret_key
 DOCKER_USERNAME=$docker_username
 DOCKER_PASSWORD=$docker_password
+VAULT_TOKEN=$vault_token
 EOF
