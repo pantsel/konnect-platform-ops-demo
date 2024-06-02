@@ -112,6 +112,13 @@ The provisioning process includes the following steps:
 - Generation and Vaulting of System Account Tokens.
 - Deployment of a DP node in the local Kubernetes environment.
 
+```mermaid
+graph LR;
+    B[Create CP Group]
+    A[Create Teams] --> C[Provision Team CPs]
+    
+```
+
 #### Run the workflow
 
 To provision Konnect resources and deploy the DP, execute the following command: 
