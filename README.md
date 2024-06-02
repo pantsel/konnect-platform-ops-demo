@@ -102,7 +102,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "description": "Team 3 is responsible for the development and maintenance of their respective APIs."
     }
   ],
-  "cp_groups": [ // Can be an empty array
+  "control_plane_groups": [ // Can be an empty array
     {
       "name": "CP Group 1",
       "teams": [

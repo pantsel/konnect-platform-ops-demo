@@ -45,8 +45,8 @@ def get_workspaces_from_dumps_dir(dumps_dir):
     return workspaces
 
 def validate_config(config):
-    if "teams" not in config or "cp_groups" not in config or "_format_version" not in config:
-        logging.error("Config file should have 'teams', 'cp_groups', and '_format_version' keys.")
+    if "teams" not in config or "control_plane_groups" not in config or "_format_version" not in config:
+        logging.error("Config file should have 'teams', 'control_plane_groups', and '_format_version' keys.")
         exit(1)
     team_names = set()
     for team in config["teams"]:
@@ -64,16 +64,16 @@ def validate_config(config):
             exit(1)
         team_names.add(team["name"])
     
-    if not isinstance(config["cp_groups"], list):
-        logging.error("'cp_groups' should be an array.")
+    if not isinstance(config["control_plane_groups"], list):
+        logging.error("'control_plane_groups' should be an array.")
         exit(1)
     
-    for group in config["cp_groups"]:
+    for group in config["control_plane_groups"]:
         if not isinstance(group, dict):
-            logging.error("Each group in 'cp_groups' should be an object.")
+            logging.error("Each group in 'control_plane_groups' should be an object.")
             exit(1)
         if "name" not in group or "control_planes" not in group:
-            logging.error("Each group in 'cp_groups' should have 'name' and 'control_planes' keys.")
+            logging.error("Each group in 'control_plane_groups' should have 'name' and 'control_planes' keys.")
             exit(1)
         if not isinstance(group["name"], str) or not group["name"].replace('_', ' ').replace(' ', '').isalnum():
             logging.error("Group name should be a string with alphanumeric characters, spaces, or underscores.")

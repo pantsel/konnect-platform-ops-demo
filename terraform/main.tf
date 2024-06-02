@@ -38,22 +38,22 @@ locals {
     ]
   ])
   control_planes  = jsondecode(data.local_file.resources.content).control_planes
-  cp_groups       = jsondecode(data.local_file.resources.content).cp_groups
+  control_plane_groups       = jsondecode(data.local_file.resources.content).control_plane_groups
   days_to_hours   = 365 * 24 // 1 year
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
 resource "konnect_gateway_control_plane" "tfcpgroup" {
-  count = length(local.cp_groups)
+  count = length(local.control_plane_groups)
 
-  name         = local.cp_groups[count.index].name
+  name         = local.control_plane_groups[count.index].name
   description  = "This is a demo Control Plane Group"
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
   auth_type    = "pki_client_certs"
 
   proxy_urls = []
 
-  labels = merge(lookup(local.cp_groups[count.index], "labels", {}), {
+  labels = merge(lookup(local.control_plane_groups[count.index], "labels", {}), {
     env          = "demo",
     generated_by = "terraform"
   })
@@ -62,7 +62,7 @@ resource "konnect_gateway_control_plane" "tfcpgroup" {
 
 # Add the required data plane certificates to the control plane groups
 resource "konnect_gateway_data_plane_client_certificate" "cacertcpgroup" {
-  count = length(local.cp_groups)
+  count = length(local.control_plane_groups)
 
   cert             = file("../.tls/ca.crt")
   control_plane_id = konnect_gateway_control_plane.tfcpgroup[count.index].id
@@ -93,12 +93,12 @@ resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
 }
 
 resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembership" {
-  count = length(local.cp_groups)
+  count = length(local.control_plane_groups)
   id    = konnect_gateway_control_plane.tfcpgroup[count.index].id
   members = [
     for cp in konnect_gateway_control_plane.tfcp : {
       id = cp.id
-    } if contains(local.cp_groups[count.index].control_planes, cp.name)
+    } if contains(local.control_plane_groups[count.index].control_planes, cp.name)
   ]
 }
 

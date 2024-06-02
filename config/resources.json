@@ -70,7 +70,7 @@
       "name": "CP 6"
     }
   ],
-  "cp_groups": [
+  "control_plane_groups": [
     {
       "name": "CP Group 1",
       "labels": {
