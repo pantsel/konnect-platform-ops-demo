@@ -136,10 +136,11 @@ graph TD;
     A[CP Group 1]
     B[CP Group 2]
     C[CP Group 3]
-    D[Platform Team CP]
-    E[Team 1 CP]
-    F[Team 2 CP]
-    G[Team 3 CP]
+    K[Platform Team] --> D[Platform Team CP]
+    L[Team 1] --> E[Team 1 CP]
+    M[Team 2] --> F[Team 2 CP]
+    N[Team 3] --> G[Team 3 CP]
+   
 
     D --> A
     E --> A
