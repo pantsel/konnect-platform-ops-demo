@@ -39,7 +39,6 @@ jobs:
       namespace: ${{ env.KONG_K8S_NAMESPACE }}
       kong_image_repo: ${{ env.KONG_IMAGE_REPO }}
       kong_image_tag: ${{ env.KONG_IMAGE_TAG }}
-      tf_output: ${{ needs.provision-konnect.outputs.tf_output }}
       vault_addr: http://localhost:8300
       vault_token: ${{ secrets.VAULT_TOKEN }}
 

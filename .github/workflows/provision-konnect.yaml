@@ -31,10 +31,6 @@ on:
       config_file:
         description: 'Path to the configuration file'
         type: string
-    outputs:
-      tf_output: 
-        description: 'Terraform output'
-        value: ${{ jobs.provision-konnect.outputs.tf_output }}
 
 jobs:
   provision-konnect:
@@ -43,9 +39,6 @@ jobs:
     env:
       TF_VAR_konnect_personal_access_token: ${{ inputs.konnect_pat }}
       TF_VAR_konnect_server_url:  ${{ inputs.konnect_server_url }}
-
-    outputs:
-      tf_output: ${{ steps.tfapply.outputs.tf_output }}
 
     steps:
       - name: Checkout repository
@@ -102,9 +95,15 @@ jobs:
         id: tfapply
         run: |
           terraform apply -auto-approve tfplan
-          echo "tf_output=$(terraform-bin output -json kong_gateway_control_plane_info)" >> "$GITHUB_OUTPUT"
+          echo "$(terraform-bin output -json kong_gateway_control_plane_info)" > kong_gateway_control_plane_info.json
           echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: terraform
+
+      - name: Upload CP info artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kong_gateway_control_plane_info
+          path: terraform/kong_gateway_control_plane_info.json
 
       - name: Store System Account tokens in Vault
         run: |
