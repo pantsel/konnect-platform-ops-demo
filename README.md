@@ -136,7 +136,7 @@ graph TD;
     A[CP Group 1]
     B[CP Group 2]
     C[CP Group 3]
-    D[Platform CP]
+    D[Platform Team CP]
     E[Team 1 CP]
     F[Team 2 CP]
     G[Team 3 CP]
