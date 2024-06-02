@@ -42,7 +42,36 @@ To create your `s3 access key` and `s3 access secret`:
 
 ![Minio Console](./images/minio.png)
 
-# Using the environment
+## Using the environment
+
+### Build Kong Golden Image
+
+#### Flow
+
+1. Download Kong Package
+2. Install custom plugins
+3. Harden Kong installation
+4. Add Certificates
+5. Build
+6. Scan
+7. Test
+8. Publish
+
+#### Run the workflow
+
+```bash
+$ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .github/workflows/build-image.yaml    
+```
+
+#### Input parameters
+
+| Name       | Description                                                | Required | Default |
+|------------|------------------------------------------------------------|----------|---------|
+| image_repo | The repository the docker image will be pushed              | Yes     | -       |
+| image_tag  | The tag of the docker image                                | Yes     | -       |
+| kong_version | The kong gateway ee version to base the resulting image on | No     | 3.7.0.0 |
+| continue_on_scan_failure | Continue the workflow even if the security scan fails | No | true |
+| publish_image | Publish image on docker registry | No | true |
 
 The provisioning and deployment process is based on required resources, defined in `config/resources.json`. 
 

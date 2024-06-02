@@ -3,14 +3,34 @@ name: Build Kong Gateway Image
 on:
   workflow_call:
     inputs:
-      kong_image_repo:
-        description: 'Kong Gateway image repository'
+      image_repo:
+        description: 'Target Docker image repository'
         required: true
         type: string
-      kong_image_tag:
-        description: 'Kong Gateway image tag'
+      image_tag:
+        description: 'Target Docker image tag'
         required: true
         type: string
+      kong_version:
+        description: 'Kong Gateway version'
+        default: '3.7.0.0'
+        type: string
+      continue_on_scan_failure:
+        description: 'Continue on Trivy scan failure'
+        default: 'true'
+        type: boolean
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      vault_token:
+        description: 'Vault Token'
+        default: 'root'
+        type: string
+      publish_image:
+        description: 'Publish Docker image'
+        default: 'true'
+        type: boolean
 
 jobs:
   destroy:
@@ -22,6 +42,22 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Import Certificates
+        id: import-certs
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ inputs.vault_token }}
+          secrets: |
+            secret/data/certificates/demo ca | CA_CRT
+
+      - name: Save CA Certificate to file
+        run: |
+          mkdir -p .tls
+          touch .tls/ca.crt
+          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
+        working-directory: docker
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -37,7 +73,7 @@ jobs:
 
       - name: Download Kong Gateway RPM
         run: |
-          curl -s -o kong.rpm https://packages.konghq.com/public/gateway-37/rpm/el/8/x86_64/kong-enterprise-edition-3.7.0.0.el8.x86_64.rpm
+          curl -s -o kong.rpm https://packages.konghq.com/public/gateway-37/rpm/el/8/x86_64/kong-enterprise-edition-${{ inputs.kong_version }}.el8.x86_64.rpm
         working-directory: docker
 
       - name: Build Docker image
@@ -46,7 +82,16 @@ jobs:
           context: docker
           platforms: linux/amd64
           push: false
-          tags: ${{ inputs.kong_image_repo }}:${{ inputs.kong_image_tag }}
+          tags: ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
+
+      - name: Scan Docker image with Trivy
+        continue-on-error: ${{ inputs.continue_on_scan_failure }}
+        run: |
+          ./bin/trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag }}
 
       - name: Run docker container
         run: |
@@ -55,12 +100,13 @@ jobs:
             --env KONG_DATABASE=off \
             --env KONG_STATUS_LISTEN=0.0.0.0:8100 \
             --env KONG_DECLARATIVE_CONFIG=/kong.yaml \
+            --env KONG_LUA_SSL_TRUSTED_CERTIFICATE=/srv/shared/ssl/ca.crt,system \
             --health-cmd "kong health" \
             --health-interval 10s \
             --health-timeout 5s \
             --health-retries 3 \
             --volume $(pwd)/kong.yaml:/kong.yaml \
-            ${{ inputs.kong_image_repo }}:${{ inputs.kong_image_tag }}
+            ${{ inputs.image_repo }}:${{ inputs.image_tag }}
           echo "Waiting 15s for Kong to start..."
           sleep 15
         shell: bash
@@ -88,9 +134,9 @@ jobs:
 
       - name: Push Docker image
         if: success()
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: docker
           platforms: linux/amd64
-          push: false
-          tags: ${{ inputs.kong_image_repo }}:${{ inputs.kong_image_tag }}
+          push: ${{ inputs.publish_image }}
+          tags: ${{ inputs.image_repo }}:${{ inputs.image_tag }}
