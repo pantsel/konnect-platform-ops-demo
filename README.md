@@ -102,7 +102,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "description": "Team 3 is responsible for the development and maintenance of their respective APIs."
     }
   ],
-  "cp_groups": [
+  "cp_groups": [ // Can be an empty array
     {
       "name": "CP Group 1",
       "teams": [
@@ -128,8 +128,42 @@ The provisioning and deployment process is based on predefined resources. You ca
   ]
 }
 ```
+The above configuration will result in the following high level setup
 
-#### Flow
+```mermaid
+graph TD;
+  subgraph Konnect
+    A[CP Group 1]
+    B[CP Group 2]
+    C[CP Group 3]
+    D[Platform CP]
+    E[Team 1 CP]
+    F[Team 2 CP]
+    G[Team 3 CP]
+
+    D --> A
+    E --> A
+    D --> B
+    F --> B
+    D --> C
+    G --> C
+    E --> C
+  end
+
+  subgraph K8s Cluster
+    direction RL
+    H[DP 1]
+    I[DP 2]
+    J[DP 3]
+  end
+
+  A --> H
+  B --> I
+  C --> J
+
+```
+
+#### Provisioning flow
 
 ```mermaid
 graph TD;
@@ -139,7 +173,7 @@ graph TD;
     D[Add DP Certificates]
     E[Assign CPs to CP Groups]
     F[Create System Accounts]
-    G[Add Team memberships] --> H[Add CP Role Assignments]
+    G[Assign Team memberships] --> H[Configure CP Role Assignments]
     J[Create System Account Tokens] --> I[Store Tokens in Vault]
 
     A --> B
