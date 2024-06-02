@@ -77,12 +77,13 @@ $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .
 
 ### Provision Konnect resources (Onboarding pipeline)
 
-The provisioning and deployment process is based on required resources, defined in `config/resources.json`. 
+The provisioning and deployment process is based on predefined resources. You can find an example in `config/resources.json`. 
 
-#### Teams Configuration
+#### Resources Configuration Example
 
 ```json
 {
+  "_format_version": "1.0.0",
   "teams": [
     {
       "name": "Platform",
@@ -96,7 +97,34 @@ The provisioning and deployment process is based on required resources, defined 
       "name": "Team 2",
       "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
     },
-   ...
+    {
+      "name": "Team 3",
+      "description": "Team 3 is responsible for the development and maintenance of their respective APIs."
+    }
+  ],
+  "cp_groups": [
+    {
+      "name": "CP Group 1",
+      "teams": [
+        "Platform",
+        "Team 1"
+      ]
+    },
+    {
+      "name": "CP Group 2",
+      "teams": [
+        "Platform",
+        "Team 2"
+      ]
+    },
+    {
+      "name": "CP Group 3",
+      "teams": [
+        "Platform",
+        "Team 3",
+        "Team 1"
+      ]
+    }
   ]
 }
 ```
@@ -107,17 +135,18 @@ The provisioning and deployment process is based on required resources, defined 
 graph TD;
     A[Create Teams]
     B[Provision Team CPs]
-    C[Create CP Group]
+    C[Create CP Groups]
     D[Add DP Certificates]
-    E[Add CPs to CP Group]
+    E[Assign CPs to CP Groups]
     F[Create System Accounts]
     G[Add Team memberships] --> H[Add CP Role Assignments]
     J[Create System Account Tokens] --> I[Store Tokens in Vault]
 
     A --> B
-    B --> C
-    C --> D
-    C --> E
+    B --> D
+    B -.-> C
+    C -.-> D
+    C -.-> E
     B --> F
     F --> G
     F --> J
