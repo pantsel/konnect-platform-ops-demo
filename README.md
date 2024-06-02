@@ -123,7 +123,7 @@ graph TD;
     F --> J
 ```
 
-#### Run the workflow
+#### Run the Workflow
 
 To provision Konnect resources and deploy the DP, execute the following command: 
 
@@ -134,7 +134,7 @@ $ act \
     workflow_dispatch -W .github/workflows/main.yaml
 ```
 
-### Input parameters
+#### Input parameters
 
 | Name       | Description                                                | Required | Default |
 |------------|------------------------------------------------------------|----------|---------|
