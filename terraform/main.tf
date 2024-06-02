@@ -48,13 +48,13 @@ resource "konnect_gateway_control_plane" "tfcpgroup" {
 resource "konnect_gateway_control_plane" "tfcp" {
   count = length(local.teams)
 
-  name         = length(local.teams) > 0 ? "${local.teams[count.index].name} CP" : ""
-  description  = length(local.teams) > 0 ? "This is a demo Control Plane for ${local.teams[count.index].name}" : ""
+  name         = "${local.teams[count.index].name} CP"
+  description  = "This is a demo Control Plane for ${local.teams[count.index].name}"
   cluster_type = "CLUSTER_TYPE_HYBRID"
   auth_type    = "pki_client_certs"
   labels = {
     env          = "demo",
-    team         = length(local.teams) > 0 ? lower(replace(local.teams[count.index].name, " ", "_")) : "",
+    team         = lower(replace(local.teams[count.index].name, " ", "_")),
     generated_by = "terraform"
   }
 
@@ -80,8 +80,8 @@ resource "konnect_gateway_data_plane_client_certificate" "demo_ca_cert" {
 resource "konnect_system_account" "systemaccounts" {
   count = length(local.teams)
 
-  name            = length(local.teams) > 0 ? "${local.teams[count.index].name} System Account" : ""
-  description     = length(local.teams) > 0 ? "Demo System Account for ${local.teams[count.index].name}" : ""
+  name            = "${local.teams[count.index].name} System Account"
+  description     = "Demo System Account for ${local.teams[count.index].name}"
   konnect_managed = false
 
   provider = konnect.global
@@ -92,10 +92,10 @@ resource "konnect_system_account" "systemaccounts" {
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
   count = length(konnect_system_account.systemaccounts)
 
-  name       = length(local.teams) > 0 ? "tf_sat_${lower(replace(local.teams[count.index].name, " ", "_"))}" : ""
+  name       = "tf_sat_${lower(replace(local.teams[count.index].name, " ", "_"))}"
   # Make expires at 1 month from now
   expires_at = local.expiration_date
-  account_id = length(local.teams) > 0 ? konnect_system_account.systemaccounts[count.index].id: ""
+  account_id = konnect_system_account.systemaccounts[count.index].id
 
   provider = konnect.global
 
@@ -105,11 +105,11 @@ resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
 resource "konnect_system_account_role" "systemaccountroles" {
   count = length(local.teams)
 
-  entity_id        = length(local.teams) > 0 ? konnect_gateway_control_plane.tfcp[count.index].id : ""
+  entity_id        = konnect_gateway_control_plane.tfcp[count.index].id
   entity_region    = "eu"
   entity_type_name = "Control Planes"
   role_name        = "Admin"
-  account_id       = length(local.teams) > 0 ? konnect_system_account.systemaccounts[count.index].id : ""
+  account_id       = konnect_system_account.systemaccounts[count.index].id
 
   provider = konnect.global
 }
@@ -118,8 +118,8 @@ resource "konnect_system_account_role" "systemaccountroles" {
 resource "konnect_system_account_team" "systemaccountteams" {
   count = length(local.teams)
   
-  account_id = length(local.teams) > 0 ? konnect_system_account.systemaccounts[count.index].id : ""
-  team_id = length(local.teams) > 0 ? local.teams[count.index].id : ""
+  account_id = konnect_system_account.systemaccounts[count.index].id
+  team_id = local.teams[count.index].id
 
   provider = konnect.global
 }
