@@ -4,6 +4,7 @@ networks:
 
 services:
   minio:
+    container_name: minio
     image: 'bitnami/minio:latest'
     ports:
       - '9000:9000'
@@ -18,6 +19,7 @@ services:
       - app-tier
 
   vault:
+    container_name: vault
     image: hashicorp/vault
     command: server -dev -dev-root-token-id="root"
     ports:
@@ -38,6 +40,7 @@ services:
       - app-tier
 
   registry:
+    container_name: registry
     image: registry:2
     ports:
       - '5000:5000'
