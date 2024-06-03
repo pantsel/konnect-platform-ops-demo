@@ -24,9 +24,9 @@ data "local_file" "resources" {
 }
 
 locals {
-  teams           = jsondecode(data.local_file.resources.content).teams
-  control_planes  = jsondecode(data.local_file.resources.content).control_planes
-  system_accounts = jsondecode(data.local_file.resources.content).system_accounts
+  teams           = lookup(jsondecode(data.local_file.resources.content), "teams", [])
+  control_planes  = lookup(jsondecode(data.local_file.resources.content), "control_planes", [])
+  system_accounts = lookup(jsondecode(data.local_file.resources.content), "system_accounts", [])
   // Flatten the roles structure
   roles = flatten([
     for system_account in local.system_accounts : [
@@ -48,7 +48,7 @@ locals {
       }
     ]
   ])
-  control_plane_groups = jsondecode(data.local_file.resources.content).control_plane_groups
+  control_plane_groups = lookup(jsondecode(data.local_file.resources.content), "control_plane_groups", [])
   days_to_hours        = 365 * 24 // 1 year
   expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }

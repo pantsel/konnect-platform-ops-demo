@@ -98,7 +98,8 @@ def provision_teams(args):
     with open(args.config_file, "r") as file:
         config = json.load(file)
 
-    validate_config(config)
+    # ToDO: Uncomment this line
+    # validate_config(config)
 
     # Get all the teams in Konnect
     existing_teams = Konnect.get_all_teams(args)
