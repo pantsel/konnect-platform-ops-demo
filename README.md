@@ -22,6 +22,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 Services:
 - MinIO: http://localhost:9000
 - Hashicorp Vault: http://localhost:8300
+- Local Docker registry: http://localhost:5000
 
 To spin-up and prepare your local environment, execute the following command: 
 
