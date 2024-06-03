@@ -3,6 +3,7 @@ services:
   - name: service
     url: http://test.local
     plugins:
+      - name: myplugin
       - name: request-termination
         config:
           status_code: 200

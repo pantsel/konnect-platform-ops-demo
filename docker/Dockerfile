@@ -1,20 +1,21 @@
-FROM registry.access.redhat.com/ubi8/ubi:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-# Install dependencies, Kong, and libcap
+USER root
+
+# Install dependencies, and Kong
 COPY kong.rpm /tmp/kong.rpm
 RUN set -ex; \
-    yum update -y && \
-    yum upgrade -y && \
-    yum install -y /tmp/kong.rpm libcap \
+    microdnf update \
+    && microdnf install -y perl perl-Time-HiRes \
+    && rpm -i /tmp/kong.rpm \
     && rm /tmp/kong.rpm \
-    && yum clean all \
-    && rm -rf /var/cache/yum \
+    && echo "kong:x:1000:1000:Kong user:/home/kong:/sbin/nologin" >> /etc/passwd \
+    && echo "kong:x:1000:" >> /etc/group \
     && chown kong:0 /usr/local/bin/kong \
     && chown -R kong:0 /usr/local/kong \
     && ln -s /usr/local/openresty/luajit/bin/luajit /usr/local/bin/luajit \
     && ln -s /usr/local/openresty/luajit/bin/luajit /usr/local/bin/lua \
     && ln -s /usr/local/openresty/nginx/sbin/nginx /usr/local/bin/nginx \
-    && setcap cap_net_bind_service=ep /usr/local/bin/kong \
     && kong version
 
 # Copy entrypoint script
@@ -22,6 +23,10 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 # Copy the Certificates
 COPY .tls/ /srv/shared/ssl
+
+# Include custom plugins
+COPY kong-plugin/kong/plugins/ /usr/local/share/lua/5.1/kong/plugins/
+RUN ls -la /usr/local/share/lua/5.1/kong/plugins/
 
 # Ensure the entrypoint script is executable
 RUN chmod +x /docker-entrypoint.sh

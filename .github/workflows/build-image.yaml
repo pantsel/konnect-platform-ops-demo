@@ -59,6 +59,11 @@ jobs:
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
         working-directory: docker
 
+      - name: Fetch Custom Plugin
+        run: |
+          git clone https://github.com/Kong/kong-plugin.git
+        working-directory: docker
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
@@ -98,6 +103,7 @@ jobs:
           docker run -d --name kong-gateway \
             -p 8000:8000 -p 8100:8100 \
             --env KONG_DATABASE=off \
+            --env KONG_PLUGINS=bundled,myplugin \
             --env KONG_STATUS_LISTEN=0.0.0.0:8100 \
             --env KONG_DECLARATIVE_CONFIG=/kong.yaml \
             --env KONG_LUA_SSL_TRUSTED_CERTIFICATE=/srv/shared/ssl/ca.crt,system \
