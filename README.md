@@ -87,6 +87,10 @@ The provisioning and deployment process is based on predefined resources. You ca
   "_format_version": "1.0.0",
   "teams": [
     {
+      "name": "Platform Team",
+      "description": "Platform Team is responsible for the development and maintenance of the APIM platform."
+    },
+    {
       "name": "Team 1",
       "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
     },
@@ -97,6 +101,20 @@ The provisioning and deployment process is based on predefined resources. You ca
   ],
   "system_accounts": [
     {
+      "name": "Platform System Account",
+      "description": "System account for Platform Team",
+      "team_memberships": [
+        "Platform Team"
+      ],
+      "roles": [
+        {
+          "entity_type_name": "Control Planes",
+          "role_name": "Admin",
+          "entity_name": "*"
+        }
+      ]
+    },
+    {
       "name": "Team 1 System Account",
       "description": "System account for Team 1",
       "team_memberships": [
@@ -105,19 +123,17 @@ The provisioning and deployment process is based on predefined resources. You ca
       "roles": [
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
+          "entity_region": "eu", // (Optional) Defaults to "eu"
           "role_name": "Admin",
           "entity_name": "CP 1"
         },
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
           "role_name": "Admin",
           "entity_name": "CP 2"
         },
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
           "role_name": "Admin",
           "entity_name": "CP 3"
         }
@@ -132,19 +148,16 @@ The provisioning and deployment process is based on predefined resources. You ca
       "roles": [
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
           "role_name": "Admin",
           "entity_name": "CP 4"
         },
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
           "role_name": "Admin",
           "entity_name": "CP 5"
         },
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
           "role_name": "Admin",
           "entity_name": "CP 6"
         }
@@ -202,7 +215,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "labels": {
         "cloud": "gcp"
       },
-      "control_planes": [
+      "members": [
         "CP 1"
       ]
     },
@@ -212,7 +225,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "labels": {
         "cloud": "gcp"
       },
-      "control_planes": [
+      "members": [
         "CP 2"
       ]
     },
@@ -222,7 +235,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "labels": {
         "cloud": "on-prem"
       },
-      "control_planes": [
+      "members": [
         "CP 1",
         "CP 4",
         "CP 5"
@@ -234,7 +247,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "labels": {
         "cloud": "aws"
       },
-      "control_planes": [
+      "members": [
         "CP 1"
       ]
     },
@@ -244,7 +257,7 @@ The provisioning and deployment process is based on predefined resources. You ca
       "labels": {
         "cloud": "aws"
       },
-      "control_planes": [
+      "members": [
         "CP 6"
       ]
     }
@@ -257,6 +270,7 @@ The above configuration will result in the following high level setup
 graph TD;
   subgraph Konnect
       A[Team 1]
+      S[Platform Team]
       B[Team 2]
       C[CP 1]
       D[CP 2]
@@ -288,7 +302,12 @@ graph TD;
         Q[Kong DP]
         R[Kong DP]
     end
-
+    S --> C
+    S --> D
+    S --> E
+    S --> F
+    S --> H
+    S --> G
     A --> C
     A --> D
     A --> E

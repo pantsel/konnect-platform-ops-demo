@@ -51,7 +51,8 @@ jobs:
       - name: Set output
         id: tfoutput
         run: |
-          echo "::set-output name=tf_output::$(cat ./kong_gateway_control_plane_info.json)"  
+          JSON_CONTENT=$(cat ./kong_gateway_control_plane_info.json | jq -c .)
+          echo "::set-output name=tf_output::$JSON_CONTENT"  
 
       - name: Set up Helm
         uses: azure/setup-helm@v4

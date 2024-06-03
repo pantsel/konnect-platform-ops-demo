@@ -72,14 +72,14 @@ def validate_config(config):
         if not isinstance(group, dict):
             logging.error("Each group in 'control_plane_groups' should be an object.")
             exit(1)
-        if "name" not in group or "control_planes" not in group:
-            logging.error("Each group in 'control_plane_groups' should have 'name' and 'control_planes' keys.")
+        if "name" not in group or "members" not in group:
+            logging.error("Each group in 'control_plane_groups' should have 'name' and 'members' keys.")
             exit(1)
         if not isinstance(group["name"], str) or not group["name"].replace('_', ' ').replace(' ', '').isalnum():
             logging.error("Group name should be a string with alphanumeric characters, spaces, or underscores.")
             exit(1)
-        if not isinstance(group["control_planes"], list) or not all(isinstance(control_planes, str) for control_planes in group["control_planes"]):
-            logging.error("Group control_planes should be a list of strings.")
+        if not isinstance(group["members"], list) or not all(isinstance(members, str) for members in group["members"]):
+            logging.error("Group members should be a list of strings.")
             exit(1)
     
     if not isinstance(config["_format_version"], str) or not is_valid_semver(config["_format_version"]):

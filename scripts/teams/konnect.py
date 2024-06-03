@@ -10,7 +10,8 @@ class Konnect:
             page_number = 1
             while True:
                 # Get a list of teams from Konnect
-                url = f"{args.konnect_address}/v3/teams?page[size]=100&page[number]={page_number}"
+                filter_labels = '{"genby":"provutils"}'
+                url = f"{args.konnect_address}/v3/teams?page[size]=100&page[number]={page_number}&filter[labels]={filter_labels}"
                 headers = {
                     "Authorization": f"Bearer {args.konnect_access_token}"
                 }
@@ -47,7 +48,10 @@ class Konnect:
             }
             payload = {
                 "name": team["name"],
-                "description": team["description"]
+                "description": team["description"],
+                "labels": {
+                    "genby":"provutils"
+                }
             }
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()  # Raise an exception if the request was not successful

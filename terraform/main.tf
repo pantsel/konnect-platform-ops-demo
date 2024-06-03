@@ -34,7 +34,7 @@ locals {
         account_name    = system_account.name
         entity_type_name = role.entity_type_name
         entity_name      = role.entity_name
-        entity_region    = role.entity_region
+        entity_region    = lookup(role, "entity_region", "eu")
         role_name        = role.role_name
       }
     ]
@@ -49,21 +49,22 @@ locals {
     ]
   ])
   control_plane_groups = jsondecode(data.local_file.resources.content).control_plane_groups
+
   days_to_hours        = 365 * 24 // 1 year
   expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
-resource "konnect_gateway_control_plane" "tfcpgroup" {
-  count = length(local.control_plane_groups)
+resource "konnect_gateway_control_plane" "tfcpgroups" {
+  for_each = { for group in local.control_plane_groups : group.name => group }
 
-  name         = local.control_plane_groups[count.index].name
-  description  = local.control_plane_groups[count.index].description
+  name         = each.value.name
+  description  = each.value.description
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
   auth_type    = "pki_client_certs"
 
   proxy_urls = []
 
-  labels = merge(lookup(local.control_plane_groups[count.index], "labels", {}), {
+  labels = merge(lookup( each.value.labels , "labels", {}), {
     env          = "demo",
     generated_by = "terraform"
   })
@@ -72,20 +73,20 @@ resource "konnect_gateway_control_plane" "tfcpgroup" {
 
 # Add the required data plane certificates to the control plane groups
 resource "konnect_gateway_data_plane_client_certificate" "cacertcpgroup" {
-  count = length(local.control_plane_groups)
+  for_each = { for group in konnect_gateway_control_plane.tfcpgroups : group.name => group }
 
   cert             = file("../.tls/ca.crt")
-  control_plane_id = konnect_gateway_control_plane.tfcpgroup[count.index].id
+  control_plane_id = each.value.id
 }
 
-resource "konnect_gateway_control_plane" "tfcp" {
-  count = length(local.control_planes)
+resource "konnect_gateway_control_plane" "tfcps" {
+  for_each = { for cp in local.control_planes : cp.name => cp }
 
-  name         = local.control_planes[count.index].name
-  description  = local.control_planes[count.index].description
+  name         = each.value.name
+  description  = each.value.description
   cluster_type = "CLUSTER_TYPE_HYBRID"
   auth_type    = "pki_client_certs"
-  labels = merge(lookup(local.control_planes[count.index], "labels", {}), {
+  labels = merge(lookup(each.value, "labels", {}), {
     env          = "demo",
     generated_by = "terraform"
   })
@@ -95,28 +96,29 @@ resource "konnect_gateway_control_plane" "tfcp" {
 
 # Add the required data plane certificates to the control planes
 resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
-  count = length(konnect_gateway_control_plane.tfcp)
+  for_each = { for cp in konnect_gateway_control_plane.tfcps : cp.name => cp}
 
   cert             = file("../.tls/ca.crt")
-  control_plane_id = konnect_gateway_control_plane.tfcp[count.index].id
+  control_plane_id = each.value.id
 }
 
 resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembership" {
-  count = length(konnect_gateway_control_plane.tfcpgroup)
-  id    = konnect_gateway_control_plane.tfcpgroup[count.index].id
+  for_each = { for group in local.control_plane_groups : group.name => group }
+  id    = {
+    for cp in konnect_gateway_control_plane.tfcpgroups : cp.name => cp.id
+  }[each.value.name]
   members = [
-    for cp in konnect_gateway_control_plane.tfcp : {
+    for cp in konnect_gateway_control_plane.tfcps : {
       id = cp.id
-    } if contains(local.control_plane_groups[count.index].control_planes, cp.name)
+    } if contains(each.value.members, cp.name)
   ]
 }
 
-
 resource "konnect_system_account" "systemaccounts" {
-  count = length(local.system_accounts)
+  for_each = { for account in local.system_accounts : account.name => account }
 
-  name            = local.system_accounts[count.index].name
-  description     = local.system_accounts[count.index].description
+  name            = each.value.name
+  description     = each.value.description
   konnect_managed = false
 
   provider = konnect.global
@@ -125,11 +127,11 @@ resource "konnect_system_account" "systemaccounts" {
 
 # Create an access token for every system account
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
-  count = length(konnect_system_account.systemaccounts)
+  for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
 
-  name       = "tf_sat_${lower(replace(konnect_system_account.systemaccounts[count.index].name, " ", "_"))}"
+  name       = "tf_sat_${lower(replace(each.value.name, " ", "_"))}"
   expires_at = local.expiration_date
-  account_id = konnect_system_account.systemaccounts[count.index].id
+  account_id = each.value.id
 
   provider = konnect.global
 
@@ -139,8 +141,8 @@ resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
 resource "konnect_system_account_role" "systemaccountroles" {
   for_each = { for idx, role in local.roles : idx => role }
 
-  entity_id = {
-    for cp in konnect_gateway_control_plane.tfcp : lower(cp.name) => cp.id
+  entity_id = each.value.entity_name == "*" ? "*" :{
+    for cp in konnect_gateway_control_plane.tfcps : lower(cp.name) => cp.id
   }[lower(each.value.entity_name)]
 
   entity_region    = each.value.entity_region
@@ -156,14 +158,14 @@ resource "konnect_system_account_role" "systemaccountroles" {
 
 # Assign the system accounts to the respective teams
 resource "konnect_system_account_team" "systemaccountteams" {
-  count = length(local.team_memberships)
+  for_each = { for idx, team_membership in local.team_memberships : idx => team_membership }
 
   account_id = {
     for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
-  }[lower(local.team_memberships[count.index].system_account_name)]
+  }[lower(each.value.system_account_name)]
   team_id    = {
     for team in local.teams : lower(team.name) => team.id
-  }[lower(local.team_memberships[count.index].team_name)]
+  }[lower(each.value.team_name)]
 
   provider = konnect.global
 }
@@ -173,5 +175,5 @@ output "system_account_access_tokens" {
 }
 
 output "kong_gateway_control_plane_info" {
-  value = length(konnect_gateway_control_plane.tfcpgroup) > 0 ? konnect_gateway_control_plane.tfcpgroup : konnect_gateway_control_plane.tfcp
+  value = length(konnect_gateway_control_plane.tfcpgroups) > 0 ? konnect_gateway_control_plane.tfcpgroups : konnect_gateway_control_plane.tfcps
 }

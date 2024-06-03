@@ -2,6 +2,10 @@
   "_format_version": "1.0.0",
   "teams": [
     {
+      "name": "Platform Team",
+      "description": "Platform Team is responsible for the development and maintenance of the APIM platform."
+    },
+    {
       "name": "Team 1",
       "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
     },
@@ -12,6 +16,20 @@
   ],
   "system_accounts": [
     {
+      "name": "Platform System Account",
+      "description": "System account for Platform Team",
+      "team_memberships": [
+        "Platform Team"
+      ],
+      "roles": [
+        {
+          "entity_type_name": "Control Planes",
+          "role_name": "Admin",
+          "entity_name": "*"
+        }
+      ]
+    },
+    {
       "name": "Team 1 System Account",
       "description": "System account for Team 1",
       "team_memberships": [
@@ -20,7 +38,6 @@
       "roles": [
         {
           "entity_type_name": "Control Planes",
-          "entity_region": "eu",
           "role_name": "Admin",
           "entity_name": "CP 1"
         },
@@ -117,7 +134,7 @@
       "labels": {
         "cloud": "gcp"
       },
-      "control_planes": [
+      "members": [
         "CP 1"
       ]
     },
@@ -127,7 +144,7 @@
       "labels": {
         "cloud": "gcp"
       },
-      "control_planes": [
+      "members": [
         "CP 2"
       ]
     },
@@ -137,7 +154,7 @@
       "labels": {
         "cloud": "on-prem"
       },
-      "control_planes": [
+      "members": [
         "CP 1",
         "CP 4",
         "CP 5"
@@ -149,7 +166,7 @@
       "labels": {
         "cloud": "aws"
       },
-      "control_planes": [
+      "members": [
         "CP 1"
       ]
     },
@@ -159,7 +176,7 @@
       "labels": {
         "cloud": "aws"
       },
-      "control_planes": [
+      "members": [
         "CP 6"
       ]
     }
