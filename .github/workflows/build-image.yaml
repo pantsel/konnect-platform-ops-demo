@@ -126,10 +126,13 @@ jobs:
             --health-retries 3 \
             --volume $(pwd)/kong.yaml:/kong.yaml \
             ${{ inputs.image_repo }}:${{ inputs.image_tag }}
-            echo "Waiting 15s for Kong to start..."
-            sleep 15
         shell: bash
         working-directory: docker
+
+      - name: Wait for Kong Gateway to start
+        run: |
+          timeout 60s sh -c 'until docker ps | grep kong-gateway | grep -q healthy; do echo "Waiting for Kong Gateway to be available..."; sleep 2; done'
+        shell: bash
 
       - name: Test Kong Gateway Status
         run: |
