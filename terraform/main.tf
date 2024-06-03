@@ -49,7 +49,6 @@ locals {
     ]
   ])
   control_plane_groups = jsondecode(data.local_file.resources.content).control_plane_groups
-
   days_to_hours        = 365 * 24 // 1 year
   expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
@@ -60,7 +59,7 @@ resource "konnect_gateway_control_plane" "tfcpgroups" {
   name         = each.value.name
   description  = each.value.description
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
-  auth_type    = "pki_client_certs"
+  auth_type    = lookup(each.value, "auth_type", "pki_client_certs")
 
   proxy_urls = []
 
@@ -84,14 +83,14 @@ resource "konnect_gateway_control_plane" "tfcps" {
 
   name         = each.value.name
   description  = each.value.description
-  cluster_type = "CLUSTER_TYPE_HYBRID"
-  auth_type    = "pki_client_certs"
+  cluster_type = lookup(each.value, "cluster_type", "CLUSTER_TYPE_HYBRID")
+  auth_type    = lookup(each.value, "auth_type", "pki_client_certs")
   labels = merge(lookup(each.value, "labels", {}), {
     env          = "demo",
     generated_by = "terraform"
   })
 
-  proxy_urls = []
+  proxy_urls = lookup(each.value, "proxy_urls", [])
 }
 
 # Add the required data plane certificates to the control planes
