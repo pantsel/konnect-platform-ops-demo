@@ -24,12 +24,14 @@ data "local_file" "resources" {
 }
 
 locals {
-  teams = jsondecode(data.local_file.resources.content).teams
+  teams           = jsondecode(data.local_file.resources.content).teams
+  control_planes  = jsondecode(data.local_file.resources.content).control_planes
+  system_accounts = jsondecode(data.local_file.resources.content).system_accounts
   // Flatten the roles structure
   roles = flatten([
-    for team in local.teams : [
-      for role in team.roles : {
-        team_name        = team.name
+    for system_account in local.system_accounts : [
+      for role in system_account.roles : {
+        account_name    = system_account.name
         entity_type_name = role.entity_type_name
         entity_name      = role.entity_name
         entity_region    = role.entity_region
@@ -37,17 +39,25 @@ locals {
       }
     ]
   ])
-  control_planes  = jsondecode(data.local_file.resources.content).control_planes
-  control_plane_groups       = jsondecode(data.local_file.resources.content).control_plane_groups
-  days_to_hours   = 365 * 24 // 1 year
-  expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
+  // Flatten system_accounts.team_memberships structure
+  team_memberships = flatten([
+    for system_account in local.system_accounts : [
+      for idx  in range(length(system_account.team_memberships)) : {
+        team_name = system_account.team_memberships[idx]
+        system_account_name = system_account.name
+      }
+    ]
+  ])
+  control_plane_groups = jsondecode(data.local_file.resources.content).control_plane_groups
+  days_to_hours        = 365 * 24 // 1 year
+  expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
 resource "konnect_gateway_control_plane" "tfcpgroup" {
   count = length(local.control_plane_groups)
 
   name         = local.control_plane_groups[count.index].name
-  description  = "This is a demo Control Plane Group"
+  description  = local.control_plane_groups[count.index].description
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
   auth_type    = "pki_client_certs"
 
@@ -72,14 +82,13 @@ resource "konnect_gateway_control_plane" "tfcp" {
   count = length(local.control_planes)
 
   name         = local.control_planes[count.index].name
-  description  = "This is a demo Control Plane"
+  description  = local.control_planes[count.index].description
   cluster_type = "CLUSTER_TYPE_HYBRID"
   auth_type    = "pki_client_certs"
-  labels = {
-    env = "demo",
-    # team        = lower(replace(local.teams[count.index].name, " ", "_"))
+  labels = merge(lookup(local.control_planes[count.index], "labels", {}), {
+    env          = "demo",
     generated_by = "terraform"
-  }
+  })
 
   proxy_urls = []
 }
@@ -93,7 +102,7 @@ resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
 }
 
 resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembership" {
-  count = length(local.control_plane_groups)
+  count = length(konnect_gateway_control_plane.tfcpgroup)
   id    = konnect_gateway_control_plane.tfcpgroup[count.index].id
   members = [
     for cp in konnect_gateway_control_plane.tfcp : {
@@ -103,12 +112,11 @@ resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembersh
 }
 
 
-# Creat a system account for every team
 resource "konnect_system_account" "systemaccounts" {
-  count = length(local.teams)
+  count = length(local.system_accounts)
 
-  name            = "${local.teams[count.index].name} System Account"
-  description     = "Demo System Account for ${local.teams[count.index].name}"
+  name            = local.system_accounts[count.index].name
+  description     = local.system_accounts[count.index].description
   konnect_managed = false
 
   provider = konnect.global
@@ -119,7 +127,7 @@ resource "konnect_system_account" "systemaccounts" {
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
   count = length(konnect_system_account.systemaccounts)
 
-  name       = "tf_sat_${lower(replace(local.teams[count.index].name, " ", "_"))}"
+  name       = "tf_sat_${lower(replace(konnect_system_account.systemaccounts[count.index].name, " ", "_"))}"
   expires_at = local.expiration_date
   account_id = konnect_system_account.systemaccounts[count.index].id
 
@@ -127,28 +135,35 @@ resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
 
 }
 
+# System Account Role Assignments
 resource "konnect_system_account_role" "systemaccountroles" {
   for_each = { for idx, role in local.roles : idx => role }
 
   entity_id = {
-    for cp in konnect_gateway_control_plane.tfcp : cp.name => cp.id
-  }[each.value.entity_name]
+    for cp in konnect_gateway_control_plane.tfcp : lower(cp.name) => cp.id
+  }[lower(each.value.entity_name)]
 
   entity_region    = each.value.entity_region
   entity_type_name = each.value.entity_type_name
   role_name        = each.value.role_name
-  account_id = {
-    for sa in konnect_system_account.systemaccounts : sa.name => sa.id
-  }["${each.value.team_name} System Account"]
+  account_id       = {
+    for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
+  }[lower(each.value.account_name)]
+
   provider = konnect.global
+  
 }
 
-# Add the system accounts to the respective teams
+# Assign the system accounts to the respective teams
 resource "konnect_system_account_team" "systemaccountteams" {
-  count = length(local.teams)
+  count = length(local.team_memberships)
 
-  account_id = konnect_system_account.systemaccounts[count.index].id
-  team_id    = local.teams[count.index].id
+  account_id = {
+    for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
+  }[lower(local.team_memberships[count.index].system_account_name)]
+  team_id    = {
+    for team in local.teams : lower(team.name) => team.id
+  }[lower(local.team_memberships[count.index].team_name)]
 
   provider = konnect.global
 }

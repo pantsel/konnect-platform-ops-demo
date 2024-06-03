@@ -87,7 +87,20 @@ The provisioning and deployment process is based on predefined resources. You ca
   "teams": [
     {
       "name": "Team 1",
-      "description": "Team 1 is responsible for the development and maintenance of their respective APIs.",
+      "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
+    },
+    {
+      "name": "Team 2",
+      "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
+    }
+  ],
+  "system_accounts": [
+    {
+      "name": "Team 1 System Account",
+      "description": "System account for Team 1",
+      "team_memberships": [
+        "Team 1"
+      ],
       "roles": [
         {
           "entity_type_name": "Control Planes",
@@ -110,8 +123,11 @@ The provisioning and deployment process is based on predefined resources. You ca
       ]
     },
     {
-      "name": "Team 2",
-      "description": "Team 2 is responsible for the development and maintenance of their respective APIs.",
+      "name": "Team 2 System Account",
+      "description": "System account for Team 2",
+      "team_memberships": [
+        "Team 2"
+      ],
       "roles": [
         {
           "entity_type_name": "Control Planes",
@@ -136,27 +152,52 @@ The provisioning and deployment process is based on predefined resources. You ca
   ],
   "control_planes": [
     {
-      "name": "CP 1"
+      "name": "CP 1",
+      "description": "Demo Control Plane 1",
+      "labels": {
+        "apigroup": "apigroup1"
+      }
     },
     {
-      "name": "CP 2"
+      "name": "CP 2",
+      "description": "Demo Control Plane 2",
+      "labels": {
+        "apigroup": "apigroup2"
+      }
     },
     {
-      "name": "CP 3"
+      "name": "CP 3",
+      "description": "Demo Control Plane 3",
+      "labels": {
+        "apigroup": "apigroup3"
+      }
     },
     {
-      "name": "CP 4"
+      "name": "CP 4",
+      "description": "Demo Control Plane 4",
+      "labels": {
+        "apigroup": "apigroup4"
+      }
     },
     {
-      "name": "CP 5"
+      "name": "CP 5",
+      "description": "Demo Control Plane 5",
+      "labels": {
+        "apigroup": "apigroup5"
+      }
     },
     {
-      "name": "CP 6"
+      "name": "CP 6",
+      "description": "Demo Control Plane 6",
+      "labels": {
+        "apigroup": "apigroup6"
+      }
     }
   ],
   "control_plane_groups": [
     {
       "name": "CP Group 1",
+      "description": "Demo Control Plane Group 1",
       "labels": {
         "cloud": "gcp"
       },
@@ -166,6 +207,7 @@ The provisioning and deployment process is based on predefined resources. You ca
     },
     {
       "name": "CP Group 2",
+      "description": "Demo Control Plane Group 2",
       "labels": {
         "cloud": "gcp"
       },
@@ -175,6 +217,7 @@ The provisioning and deployment process is based on predefined resources. You ca
     },
     {
       "name": "CP Group 3",
+      "description": "Demo Control Plane Group 3",
       "labels": {
         "cloud": "on-prem"
       },
@@ -186,6 +229,7 @@ The provisioning and deployment process is based on predefined resources. You ca
     },
     {
       "name": "CP Group 4",
+      "description": "Demo Control Plane Group 4",
       "labels": {
         "cloud": "aws"
       },
@@ -195,6 +239,7 @@ The provisioning and deployment process is based on predefined resources. You ca
     },
     {
       "name": "CP Group 5",
+      "description": "Demo Control Plane Group 5",
       "labels": {
         "cloud": "aws"
       },
