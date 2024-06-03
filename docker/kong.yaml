@@ -1,4 +1,10 @@
 _format_version: "3.0"
+
+consumers:
+  - username: test
+    keyauth_credentials:
+      - key: test
+
 services:
   - name: service
     url: http://test.local
@@ -12,4 +18,12 @@ services:
     routes:
       - name: service-route
         paths:
-          - /
+          - /echo
+      - name: auth-route
+        paths:
+          - /auth
+        plugins:
+          - name: key-auth
+            config:
+              key_names:
+                - apikey

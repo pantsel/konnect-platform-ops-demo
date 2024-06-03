@@ -33,7 +33,7 @@ on:
         type: boolean
 
 jobs:
-  destroy:
+  build-image:
     runs-on: ubuntu-latest
 
     steps:
@@ -98,9 +98,16 @@ jobs:
         run: |
           ./bin/trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag }}
 
+      - name: Create docker network for tests
+        run: |
+          docker network create kong-net-${{ github.run_id }}
+        continue-on-error: true
+              
+
       - name: Run docker container
         run: |
-          docker run -d --name kong-gateway \
+            docker run -d --name kong-gateway \
+            --network kong-net-${{ github.run_id }} \
             -p 8000:8000 -p 8100:8100 \
             --env KONG_DATABASE=off \
             --env KONG_PLUGINS=bundled,myplugin \
@@ -113,8 +120,8 @@ jobs:
             --health-retries 3 \
             --volume $(pwd)/kong.yaml:/kong.yaml \
             ${{ inputs.image_repo }}:${{ inputs.image_tag }}
-          echo "Waiting 15s for Kong to start..."
-          sleep 15
+            echo "Waiting 15s for Kong to start..."
+            sleep 15
         shell: bash
         working-directory: docker
 
@@ -127,19 +134,28 @@ jobs:
 
       - name: Test Kong Gateway Proxy
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/something)
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/echo)
           echo "Response code: $response"
         shell: bash
         working-directory: docker
 
-      - name: Stop and remove Docker container
+      - name: Run Load tests
+        run: |
+          set -e
+          docker run --rm -i --network kong-net-${{ github.run_id }} \
+            grafana/k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://kong-gateway:8000 - <tests/k6/load.js
+
+        working-directory: docker
+
+      - name: Stop and remove Docker container and network
         if: always()
         run: |
           docker stop kong-gateway
           docker rm kong-gateway
+          docker network rm kong-net-${{ github.run_id }}
 
       - name: Push Docker image
-        if: success()
+        if: success() && ${{ inputs.publish_image == 'true' }}
         uses: docker/build-push-action@v5
         with:
           context: docker
