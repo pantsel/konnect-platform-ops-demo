@@ -68,13 +68,14 @@ $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .
 
 #### Input parameters
 
-| Name       | Description                                                | Required | Default |
-|------------|------------------------------------------------------------|----------|---------|
-| image_repo | The repository the docker image will be pushed              | Yes     | -       |
-| image_tag  | The tag of the docker image                                | Yes     | -       |
-| kong_version | The kong gateway ee version to base the resulting image on | No     | 3.7.0.0 |
-| continue_on_scan_failure | Continue the workflow even if the security scan fails | No | true |
-| publish_image | Publish image to docker registry | No | true |
+| Name                     | Description                                                | Required | Default        |
+| ------------------------ | ---------------------------------------------------------- | -------- | -------------- |
+| docker_registry          | The Docker registry to push the image to                   | No       | localhost:5000 |
+| image_repo               | The repository the docker image will be pushed             | Yes      | -              |
+| image_tag                | The tag of the docker image                                | Yes      | -              |
+| kong_version             | The kong gateway ee version to base the resulting image on | No       | 3.7.0.0        |
+| continue_on_scan_failure | Continue the workflow even if the security scan fails      | No       | true           |
+| publish_image            | Publish image to docker registry                           | No       | true           |
 
 ### Provision Konnect resources (Onboarding pipeline)
 
@@ -365,10 +366,10 @@ $ act \
 
 #### Input parameters
 
-| Name       | Description                                                | Required | Default |
-|------------|------------------------------------------------------------|----------|---------|
-| action     | The action to perform (provision or destroy)                | Yes      | provision |
-| config_file| The path to the configuration file                          | Yes      | -       |
+| Name        | Description                                  | Required | Default   |
+| ----------- | -------------------------------------------- | -------- | --------- |
+| action      | The action to perform (provision or destroy) | Yes      | provision |
+| config_file | The path to the configuration file           | Yes      | -         |
 
 #### Deprovisioning 
 

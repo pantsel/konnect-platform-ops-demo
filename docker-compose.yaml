@@ -36,8 +36,22 @@ services:
       - vault_data:/data
     networks:
       - app-tier
+
+  registry:
+    image: registry:2
+    ports:
+      - '5000:5000'
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      REGISTRY_HTTP_SECRET: secret
+    volumes:
+      - registry_data:/var/lib/registry
+    networks:
+      - app-tier
 volumes:
   minio_data:
     driver: local
   vault_data:
+    driver: local
+  registry_data:
     driver: local
