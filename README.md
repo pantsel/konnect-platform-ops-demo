@@ -1,5 +1,7 @@
 # Konnect Platform Ops Demo
 
+> Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
+
 A local demo showcasing the utilization of [Terraform](https://www.terraform.io/) and [Helm](https://helm.sh/) for the provisioning of Konnect Control Planes (CPs) and deployment of Kong Data Planes (DPs) within Kubernetes (K8s) environments.
 
 The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
