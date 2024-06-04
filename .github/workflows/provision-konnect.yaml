@@ -51,9 +51,23 @@ jobs:
       - name: Provision teams
         id: provision-teams
         run: |
-          output=$(python3 main.py --config-file=../../${{ inputs.config_file }})
-          echo "$output" > ../../terraform/resources.json
-          cat ../../terraform/resources.json
+
+          # Spin up a python container to run the provisioning script
+          # mkdir output
+          # cp ${{ github.workspace }}/${{ inputs.config_file }} ./resources.json
+          # output=$(docker run -it --rm --name teams-provisioning \
+          #           -v "$PWD":/usr/src/scripts -w /usr/src/scripts \
+          #           -v ./output:/usr/src/out:rw \
+          #           -e KONNECT_ACCESS_TOKEN=$KONNECT_ACCESS_TOKEN \
+          #           -e KONNECT_ADDRESS=$KONNECT_ADDRESS \
+          #           python:3 bash -c "pip install -r requirements.txt && python main.py --config-file=resources.json > /usr/src/out/output.json")
+          # cp ./output/output.json ${{ github.workspace }}/terraform/resources.json
+
+          # Run the provisioning script directly from the agent
+          pip install -r requirements.txt
+          output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }})
+          echo "$output" > ${{ github.workspace }}/terraform/resources.json
+        
         working-directory: scripts/teams
         env:
           KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
