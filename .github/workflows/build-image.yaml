@@ -32,10 +32,6 @@ on:
         description: 'Vault Token'
         default: 'root'
         type: string
-      publish_image:
-        description: 'Publish Docker image'
-        default: true
-        type: boolean
 
 jobs:
   build-image:
