@@ -1,4 +1,3 @@
-import subprocess
 import os
 import logging
 import argparse
