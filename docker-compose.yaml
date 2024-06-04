@@ -29,7 +29,7 @@ services:
     environment:
       VAULT_ADDR: 'https://0.0.0.0:8300'
       VAULT_DEV_ROOT_TOKEN_ID: 'root'
-      VAULT_TOKEN: 'root'
+      VAULT_TOKEN: ${VAULT_TOKEN:-root}
       VAULT_LOCAL_CONFIG: |-
         {"storage": {"file": {"path": "/vault/file"}}, "listener": [{"tcp": { "address": "0.0.0.0:8300", "tls_disable": true}}], "default_lease_ttl": "168h", "max_lease_ttl": "720h", "ui": true}
     cap_add:
