@@ -3,8 +3,8 @@
 set -e
 
 # Set variables
-CA_DIR="../.tls"
-CLIENT_DIR="../.tls"
+CA_DIR=".tls"
+CLIENT_DIR=".tls"
 CA_KEY="$CA_DIR/ca.key"
 CA_CERT="$CA_DIR/ca.crt"
 CLIENT_KEY="$CLIENT_DIR/tls.key"
