@@ -1,7 +1,7 @@
 # Description: Makefile for setting up the project
 
 export VAULT_ADDR=http://localhost:8300
-export VAULT_TOKEN=$(shell grep -oP 'VAULT_TOKEN=\K.*' act.secrets)
+export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 
 prepare: gencerts docker prep-secrets vault-secrets
 
