@@ -171,6 +171,7 @@ resource "konnect_system_account_team" "systemaccountteams" {
 
 output "system_account_access_tokens" {
   value = konnect_system_account_access_token.systemaccountaccesstokens
+  sensitive = true
 }
 
 output "kong_gateway_control_plane_info" {
