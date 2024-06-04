@@ -85,6 +85,7 @@ jobs:
       - name: Remove teams
         id: remove-teams
         run: |
+          pip install -r requirements.txt
           python3 main.py --config-file=../../${{ inputs.config_file }} --wipe=true
         working-directory: scripts/teams
         env:
