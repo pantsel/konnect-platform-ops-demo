@@ -356,29 +356,50 @@ graph TD;
 
 #### Run the Workflow
 
-To provision Konnect resources and deploy the DP, execute the following command: 
+To provision Konnect resources, execute the following command: 
 
 ```bash
-$ act \
-    --input action=provision \
-    --input config_file=config/resources.json \
-    workflow_dispatch -W .github/workflows/main.yaml
+$ act --input config_file=config/resources.json -W .github/workflows/provision-konnect.yaml 
 ```
 
 #### Input parameters
 
-| Name        | Description                                  | Required | Default   |
-| ----------- | -------------------------------------------- | -------- | --------- |
-| action      | The action to perform (provision or destroy) | Yes      | provision |
-| config_file | The path to the configuration file           | Yes      | -         |
+| Name               | Description                               | Required | Default                   |
+| ------------------ | ----------------------------------------- | -------- | ------------------------- |
+| konnect_server_url | The URL of the Konnect server             | No       | https://eu.api.konghq.com |
+| config_file        | The path to the resources config file     | Yes      | -                         |
+| vault_addr         | The address of the HashiCorp Vault server | No       | http://localhost:8300     |
 
-#### Deprovisioning 
+
+After provisioning, you can deploy the respective Kong DPs:
+
+> The provisioned Control Planes information is stored as an artifact after running the provisioning workflow. This artifact is used for deploying the respective Data Plane nodes.
+
+```bash
+$ act -W .github/workflows/deploy-dp.yaml
+```
+
+### Input Parameters
+
+| Name            | Description                                             | Required | Default               |
+| --------------- | ------------------------------------------------------- | -------- | --------------------- |
+| namespace       | The Kubernetes namespace where the dps will be deployed | No       | kong                  |
+| kong_image_repo | The repository of the Kong Docker image                 | No       | kong/kong-gateway     |
+| kong_image_tag  | The tag of the Kong Docker image                        | No       | 3.7.0.0               |
+| vault_addr      | The address of the HashiCorp Vault server               | No       | http://localhost:8300 |
+
 
 To clean up everything on Konnect and Kubernetes, execute the following command:
 
 ```bash
-$ act \
-    --input action=destroy \
-    --input config_file=config/resources.json \
-    workflow_dispatch -W .github/workflows/main.yaml
+$ act --input config_file=config/resources.json -W .github/workflows/destroy.yaml    
 ```
+
+#### Input parameters
+
+| Name               | Description                                           | Required | Default                   |
+| ------------------ | ----------------------------------------------------- | -------- | ------------------------- |
+| konnect_server_url | The URL of the Konnect server                         | No       | https://eu.api.konghq.com |
+| config_file        | The path to the resources config file                 | Yes      | -                         |
+| vault_addr         | The address of the HashiCorp Vault server             | No       | http://localhost:8300     |
+| namespace          | The Kubernetes namespace where the dps where deployed | No       | kong                      |

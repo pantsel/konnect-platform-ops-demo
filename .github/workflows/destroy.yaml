@@ -5,32 +5,15 @@ on:
     inputs:
       namespace:
         description: 'Kubernetes namespace'
-        required: true
-        type: string
-      konnect_pat:
-        description: 'Kong Konnect Personal Access Token'
-        required: true
+        default: 'kong'
         type: string
       konnect_server_url:
         description: 'Kong Konnect Server URL'
-        required: true
         type: string
         default: "https://eu.api.konghq.com"
-      s3_access_key:
-        description: 'S3 Access Key'
-        required: true
-        type: string
-      s3_secret_key:
-        description: 'S3 Secret Key'
-        required: true
-        type: string
       vault_addr:
         description: 'Vault Address'
         default: 'http://localhost:8300'
-        type: string
-      vault_token:
-        description: 'Vault Token'
-        default: 'root'
         type: string
       config_file:
         description: 'Path to the configuration file'
@@ -42,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TF_VAR_konnect_personal_access_token: ${{ inputs.konnect_pat }}
+      TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
       TF_VAR_konnect_server_url:  ${{ inputs.konnect_server_url }}
 
     steps:
@@ -64,7 +47,7 @@ jobs:
         uses: hashicorp/vault-action@v2
         with:
           url: ${{ inputs.vault_addr }}
-          token: ${{ inputs.vault_token }}
+          token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
             secret/data/certificates/demo ca | CA_CRT
 
@@ -90,8 +73,8 @@ jobs:
             -backend-config="bucket=tfstate" \
             -backend-config="key=konnect.tfstate" \
             -backend-config="region=main" \
-            -backend-config="access_key=${{ inputs.s3_access_key }}" \
-            -backend-config="secret_key=${{ inputs.s3_secret_key }}"
+            -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
+            -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}"
         working-directory: terraform
 
       - name: Terraform destroy
@@ -105,7 +88,7 @@ jobs:
           python3 main.py --config-file=../../${{ inputs.config_file }} --wipe=true
         working-directory: scripts/teams
         env:
-          KONNECT_ACCESS_TOKEN: ${{ inputs.konnect_pat }}
+          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
           KONNECT_ADDRESS: https://global.api.konghq.com
 
       - name: Remove Dataplane namespace
