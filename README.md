@@ -76,7 +76,6 @@ $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .
 | image_tag                | The tag of the docker image                                | Yes      | -              |
 | kong_version             | The kong gateway ee version to base the resulting image on | No       | 3.7.0.0        |
 | continue_on_scan_failure | Continue the workflow even if the security scan fails      | No       | true           |
-| publish_image            | Publish image to docker registry                           | No       | true           |
 
 ### Provision Konnect resources (Onboarding pipeline)
 
