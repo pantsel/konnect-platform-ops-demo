@@ -14,7 +14,6 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Terraform](https://www.terraform.io/)
 - [Helm](https://helm.sh/)
 - [`act` - Local GitHub Actions Runner](https://github.com/nektos/act)
-- [Hashicorp Vault CLI](https://developer.hashicorp.com/vault/install)
 - [Make](https://www.gnu.org/software/make/)
 
 ## Prepare the demo environment
