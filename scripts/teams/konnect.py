@@ -47,6 +47,8 @@ class Konnect:
             response = requests.get(url, params=params, headers=headers)
             response.raise_for_status()  # Raise an exception if the request was not successful
             data = response.json()
+            logging.info(f"Team '{team_name}' retrieved successfully.")
+            logging.info(data)
 
             teams = data["data"]
             team = None
@@ -90,6 +92,7 @@ class Konnect:
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()  # Raise an exception if the request was not successful
             logging.info(f"Team '{team["name"]}' created successfully.")
+            logging.info(response.json())   
             return response.json()
         except requests.exceptions.RequestException as e:
             logging.error(f"An error occurred while creating team '{team["name"]}': {e}")
