@@ -1,0 +1,48 @@
+{
+    "_format_version": "1.0.0",
+    "_type": "federated",
+    "name": "sdn",
+    "description": "Team managing Software Defined Networking (SDN) APIs",
+    "resources": [
+        {
+            "type": "konnect::control_plane",
+            "name": "sdn_dp_1",
+            "description": "Control plane 1",
+            "region": "eu",
+            "labels": {
+                "env": "demo",
+                "apigroup": "sdn_dev"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "sdn_dp_2",
+            "description": "Control plane 2",
+            "region": "eu",
+            "labels": {
+                "env": "demo",
+                "apigroup": "sdn_dev"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "sdn_dp_3",
+            "description": "Control plane 3",
+            "region": "eu",
+            "labels": {
+                "env": "demo",
+                "apigroup": "sdn_dev"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "sdn_dp_4",
+            "description": "Control plane 4",
+            "region": "eu",
+            "labels": {
+                "env": "demo",
+                "apigroup": "sdn_dev"
+            }
+        }
+    ]
+}

@@ -32,6 +32,22 @@ class Konnect:
             sys.exit(1)
 
     @staticmethod
+    def get_team_by_name(args, team_name):
+        try:
+            filter_labels = '{"genby":"provutils"}'
+            url = f"{args.konnect_address}/v3/teams?filter[name]={team_name}&filter[labels]={filter_labels}"
+            headers = {
+                "Authorization": f"Bearer {args.konnect_access_token}"
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # Raise an exception if the request was not successful
+            data = response.json()
+            return data["data"][0] if data["data"] else None
+        except requests.exceptions.RequestException as e:
+            logging.error(f"An error occurred while retrieving team '{team_name}': {e}")
+            sys.exit(1)
+
+    @staticmethod
     def create_team(args, team, existing_teams):
 
         # if team name already exists in existing_teams, return the team

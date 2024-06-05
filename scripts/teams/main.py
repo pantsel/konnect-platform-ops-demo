@@ -89,6 +89,11 @@ def is_valid_semver(version):
     pattern = r'^\d+\.\d+\.\d+$'
     return bool(re.match(pattern, version))
 
+def read_config_file(config_file):
+    with open(config_file, "r") as file:
+        config = json.load(file)
+    return config
+
 def provision_teams(args):
     logging.info("Provisioning teams in Konnect...")
     logging.info(args)
@@ -143,11 +148,36 @@ def merge_arrays(arr1, arr2):
     
     return merged_list
 
+def provision_team(args, config):
+    logging.info("Provisioning team in Konnect...")
+    logging.info(args)
+    logging.info(f"Reading team data from '{args.config_file}'")
+
+    existing_team = Konnect.get_team_by_name(args, config["name"])
+
+    if existing_team:
+        logging.info(f"Team '{config['name']}' already exists.")
+        if args.wipe:
+            logging.info(f"Deleting team '{config['name']}'")
+            Konnect.delete_team(args, existing_team["id"])
+        else:
+            logging.info("Skipping...")
+    else:
+        existing_team = Konnect.create_team(args, config, [])
+    
+    team = {**config, **existing_team}
+
+    print(json.dumps(team, indent=2))
+    
 def main():
     parser = argparse.ArgumentParser(description="Utility to provision teams in Konnect.")
     args = parse_args(parser)
+    config = read_config_file(args.config_file)
 
-    provision_teams(args)
+    if config["_type"] == "federated":
+        provision_team(args,config)
+    else:
+        provision_teams(args)
 
 if __name__ == "__main__":
     main()

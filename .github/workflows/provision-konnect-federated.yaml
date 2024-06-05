@@ -1,0 +1,153 @@
+name: Provision Konnect
+
+on:
+  workflow_call:
+    inputs:
+      konnect_server_url:
+        description: 'Kong Konnect Server URL'
+        required: true
+        type: string
+        default: "https://eu.api.konghq.com"
+      config_file:
+        description: 'Path to the configuration file'
+        type: string
+      vault_addr:
+        description: 'Vault Address'
+        type: string
+        default: 'http://localhost:8300'
+      action:
+        description: 'Action to perform'
+        required: true
+        type: string
+        default: 'provision' # 'provision' or 'destroy'
+      terraform_dir:
+        description: 'Path to the Terraform directory'
+        type: string
+        default: 'terraform/environments/local/federated'
+
+jobs:
+  provision-konnect:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
+      TF_VAR_konnect_server_url:  ${{ inputs.konnect_server_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 'latest'
+      
+      - name: Import Certificates
+        id: import-certs
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/certificates/demo ca | CA_CRT
+
+      - name: Save CA Certificate to file
+        run: |
+          mkdir -p .tls
+          touch .tls/ca.crt
+          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
+        working-directory: terraform/modules/federated
+
+      - name: Provision team
+        if: ${{ inputs.action == 'provision' }}
+        run: |
+
+          # Run the provisioning script directly from the agent
+          pip install -r requirements.txt
+          output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }})
+          echo "$output" > ${{ github.workspace }}/terraform/modules/federated/resources.json
+        
+        working-directory: scripts/teams
+        env:
+          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
+          KONNECT_ADDRESS: https://global.api.konghq.com
+
+      - name: Create MinIO bucket if not exists
+        run: |
+          
+          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          mc alias set $team_name http://localhost:9000 minio-root-user minio-root-password
+          ./create-minio-bucket.sh $team_name $team_name.tfstate
+        
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+        working-directory: scripts
+
+      - name: Terraform Init
+        run: |
+          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          terraform init \
+            -backend-config=config.s3.tfbackend \
+            -backend-config="bucket=$team_name.tfstate" \
+            -backend-config="key=konnect.tfstate" \
+            -backend-config="region=main" \
+            -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
+            -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}"
+        working-directory: ${{ inputs.terraform_dir }}
+
+      - name: Terraform Plan
+        if: ${{ inputs.action == 'provision' }}
+        run: |
+          terraform plan -out=tfplan
+        working-directory: ${{ inputs.terraform_dir }}
+
+      - name: Terraform Apply
+        if: ${{ inputs.action == 'provision' }}
+        id: tfapply
+        run: |
+          terraform apply -auto-approve tfplan
+          echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
+          echo "$(terraform-bin output -json system_account_access_token)" > system_account_token.json
+        working-directory: ${{ inputs.terraform_dir }}
+
+      - name: Upload CP info artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kong_gateway_control_plane_info
+          path:  ${{ inputs.terraform_dir }}/kong_gateway_control_plane_info.json
+
+      - name: Store System Account token in Vault
+        if: ${{ inputs.action == 'provision' }}
+        run: |
+          
+          secret_name=$(jq -r '.name' system_account_token.json)
+          secret_value=$(jq -r '.token' system_account_token.json)
+
+          vault kv put secret/${secret_name} value=${secret_value}
+          echo "Stored secret ${secret_name} in Vault."
+
+        working-directory: ${{ inputs.terraform_dir }}
+        env:
+          VAULT_ADDR: ${{ inputs.vault_addr }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+
+      - name: Setup teams to be removed
+        run: |
+          echo '{}' | jq '.' > ${{ github.workspace }}/terraform/modules/federated/resources.json
+  
+      - name: Terraform destroy
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          terraform destroy -auto-approve
+        working-directory: ${{ inputs.terraform_dir }}
+
+      - name: Remove team
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          pip install -r requirements.txt
+          python3 main.py --config-file=../../${{ inputs.config_file }} --wipe=true
+        working-directory: scripts/teams
+        env:
+          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
+          KONNECT_ADDRESS: https://global.api.konghq.com

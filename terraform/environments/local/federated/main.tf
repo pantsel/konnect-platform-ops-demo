@@ -1,5 +1,4 @@
 terraform {
-  backend "s3" {}
   required_providers {
     konnect = {
       source = "kong/konnect"
@@ -18,22 +17,19 @@ provider "konnect" {
   server_url            = "https://global.api.konghq.com"
 }
 
-
-variable "module_to_run" {
-  description = "Specify which module to run ('federated', or 'central')"
-  type        = string
-  default     = "central"
-}
-
 module "federated" {
-  source  = "./modules/federated"
-  # count  = var.module_to_run == "federated" ? 1 : 0
+  source  = "../../../modules/federated"
   providers = {
     konnect.global = konnect.global
   }
 }
 
-# module "module_b" {
-#   source = "./modules/central"
-#   count  = var.module_to_run == "central" ? 1 : 0
-# }
+output "system_account_access_token" {
+  value = module.federated.system_account_access_token
+  sensitive = true
+}
+
+output "kong_gateway_control_plane_info" {
+  value = module.federated.kong_gateway_control_plane_info
+}
+
