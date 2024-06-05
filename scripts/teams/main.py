@@ -25,10 +25,18 @@ logging.info = lambda msg: logging.log(logging.INFO, f"{COLORS['INFO']}{msg}{COL
 logging.warning = lambda msg: logging.log(logging.WARNING, f"{COLORS['WARNING']}{msg}{COLORS['END']}")
 logging.error = lambda msg: logging.log(logging.ERROR, f"{COLORS['ERROR']}{msg}{COLORS['END']}")
 
+def parse_label(label):
+    try:
+        key, value = label.split('=')
+        return key, value
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid label: {label}. Must be in the format key=value.")
+
 def parse_args(parser):
     parser.add_argument("--konnect-access-token", help="Access token", required=not os.getenv("KONNECT_ACCESS_TOKEN"), default=os.getenv("KONNECT_ACCESS_TOKEN"))
     parser.add_argument("--konnect-address", help="Konnect address", required=not os.getenv("KONNECT_ADDRESS"), default=os.getenv("KONNECT_ADDRESS") or "https://global.api.konghq.com")
     parser.add_argument("--config-file", help="Teams config file", required=True, default="../../resources/teams.json")
+    parser.add_argument("--extra-labels", type=parse_label, help="Extra labels to add to the team", nargs="+")
     parser.add_argument("--wipe", help="Delete all teams", default=False, type=bool)
     args = parser.parse_args()
 

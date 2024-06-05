@@ -1,6 +1,7 @@
 import requests
 import logging
 import sys
+import json
 
 class Konnect:
     @staticmethod
@@ -34,15 +35,31 @@ class Konnect:
     @staticmethod
     def get_team_by_name(args, team_name):
         try:
-            filter_labels = '{"genby":"provutils"}'
-            url = f"{args.konnect_address}/v3/teams?filter[name]={team_name}&filter[labels]={filter_labels}"
+            extra_labels = dict(args.extra_labels)
+            url = f"{args.konnect_address}/v3/teams"
+            params = {
+                "page[size]": 100,
+                "filter[name]": team_name
+            }
             headers = {
                 "Authorization": f"Bearer {args.konnect_access_token}"
             }
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, params=params, headers=headers)
             response.raise_for_status()  # Raise an exception if the request was not successful
             data = response.json()
-            return data["data"][0] if data["data"] else None
+
+            teams = data["data"]
+            team = None
+            
+            # Seems like providing multile filter[labels] as request parameter is not working.
+            # Therefore, we need to filter the team with the same labels as the one we are looking for.
+            # TODO: Verify if this is indeed the case.
+            for t in teams:
+                if t["labels"] == {**extra_labels, **{"genby":"provutils"}}:
+                    team = t
+                    break
+
+            return team
         except requests.exceptions.RequestException as e:
             logging.error(f"An error occurred while retrieving team '{team_name}': {e}")
             sys.exit(1)
@@ -57,6 +74,7 @@ class Konnect:
                 return existing_team
 
         try:
+            extra_labels = dict(args.extra_labels)
             url = f"{args.konnect_address}/v3/teams"
             headers = {
                 "Authorization": f"Bearer {args.konnect_access_token}",
@@ -65,9 +83,9 @@ class Konnect:
             payload = {
                 "name": team["name"],
                 "description": team["description"],
-                "labels": {
+                "labels": {**extra_labels, **{
                     "genby":"provutils"
-                }
+                }}
             }
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()  # Raise an exception if the request was not successful
