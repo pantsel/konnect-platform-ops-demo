@@ -27,4 +27,15 @@ vault-secrets:
 		ca=@/tmp/.tls/ca.crt
 	@echo "Vault secrets setup completed"
 
-.PHONY: prepare gencerts prep-secrets docker vault-secrets
+down:
+	@echo "Stopping containers.."
+	@docker-compose down
+
+clean:
+	@echo "Cleaning up.."
+	@docker-compose down
+	@rm -rf .tls
+	@rm -rf act.secrets
+	@rm -rf .tmp
+
+.PHONY: prepare gencerts prep-secrets docker vault-secrets clean down
