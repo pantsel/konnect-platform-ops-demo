@@ -74,14 +74,23 @@ jobs:
           secrets: |
             secret/data/system-accounts/${{ inputs.service_account }} token | SERVICE_ACCOUNT_TOKEN ;
 
-      - name: Fetch control plane ${control_plane_name} information
+      - name: Fetch control plane ${{ inputs.control_plane_name }} information
         run: |
-          
-          # Fetch the control plane information and save it to a file
-          set -e
-          curl -Gsf -d "filter[name][eq]=${{ inputs.control_plane_name }}" "${{ inputs.konnect_server_url }}/v2/control-planes" \
-            -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" \
-            -H "Content-Type: application/json" | jq -c .data[0] > kong_gateway_control_plane_info.json
+
+          # Make the request and capture the response code and body
+          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
+          http_code=${response: -3}
+          response_body=${response:0:-3}
+
+          # Check the response code
+          if [ "$http_code" -ne 200 ]; then
+            echo "Request failed with status code $http_code"
+            echo "Response body: $response_body"
+            exit 1
+          fi
+
+          echo "Request succeeded with status code $http_code"
+          echo "$response_body" | jq -c .data[0] > kong_gateway_control_plane_info.json
 
       - name: Create Kong namespace if not exists
         run: |
