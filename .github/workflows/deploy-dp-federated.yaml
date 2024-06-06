@@ -77,8 +77,7 @@ jobs:
       - name: Fetch control plane ${control_plane_name} information
         run: |
           
-          # Fetch the control plane information from the control plane
-          # and save it to a file
+          # Fetch the control plane information and save it to a file
           set -e
           curl -Gsf -d "filter[name][eq]=tiger_cp_acc" "${{ inputs.konnect_server_url }}/v2/control-planes" \
             -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" \
