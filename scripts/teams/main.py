@@ -5,6 +5,7 @@ import logging
 from konnect import Konnect
 import json
 import re
+from utils import is_valid_semver, merge_arrays, validate_config
 
 
 # Set up logging
@@ -41,61 +42,6 @@ def parse_args(parser):
     args = parser.parse_args()
 
     return args
-
-def get_workspaces_from_dumps_dir(dumps_dir):
-    workspaces = []
-    for filename in os.listdir(dumps_dir):
-        if filename.endswith(".yaml"):
-            workspace_name = os.path.splitext(filename)[0]
-            if workspace_name != "default": # Exclude default workspace
-                workspaces.append(workspace_name)
-    return workspaces
-
-def validate_config(config):
-    if "teams" not in config or "control_plane_groups" not in config or "_format_version" not in config:
-        logging.error("Config file should have 'teams', 'control_plane_groups', and '_format_version' keys.")
-        exit(1)
-    team_names = set()
-    for team in config["teams"]:
-        if "name" not in team or "description" not in team:
-            logging.error("Every team should have a 'name' and a 'description' key.")
-            exit(1)
-        if not isinstance(team["name"], str) or not isinstance(team["description"], str):
-            logging.error("Every team name and description should be a string.")
-            exit(1)
-        if not team["name"].replace('_', ' ').replace(' ', '').isalnum():
-            logging.error("Team names should only contain alphanumeric characters, spaces, or underscores.")
-            exit(1)
-        if team["name"] in team_names:
-            logging.error("Team names should be unique.")
-            exit(1)
-        team_names.add(team["name"])
-    
-    if not isinstance(config["control_plane_groups"], list):
-        logging.error("'control_plane_groups' should be an array.")
-        exit(1)
-    
-    for group in config["control_plane_groups"]:
-        if not isinstance(group, dict):
-            logging.error("Each group in 'control_plane_groups' should be an object.")
-            exit(1)
-        if "name" not in group or "members" not in group:
-            logging.error("Each group in 'control_plane_groups' should have 'name' and 'members' keys.")
-            exit(1)
-        if not isinstance(group["name"], str) or not group["name"].replace('_', ' ').replace(' ', '').isalnum():
-            logging.error("Group name should be a string with alphanumeric characters, spaces, or underscores.")
-            exit(1)
-        if not isinstance(group["members"], list) or not all(isinstance(members, str) for members in group["members"]):
-            logging.error("Group members should be a list of strings.")
-            exit(1)
-    
-    if not isinstance(config["_format_version"], str) or not is_valid_semver(config["_format_version"]):
-        logging.error("_format_version should be a valid semver string.")
-        exit(1)
-
-def is_valid_semver(version):
-    pattern = r'^\d+\.\d+\.\d+$'
-    return bool(re.match(pattern, version))
 
 def read_config_file(config_file):
     with open(config_file, "r") as file:
@@ -143,23 +89,13 @@ def provision_teams(args):
   
     print(json.dumps(config, indent=2))
 
-def merge_arrays(arr1, arr2):
-    dict1 = {item['name']: item for item in arr1}
-    dict2 = {item['name']: item for item in arr2}
-    
-    merged_dict = {**dict1, **dict2}
-    
-    for key in dict1.keys() & dict2.keys():
-        merged_dict[key] = {**dict1[key], **dict2[key]}
-    
-    merged_list = list(merged_dict.values())
-    
-    return merged_list
 
 def provision_team(args, config):
     logging.info("Provisioning team in Konnect...")
     logging.info(args)
     logging.info(f"Reading team data from '{args.config_file}'")
+
+    validate_config(config, logging)
 
     existing_team = Konnect.get_team_by_name(args, config["name"])
 
@@ -176,7 +112,8 @@ def provision_team(args, config):
     team = {**config, **existing_team}
 
     print(json.dumps(team, indent=2))
-    
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utility to provision teams in Konnect.")
     args = parse_args(parser)
