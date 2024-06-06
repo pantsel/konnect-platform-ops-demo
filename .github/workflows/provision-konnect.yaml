@@ -142,6 +142,7 @@ jobs:
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
 
       - name: Setup teams to be removed
+        if: ${{ inputs.action == 'destroy' }}
         run: |
           echo '{}' | jq '.' > ${{ github.workspace }}/terraform/modules/centralised/resources.json
       
