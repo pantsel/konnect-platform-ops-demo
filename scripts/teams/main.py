@@ -4,7 +4,6 @@ import argparse
 import logging
 from konnect import Konnect
 import json
-import re
 from utils import is_valid_semver, merge_arrays, validate_config
 
 
