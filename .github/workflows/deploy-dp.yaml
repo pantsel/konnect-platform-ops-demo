@@ -31,6 +31,11 @@ on:
         description: 'Konnect server URL'
         type: string
         default: https://eu.api.konghq.com
+      action:
+        description: 'Action to perform'
+        required: true
+        type: string
+        default: 'deploy' # 'deploy' or 'destroy'
 
 jobs: 
   prepare:
@@ -54,6 +59,7 @@ jobs:
           version: 'latest'
 
       - name: Import Certificates
+        if: ${{ inputs.action == 'deploy' }}
         id: import-certs
         uses: hashicorp/vault-action@v2
         with:
@@ -63,6 +69,7 @@ jobs:
             secret/data/certificates/demo * | DP_
 
       - name: Import Service Account Token
+        if: ${{ inputs.action == 'deploy' }}
         id: import-token
         uses: hashicorp/vault-action@v2
         with:
@@ -72,6 +79,7 @@ jobs:
             secret/data/system-accounts/${{ inputs.service_account }} token | SERVICE_ACCOUNT_TOKEN ;
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
+        if: ${{ inputs.action == 'deploy' }}
         run: |
 
           # Make the request and capture the response code and body
@@ -90,15 +98,18 @@ jobs:
           echo "$response_body" | jq -c .data[0] > kong_gateway_control_plane_info.json
 
       - name: Create Kong namespace if not exists
+        if: ${{ inputs.action == 'deploy' }}
         run: |
           kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Add Kong Helm Repository
+        if: ${{ inputs.action == 'deploy' }}
         run: |
           helm repo add kong https://charts.konghq.com
           helm repo update
       
       - name: Create kong-cluster-cert secret if not exists
+        if: ${{ inputs.action == 'deploy' }}
         run: |
 
           echo "$TLS_CERT" > tls.crt
@@ -115,6 +126,7 @@ jobs:
           TLS_KEY: ${{ steps.import-certs.outputs.DP_TLS_KEY }}
 
       - name: Deploy Kong Data Plane
+        if: ${{ inputs.action == 'deploy' }}
         run: |
 
           CONTROL_PLANE_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.control_plane_endpoint | sed 's|https://||')
@@ -138,4 +150,13 @@ jobs:
             --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
             --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
             --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
+        working-directory: ${{ github.workspace }}/k8s
+
+      - name: Destroy Kong Deployment
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+            CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
+            if helm status kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE >/dev/null 2>&1; then
+              helm uninstall kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE
+            fi
         working-directory: ${{ github.workspace }}/k8s
