@@ -24,8 +24,8 @@ module "federated" {
   }
 }
 
-output "system_account_access_token" {
-  value = module.federated.system_account_access_token
+output "system_account_access_tokens" {
+  value = module.federated.system_account_access_tokens
   sensitive = true
 }
 

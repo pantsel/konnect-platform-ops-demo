@@ -30,7 +30,6 @@ resource "konnect_gateway_control_plane" "tfcps" {
   cluster_type = lookup(each.value, "cluster_type", "CLUSTER_TYPE_HYBRID")
   auth_type    = lookup(each.value, "auth_type", "pki_client_certs")
   labels = merge(lookup(each.value, "labels", {}), {
-    env          = "demo",
     generated_by = "terraform"
   })
 
@@ -47,29 +46,45 @@ resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
 
 
 # Create system account for the team
-resource "konnect_system_account" "systemaccount" {
+# resource "konnect_system_account" "systemaccount" {
 
-  name            = "team-${lookup(local.team, "name", "")}-system-account"
-  description     = "System account for team ${lookup(local.team, "name", "")}"
+#   name            = "team-${lookup(local.team, "name", "")}-system-account"
+#   description     = "System account for team ${lookup(local.team, "name", "")}"
+#   konnect_managed = false
+
+#   provider = konnect.global
+
+# }
+
+# Create system accounts for every control plane
+resource "konnect_system_account" "systemaccounts" {
+  for_each = { for cp in local.control_planes : cp.name => cp }
+
+  name            = "npa_${local.team.name}_${each.value.name}"
+  description     = "System account for team ${local.team.name} and control plane ${each.value.name}"
   konnect_managed = false
 
   provider = konnect.global
 
 }
 
-# Create an access token for the system account
-resource "konnect_system_account_access_token" "systemaccountaccesstoken" {
-  name       = "tf_sat_${lower(replace(lookup(local.team, "name", ""), " ", "_"))}"
+# Create an access tokens for the system accounts
+resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
+  for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
+
+  name       = "spat_${lower(replace(each.value.name, " ", "_"))}"
   expires_at = local.expiration_date
-  account_id = konnect_system_account.systemaccount.id
+  account_id = each.value.id
 
   provider = konnect.global
 
 }
-
 # Assign the system accounts to the team
 resource "konnect_system_account_team" "systemaccountteam" {
-  account_id = konnect_system_account.systemaccount.id
+
+  for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
+
+  account_id = each.value.id
   team_id    = lookup(local.team, "id", "")
 
   provider = konnect.global
@@ -77,21 +92,24 @@ resource "konnect_system_account_team" "systemaccountteam" {
 
 # System Account Role Assignments
 resource "konnect_system_account_role" "systemaccountroles" {
-  for_each = { for idx, cp in konnect_gateway_control_plane.tfcps : idx => cp }
+  for_each = { for cp in konnect_gateway_control_plane.tfcps : cp.name => cp }
 
   entity_id = each.value.id
 
-  entity_region    = "eu"
+  entity_region    = lookup(local.team, "region", "")
   entity_type_name = "Control Planes"
   role_name        = "Admin"
-  account_id       = konnect_system_account.systemaccount.id
+  account_id       = {
+    for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
+  }["npa_${lookup(local.team, "name", "")}_${each.value.name}"]
+  
 
   provider = konnect.global
   
 }
 
-output "system_account_access_token" {
-  value = konnect_system_account_access_token.systemaccountaccesstoken
+output "system_account_access_tokens" {
+  value = konnect_system_account_access_token.systemaccountaccesstokens
   sensitive = true
 }
 

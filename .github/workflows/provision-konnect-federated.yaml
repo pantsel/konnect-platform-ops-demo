@@ -106,7 +106,7 @@ jobs:
         run: |
           terraform apply -auto-approve tfplan
           echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
-          echo "$(terraform-bin output -json system_account_access_token)" > system_account_token.json
+          echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
 
       - name: Upload CP info artifact
@@ -118,12 +118,18 @@ jobs:
       - name: Store System Account token in Vault
         if: ${{ inputs.action == 'provision' }}
         run: |
-          
-          secret_name=$(jq -r '.name' system_account_token.json)
-          secret_value=$(jq -r '.token' system_account_token.json)
+          for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
 
-          vault kv put secret/${secret_name} value=${secret_value}
-          echo "Stored secret ${secret_name} in Vault."
+            secret_name=$(_jq '.name')
+            secret_value=$(_jq '.token')
+
+            vault kv put secret/${secret_name} value=${secret_value}
+
+            echo "Stored secret ${secret_name} in Vault."
+          done
 
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
