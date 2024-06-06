@@ -68,7 +68,7 @@ jobs:
           url: ${{ inputs.vault_addr }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/${{ inputs.service_account }} value | SERVICE_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/${{ inputs.service_account }} value | SERVICE_ACCOUNT_TOKEN ;
 
       - name: Fetch control plane ${control_plane_name} information
         run: |

@@ -72,7 +72,7 @@ resource "konnect_system_account" "systemaccounts" {
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
   for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
 
-  name       = "spat_${lower(replace(each.value.name, " ", "_"))}"
+  name       = "${lower(replace(each.value.name, " ", "_"))}"
   expires_at = local.expiration_date
   account_id = each.value.id
 
