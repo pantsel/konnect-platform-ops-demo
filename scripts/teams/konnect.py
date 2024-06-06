@@ -9,10 +9,10 @@ class Konnect:
         try:
             teams = []
             page_number = 1
+            labels = {**dict(args.extra_labels), **{"genby":"provutils"}}
             while True:
                 # Get a list of teams from Konnect
-                filter_labels = '{"genby":"provutils"}'
-                url = f"{args.konnect_address}/v3/teams?page[size]=100&page[number]={page_number}&filter[labels]={filter_labels}"
+                url = f"{args.konnect_address}/v3/teams?page[size]=100&page[number]={page_number}"
                 headers = {
                     "Authorization": f"Bearer {args.konnect_access_token}"
                 }
@@ -22,7 +22,9 @@ class Konnect:
 
                 # Filter out system teams
                 filtered_data = [record for record in data["data"] if not record.get("system_team")]
-
+                # Filter out the teams not matching the labels
+                filtered_data = [record for record in filtered_data if record.get("labels") == labels]
+                
                 teams.extend(filtered_data)
                 if len(data["data"]) == 0:
                     break

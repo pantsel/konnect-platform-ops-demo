@@ -61,15 +61,18 @@ def provision_teams(args):
     # Get all the teams in Konnect
     existing_teams = Konnect.get_all_teams(args)
 
+    logging.info(f"Existing teams: {existing_teams}")
+
     # Delete teams that are not in the config
     for team in existing_teams:
-        if team["name"] not in [team["name"] for team in config["teams"]]:
+        if team["name"] not in [team["name"] for team in config["resources"]["teams"]]:
             logging.info(f"Deleting team '{team['name']}'")
             Konnect.delete_team(args, team["id"])
 
     
-    for team in config["teams"]:
+    for team in config["resources"]["teams"]:
         if args.wipe:
+            logging.info(f"Deleting team '{team['name']}'")
             existing_team = next((t for t in existing_teams if t["name"] == team["name"]), None)
             if existing_team:
                 logging.info(f"Deleting team '{team['name']}'")
@@ -83,8 +86,8 @@ def provision_teams(args):
     existing_teams = Konnect.get_all_teams(args)
 
 
-    merged_teams = merge_arrays(config["teams"], existing_teams)
-    config["teams"] = merged_teams
+    merged_teams = merge_arrays(config["resources"]["teams"], existing_teams)
+    config["resources"]["teams"] = merged_teams
   
     print(json.dumps(config, indent=2))
 
@@ -122,8 +125,10 @@ def main():
 
     if config["metadata"]["type"] == "konnect::team":
         provision_team(args,config)
-    else:
+    elif config["metadata"]["type"] == "konnect::resources":
         provision_teams(args)
+    else:
+        logging.error("Invalid config file. '.metadata.type' should be 'konnect::team' or 'konnect::resources'.")
 
 if __name__ == "__main__":
     main()

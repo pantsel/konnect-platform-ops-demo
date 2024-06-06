@@ -119,12 +119,6 @@ jobs:
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
 
-      - name: Upload CP info artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kong_gateway_control_plane_info
-          path:  ${{env.TERRAFORM_DIR}}/kong_gateway_control_plane_info.json
-
       - name: Store System Account tokens in Vault
         if: ${{ inputs.action == 'provision' }}
         run: |

@@ -1,32 +1,26 @@
 
 terraform {
-  backend "s3" {}
   required_providers {
     konnect = {
-      source = "kong/konnect"
+      source                = "kong/konnect"
+      configuration_aliases = [konnect.global]
     }
   }
 }
-
-provider "konnect" {
-  personal_access_token = var.konnect_personal_access_token
-  server_url            = var.konnect_server_url
-}
-
-provider "konnect" {
-  alias                 = "global"
-  personal_access_token = var.konnect_personal_access_token
-  server_url            = "https://global.api.konghq.com"
-}
-
 data "local_file" "resources" {
   filename = "${path.module}/resources.json"
 }
 
 locals {
-  teams           = lookup(jsondecode(data.local_file.resources.content), "teams", [])
-  control_planes  = lookup(jsondecode(data.local_file.resources.content), "control_planes", [])
-  system_accounts = lookup(jsondecode(data.local_file.resources.content), "system_accounts", [])
+  resources     = lookup(jsondecode(data.local_file.resources.content), "resources", {
+    system_accounts = [],
+    teams           = [],
+    control_planes  = [],
+    control_plane_groups = []
+  })
+  teams           = lookup(local.resources, "teams", [])
+  control_planes  = lookup(local.resources, "control_planes", [])
+  system_accounts = lookup(local.resources, "system_accounts", [])
   // Flatten the roles structure
   roles = flatten([
     for system_account in local.system_accounts : [
@@ -74,7 +68,7 @@ resource "konnect_gateway_control_plane" "tfcpgroups" {
 resource "konnect_gateway_data_plane_client_certificate" "cacertcpgroup" {
   for_each = { for group in konnect_gateway_control_plane.tfcpgroups : group.name => group }
 
-  cert             = file("../.tls/ca.crt")
+  cert             = file("${path.module}/.tls/ca.crt")
   control_plane_id = each.value.id
 }
 
@@ -97,7 +91,7 @@ resource "konnect_gateway_control_plane" "tfcps" {
 resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
   for_each = { for cp in konnect_gateway_control_plane.tfcps : cp.name => cp}
 
-  cert             = file("../.tls/ca.crt")
+  cert             = file("${path.module}/.tls/ca.crt")
   control_plane_id = each.value.id
 }
 

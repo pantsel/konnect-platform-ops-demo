@@ -1,7 +1,13 @@
 {
-  "_format_version": "1.0.0",
-  "_type": "centralised",
-  "region": "eu",
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect::resources",
+    "plan": "centralised",
+    "region": "eu",
+    "name": "rsgrpeu",
+    "description": "EU resource group"
+  },
+
   "resources": {
     "teams": [
       {
