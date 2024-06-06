@@ -54,11 +54,11 @@ jobs:
         if: ${{ inputs.action == 'provision' }}
         run: |
 
-          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           pip install -r requirements.txt
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name)
           echo "$output" > ${{ github.workspace }}/terraform/modules/federated/resources.json
-        
+          cat ${{ github.workspace }}/terraform/modules/federated/resources.json
         working-directory: scripts/teams
         env:
           KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
@@ -67,7 +67,7 @@ jobs:
       - name: Create MinIO bucket if not exists
         run: |
           
-          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           mc alias set $team_name http://localhost:9000 minio-root-user minio-root-password
           ./create-minio-bucket.sh $team_name $team_name.tfstate
         
@@ -80,8 +80,8 @@ jobs:
         id: tfvars
         run: |
           
-          region=$(cat ${{ github.workspace }}/terraform/modules/federated/resources.json | jq -r .region)
-          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          region=$(cat ${{ github.workspace }}/${{ inputs.config_file }} | jq -r .metadata.region)
+          team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           
           echo "konnect_server_url=https://$region.api.konghq.com" >> $GITHUB_OUTPUT
           echo "team_name=$team_name" >> $GITHUB_OUTPUT
@@ -125,7 +125,7 @@ jobs:
           name: kong_gateway_control_plane_info
           path:  ${{env.TERRAFORM_DIR}}/kong_gateway_control_plane_info.json
 
-      - name: Store System Account token in Vault
+      - name: Store System Account tokens in Vault
         if: ${{ inputs.action == 'provision' }}
         run: |
           for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
@@ -161,7 +161,7 @@ jobs:
       - name: Remove team
         if: ${{ inputs.action == 'destroy' }}
         run: |
-          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           pip install -r requirements.txt
           python3 main.py --config-file=../../${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name --wipe=true
         working-directory: scripts/teams

@@ -1,9 +1,12 @@
 {
-    "_format_version": "1.0.0",
-    "_type": "federated",
-    "name": "kronos",
-    "region": "eu",
-    "description": "Kronos team is building IaC services in the EU region",
+    "metadata": {
+        "format_version": "1.0.0",
+        "type": "konnect::team",
+        "plan": "federated",
+        "region": "eu",
+        "name": "kronos",
+        "description": "Kronos team is building IaC services in the EU region"
+    },
     "resources": [
         {
             "type": "konnect::control_plane",

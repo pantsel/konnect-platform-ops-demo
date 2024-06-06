@@ -14,7 +14,7 @@ data "local_file" "resources" {
 }
 
 locals {
-  team            = jsondecode(data.local_file.resources.content)
+  team            = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
   resources       = lookup(jsondecode(data.local_file.resources.content), "resources", [])
   control_planes  = [for resource in local.resources : resource if resource.type == "konnect::control_plane"]
   days_to_hours   = 365 * 24 // 1 year

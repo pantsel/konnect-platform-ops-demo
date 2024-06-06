@@ -94,23 +94,25 @@ def provision_team(args, config):
     logging.info(args)
     logging.info(f"Reading team data from '{args.config_file}'")
 
-    validate_config(config, logging)
+    # validate_config(config, logging)
 
-    existing_team = Konnect.get_team_by_name(args, config["name"])
+    team_name = config["metadata"]["name"]
+
+    existing_team = Konnect.get_team_by_name(args, team_name)
 
     if existing_team:
-        logging.info(f"Team '{config['name']}' already exists.")
+        logging.info(f"Team '{team_name}' already exists.")
         if args.wipe:
-            logging.info(f"Deleting team '{config['name']}'")
+            logging.info(f"Deleting team '{team_name}'")
             Konnect.delete_team(args, existing_team["id"])
         else:
             logging.info("Skipping...")
     else:
-        existing_team = Konnect.create_team(args, config, [])
-    
-    team = {**config, **existing_team}
+        existing_team = Konnect.create_team(args, config["metadata"], [])
 
-    print(json.dumps(team, indent=2))
+    config["metadata"] = {**config["metadata"], **existing_team}
+
+    print(json.dumps(config, indent=2))
 
 
 def main():
@@ -118,7 +120,7 @@ def main():
     args = parse_args(parser)
     config = read_config_file(args.config_file)
 
-    if config["_type"] == "federated":
+    if config["metadata"]["type"] == "konnect::team":
         provision_team(args,config)
     else:
         provision_teams(args)
