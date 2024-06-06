@@ -19,6 +19,18 @@ on:
         description: 'Vault Address'
         default: 'http://localhost:8300'
         type: string
+      control_plane_name:
+        description: 'The name of the control plane to deploy the data plane to'
+        type: string
+        required: true
+      service_account:
+        description: 'The service account to use for authentication'
+        type: string
+        required: true
+      konnect_server_url:
+        description: 'Konnect server URL'
+        type: string
+        default: https://eu.api.konghq.com
 
 jobs: 
   prepare:
@@ -33,24 +45,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: kong_gateway_control_plane_info
-          path: ./
-
-      - name: Debug
-        run: |
-          ls -lha
-          cat ./kong_gateway_control_plane_info.json
-  
-      - name: Set output
-        id: tfoutput
-        run: |
-          set -eux
-          JSON_CONTENT=$(cat ./kong_gateway_control_plane_info.json | jq -c .)
-          echo "::set-output name=tf_output::$JSON_CONTENT" 
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -70,6 +64,24 @@ jobs:
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
             secret/data/certificates/demo * | DP_
+
+      - name: Import Service Account Token
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ inputs.service_account }} token | SERVICE_ACCOUNT_TOKEN ;
+
+      - name: Fetch control plane ${control_plane_name} information
+        run: |
+          
+          # Fetch the control plane information and save it to a file
+          set -e
+          curl -Gsf -d "filter[name][eq]=${{ inputs.control_plane_name }}" "${{ inputs.konnect_server_url }}/v2/control-planes" \
+            -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" \
+            -H "Content-Type: application/json" | jq -c .data[0] > kong_gateway_control_plane_info.json
 
       - name: Create Kong namespace if not exists
         run: |
@@ -96,41 +108,22 @@ jobs:
           TLS_CERT: ${{ steps.import-certs.outputs.DP_TLS_CRT }}
           TLS_KEY: ${{ steps.import-certs.outputs.DP_TLS_KEY }}
 
-  deploy-dps:
-
-    needs: prepare
-  
-    runs-on: ubuntu-latest
-
-    env:
-      NAMESPACE: ${{ inputs.namespace }}
-
-    strategy:
-      matrix: 
-        value: ${{ fromJson(needs.prepare.outputs.tf_output) }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: 'latest'
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'latest'
-
       - name: Deploy Kong Data Plane
         run: |
 
-          CONTROL_PLANE_ENDPOINT=$(echo ${{ matrix.value.config.control_plane_endpoint }} | sed 's|https://||')
-          TELEMETRY_ENDPOINT=$(echo ${{ matrix.value.config.telemetry_endpoint }} | sed 's|https://||')
-          CONTROL_PLANE_HASH=$(echo $CONTROL_PLANE_ENDPOINT | sed 's|https://||' | sed 's/\..*//')
+          CONTROL_PLANE_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.control_plane_endpoint | sed 's|https://||')
+          TELEMETRY_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.telemetry_endpoint | sed 's|https://||')
+          CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
 
-          helm upgrade --install kong-dp-$CONTROL_PLANE_HASH kong/kong \
+          # Validate all required inputs are set
+          if [ "$CONTROL_PLANE_ENDPOINT" = "null" ] || [ "$TELEMETRY_ENDPOINT" = "null" ]; then
+            echo "Missing required input(s)"
+            echo "Control Plane Endpoint: $CONTROL_PLANE_ENDPOINT"
+            echo "Telemetry Endpoint: $TELEMETRY_ENDPOINT"
+            exit 1
+          fi
+
+          helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE --create-namespace \
             --values ./k8s/values.yaml \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
