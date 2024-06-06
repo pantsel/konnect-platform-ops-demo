@@ -35,7 +35,7 @@ on:
 jobs: 
   prepare:
     runs-on: ubuntu-latest
-    
+
     env:
       NAMESPACE: ${{ inputs.namespace }}
 
@@ -130,11 +130,12 @@ jobs:
           fi
 
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
-            -n $NAMESPACE --create-namespace \
-            --values ./k8s/values.yaml \
+            -n $NAMESPACE \
+            --values values.yaml \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
             --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
             --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
             --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
             --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
             --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
+        working-directory: ${{ github.workspace }}/k8s
