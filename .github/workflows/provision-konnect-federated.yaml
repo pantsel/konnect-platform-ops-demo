@@ -126,7 +126,7 @@ jobs:
             secret_name=$(_jq '.name')
             secret_value=$(_jq '.token')
 
-            vault kv put secret/system-accounts/${secret_name} value=${secret_value}
+            vault kv put secret/system-accounts/${secret_name} token=${secret_value}
 
             echo "Stored secret ${secret_name} in Vault."
           done
