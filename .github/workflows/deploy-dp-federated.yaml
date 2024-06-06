@@ -24,7 +24,7 @@ on:
         type: string
         required: true
       service_account:
-        description: 'The service account to use for the data plane'
+        description: 'The service account to use for authentication'
         type: string
         required: true
       konnect_server_url:
