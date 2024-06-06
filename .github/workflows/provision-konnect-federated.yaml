@@ -3,11 +3,6 @@ name: Provision Konnect
 on:
   workflow_call:
     inputs:
-      konnect_server_url:
-        description: 'Kong Konnect Server URL'
-        required: true
-        type: string
-        default: "https://eu.api.konghq.com"
       config_file:
         description: 'Path to the configuration file'
         type: string
@@ -27,7 +22,6 @@ jobs:
 
     env:
       TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
-      TF_VAR_konnect_server_url:  ${{ inputs.konnect_server_url }}
       TERRAFORM_DIR: 'terraform/environments/local/federated'
 
     steps:
@@ -56,10 +50,10 @@ jobs:
         working-directory: terraform/modules/federated
 
       - name: Provision team
+        id: provision-team
         if: ${{ inputs.action == 'provision' }}
         run: |
 
-          # Run the provisioning script directly from the agent
           team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
           pip install -r requirements.txt
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name)
@@ -82,23 +76,37 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
         working-directory: scripts
 
+      - name: Setup terraform variables
+        id: tfvars
+        run: |
+          
+          region=$(cat ${{ github.workspace }}/terraform/modules/federated/resources.json | jq -r .region)
+          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
+          
+          echo "konnect_server_url=https://$region.api.konghq.com" >> $GITHUB_OUTPUT
+          echo "team_name=$team_name" >> $GITHUB_OUTPUT
+        working-directory: ${{ github.workspace }}
+
       - name: Terraform Init
         run: |
-          team_name=$(jq -r '.name' ${{ github.workspace }}/${{ inputs.config_file }})
           terraform init \
             -backend-config=config.s3.tfbackend \
-            -backend-config="bucket=$team_name.tfstate" \
+            -backend-config="bucket=${{ steps.tfvars.outputs.team_name }}.tfstate" \
             -backend-config="key=konnect.tfstate" \
             -backend-config="region=main" \
             -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
             -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}"
         working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
 
       - name: Terraform Plan
         if: ${{ inputs.action == 'provision' }}
         run: |
           terraform plan -out=tfplan
         working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
 
       - name: Terraform Apply
         if: ${{ inputs.action == 'provision' }}
@@ -108,6 +116,8 @@ jobs:
           echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
           echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
 
       - name: Upload CP info artifact
         uses: actions/upload-artifact@v4
@@ -145,6 +155,8 @@ jobs:
         run: |
           terraform destroy -auto-approve
         working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
 
       - name: Remove team
         if: ${{ inputs.action == 'destroy' }}

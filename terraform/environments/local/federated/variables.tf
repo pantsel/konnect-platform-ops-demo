@@ -9,3 +9,9 @@ variable "konnect_server_url" {
   description = "The URL of the Konnect server to connect to"
   type        = string
 }
+
+variable "konnect_region" {
+  description = "The region to create the resources in"
+  default     = "eu"
+  type        = string
+}

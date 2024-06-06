@@ -44,18 +44,6 @@ resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
   control_plane_id = each.value.id
 }
 
-
-# Create system account for the team
-# resource "konnect_system_account" "systemaccount" {
-
-#   name            = "team-${lookup(local.team, "name", "")}-system-account"
-#   description     = "System account for team ${lookup(local.team, "name", "")}"
-#   konnect_managed = false
-
-#   provider = konnect.global
-
-# }
-
 # Create system accounts for every control plane
 resource "konnect_system_account" "systemaccounts" {
   for_each = { for cp in local.control_planes : cp.name => cp }
