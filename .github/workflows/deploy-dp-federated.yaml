@@ -1,0 +1,125 @@
+name: Deploy Kong Data Plane
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        description: 'Kubernetes namespace'
+        type: string
+        default: 'kong'
+      kong_image_repo:
+        description: 'Kong image repository'
+        default: 'kong/kong-gateway'
+        type: string
+      kong_image_tag:
+        description: 'Kong image tag'
+        default: '3.7.0.0'
+        type: string
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      control_plane_name:
+        description: 'The name of the control plane to deploy the data plane to'
+        type: string
+        required: true
+      service_account:
+        description: 'The service account to use for the data plane'
+        type: string
+        required: true
+
+jobs: 
+  prepare:
+    runs-on: ubuntu-latest
+
+    outputs:
+      tf_output: ${{ steps.tfoutput.outputs.tf_output }}
+
+    env:
+      NAMESPACE: ${{ inputs.namespace }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Import Certificates
+        id: import-certs
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/certificates/demo * | DP_
+
+      - name: Import Service Account Token
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/${{ inputs.service_account }} value | SERVICE_ACCOUNT_TOKEN ;
+
+      - name: Fetch control plane ${control_plane_name} information
+        run: |
+          
+          # Fetch the control plane information from the control plane
+          # and save it to a file
+          curl -Gs -d "filter[name][eq]=tiger_cp_acc" "https://eu.api.konghq.com/v2/control-planes" \
+            -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" \
+            -H "Content-Type: application/json" | jq -c .data[0] > kong_gateway_control_plane_info.json
+
+      - name: Create Kong namespace if not exists
+        run: |
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Add Kong Helm Repository
+        run: |
+          helm repo add kong https://charts.konghq.com
+          helm repo update
+      
+      - name: Create kong-cluster-cert secret if not exists
+        run: |
+
+          echo "$TLS_CERT" > tls.crt
+          echo "$TLS_KEY" > tls.key
+
+          kubectl create secret tls kong-cluster-cert \
+              -n $NAMESPACE \
+              --dry-run=client \
+              --cert=tls.crt --key=tls.key -o yaml \
+              | kubectl apply -f -
+
+        env:
+          TLS_CERT: ${{ steps.import-certs.outputs.DP_TLS_CRT }}
+          TLS_KEY: ${{ steps.import-certs.outputs.DP_TLS_KEY }}
+
+      - name: Deploy Kong Data Plane
+        run: |
+
+          CONTROL_PLANE_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.control_plane_endpoint | sed 's|https://||')
+          TELEMETRY_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.telemetry_endpoint | sed 's|https://||')
+          CONTROL_PLANE_HASH=$(echo $CONTROL_PLANE_ENDPOINT | sed 's|https://||' | sed 's/\..*//')
+
+          # replace control plane name underscores with hyphens
+          CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
+
+          helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
+            -n $NAMESPACE --create-namespace \
+            --values ./k8s/values.yaml \
+            --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
+            --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
+            --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
+            --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
+            --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
+            --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
