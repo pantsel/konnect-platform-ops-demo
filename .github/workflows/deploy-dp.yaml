@@ -96,7 +96,7 @@ jobs:
 
           echo "Request succeeded with status code $http_code"
           echo "$response_body" | jq -c .data[0] > kong_gateway_control_plane_info.json
-
+          
       - name: Create Kong namespace if not exists
         if: ${{ inputs.action == 'deploy' }}
         run: |
@@ -143,14 +143,13 @@ jobs:
 
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
-            --values values.yaml \
+            --values  ${{ github.workspace }}/k8s/values.yaml \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
             --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
             --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
             --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
             --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
             --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
-        working-directory: ${{ github.workspace }}/k8s
 
       - name: Destroy Kong Deployment
         if: ${{ inputs.action == 'destroy' }}
@@ -159,4 +158,3 @@ jobs:
             if helm status kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE >/dev/null 2>&1; then
               helm uninstall kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE
             fi
-        working-directory: ${{ github.workspace }}/k8s
