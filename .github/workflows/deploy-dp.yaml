@@ -35,10 +35,7 @@ on:
 jobs: 
   prepare:
     runs-on: ubuntu-latest
-
-    outputs:
-      tf_output: ${{ steps.tfoutput.outputs.tf_output }}
-
+    
     env:
       NAMESPACE: ${{ inputs.namespace }}
 
