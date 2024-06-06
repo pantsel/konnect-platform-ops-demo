@@ -27,6 +27,10 @@ on:
         description: 'The service account to use for the data plane'
         type: string
         required: true
+      konnect_server_url:
+        description: 'Konnect server URL'
+        type: string
+        default: https://eu.api.konghq.com
 
 jobs: 
   prepare:
@@ -75,7 +79,8 @@ jobs:
           
           # Fetch the control plane information from the control plane
           # and save it to a file
-          curl -Gs -d "filter[name][eq]=tiger_cp_acc" "https://eu.api.konghq.com/v2/control-planes" \
+          set -e
+          curl -Gsf -d "filter[name][eq]=tiger_cp_acc" "${{ inputs.konnect_server_url }}/v2/control-planes" \
             -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" \
             -H "Content-Type: application/json" | jq -c .data[0] > kong_gateway_control_plane_info.json
 
