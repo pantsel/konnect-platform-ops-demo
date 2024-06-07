@@ -22,7 +22,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
     - [Flow](#flow-2)
-    - [Run the Provisioning workflow (Team Onboarding)](#run-the-provisioning-workflow-team-onboarding)
+    - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy Data Planes](#deploy-data-planes)
 <!-- /TOC -->
 
@@ -519,7 +519,7 @@ graph LR;
   A --> B --> C --> D --> E
 ```
 
-#### Run the Provisioning workflow (Team Onboarding)
+#### Run the Team Onboarding workflow
 
 To onboard the example teams in Konnect, execute the following command: 
 
