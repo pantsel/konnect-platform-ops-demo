@@ -76,192 +76,213 @@ $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .
 | kong_version             | The kong gateway ee version to base the resulting image on | No       | 3.7.0.0        |
 | continue_on_scan_failure | Continue the workflow even if the security scan fails      | No       | true           |
 
-### Provision Konnect resources (Onboarding pipeline)
+### Provision Konnect resources
 
-The provisioning and deployment process is based on predefined resources. You can find an example in `config/resources.json`. 
+In this demo, there are two approaches of resources in Konnect.
+
+1. **Centralised**: A central Platform team manages all Konnect resources
+2. **Federated**: Every team manages their own Konnect resources
+
+
+### Centralised approach
+
+The provisioning and deployment process is based on predefined resources. You can find an example in `examples/centralised/resources.json`.
 
 #### Resources Configuration Example
 
 ```json
 {
-  "_format_version": "1.0.0",
-  "teams": [
-    {
-      "name": "Platform Team",
-      "description": "Platform Team is responsible for the development and maintenance of the APIM platform."
-    },
-    {
-      "name": "Team 1",
-      "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
-    },
-    {
-      "name": "Team 2",
-      "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
-    }
-  ],
-  "system_accounts": [
-    {
-      "name": "Platform System Account",
-      "description": "System account for Platform Team",
-      "team_memberships": [
-        "Platform Team"
-      ],
-      "roles": [
-        {
-          "entity_type_name": "Control Planes",
-          "role_name": "Admin",
-          "entity_name": "*"
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect::resources",
+    "plan": "centralised",
+    "region": "eu",
+    "name": "rsgrpeu",
+    "description": "EU resource group"
+  },
+  "resources": {
+    "teams": [
+      {
+        "name": "Platform Team",
+        "description": "Platform Team is responsible for the development and maintenance of the APIM platform."
+      },
+      {
+        "name": "Team 1",
+        "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
+      },
+      {
+        "name": "Team 2",
+        "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
+      }
+    ],
+    "system_accounts": [
+      {
+        "name": "Platform System Account",
+        "description": "System account for Platform Team",
+        "team_memberships": [
+          "Platform Team"
+        ],
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "role_name": "Admin",
+            "entity_name": "*"
+          }
+        ]
+      },
+      {
+        "name": "Team 1 System Account",
+        "description": "System account for Team 1",
+        "team_memberships": [
+          "Team 1"
+        ],
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "role_name": "Admin",
+            "entity_name": "CP 1"
+          },
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "eu",
+            "role_name": "Admin",
+            "entity_name": "CP 2"
+          },
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "eu",
+            "role_name": "Admin",
+            "entity_name": "CP 3"
+          }
+        ]
+      },
+      {
+        "name": "Team 2 System Account",
+        "description": "System account for Team 2",
+        "team_memberships": [
+          "Team 2"
+        ],
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "eu",
+            "role_name": "Admin",
+            "entity_name": "CP 4"
+          },
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "eu",
+            "role_name": "Admin",
+            "entity_name": "CP 5"
+          },
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "eu",
+            "role_name": "Admin",
+            "entity_name": "CP 6"
+          }
+        ]
+      }
+    ],
+    "control_planes": [
+      {
+        "name": "CP 1",
+        "description": "Demo Control Plane 1",
+        "labels": {
+          "apigroup": "apigroup1"
         }
-      ]
-    },
-    {
-      "name": "Team 1 System Account",
-      "description": "System account for Team 1",
-      "team_memberships": [
-        "Team 1"
-      ],
-      "roles": [
-        {
-          "entity_type_name": "Control Planes",
-          "entity_region": "eu", // (Optional) Defaults to "eu"
-          "role_name": "Admin",
-          "entity_name": "CP 1"
-        },
-        {
-          "entity_type_name": "Control Planes",
-          "role_name": "Admin",
-          "entity_name": "CP 2"
-        },
-        {
-          "entity_type_name": "Control Planes",
-          "role_name": "Admin",
-          "entity_name": "CP 3"
+      },
+      {
+        "name": "CP 2",
+        "description": "Demo Control Plane 2",
+        "labels": {
+          "apigroup": "apigroup2"
         }
-      ]
-    },
-    {
-      "name": "Team 2 System Account",
-      "description": "System account for Team 2",
-      "team_memberships": [
-        "Team 2"
-      ],
-      "roles": [
-        {
-          "entity_type_name": "Control Planes",
-          "role_name": "Admin",
-          "entity_name": "CP 4"
-        },
-        {
-          "entity_type_name": "Control Planes",
-          "role_name": "Admin",
-          "entity_name": "CP 5"
-        },
-        {
-          "entity_type_name": "Control Planes",
-          "role_name": "Admin",
-          "entity_name": "CP 6"
+      },
+      {
+        "name": "CP 3",
+        "description": "Demo Control Plane 3",
+        "labels": {
+          "apigroup": "apigroup3"
         }
-      ]
-    }
-  ],
-  "control_planes": [
-    {
-      "name": "CP 1",
-      "description": "Demo Control Plane 1",
-      "labels": {
-        "apigroup": "apigroup1"
-      }
-    },
-    {
-      "name": "CP 2",
-      "description": "Demo Control Plane 2",
-      "labels": {
-        "apigroup": "apigroup2"
-      }
-    },
-    {
-      "name": "CP 3",
-      "description": "Demo Control Plane 3",
-      "labels": {
-        "apigroup": "apigroup3"
-      }
-    },
-    {
-      "name": "CP 4",
-      "description": "Demo Control Plane 4",
-      "labels": {
-        "apigroup": "apigroup4"
-      }
-    },
-    {
-      "name": "CP 5",
-      "description": "Demo Control Plane 5",
-      "labels": {
-        "apigroup": "apigroup5"
-      }
-    },
-    {
-      "name": "CP 6",
-      "description": "Demo Control Plane 6",
-      "labels": {
-        "apigroup": "apigroup6"
-      }
-    }
-  ],
-  "control_plane_groups": [
-    {
-      "name": "CP Group 1",
-      "description": "Demo Control Plane Group 1",
-      "labels": {
-        "cloud": "gcp"
       },
-      "members": [
-        "CP 1"
-      ]
-    },
-    {
-      "name": "CP Group 2",
-      "description": "Demo Control Plane Group 2",
-      "labels": {
-        "cloud": "gcp"
+      {
+        "name": "CP 4",
+        "description": "Demo Control Plane 4",
+        "labels": {
+          "apigroup": "apigroup4"
+        }
       },
-      "members": [
-        "CP 2"
-      ]
-    },
-    {
-      "name": "CP Group 3",
-      "description": "Demo Control Plane Group 3",
-      "labels": {
-        "cloud": "on-prem"
+      {
+        "name": "CP 5",
+        "description": "Demo Control Plane 5",
+        "labels": {
+          "apigroup": "apigroup5"
+        }
       },
-      "members": [
-        "CP 1",
-        "CP 4",
-        "CP 5"
-      ]
-    },
-    {
-      "name": "CP Group 4",
-      "description": "Demo Control Plane Group 4",
-      "labels": {
-        "cloud": "aws"
+      {
+        "name": "CP 6",
+        "description": "Demo Control Plane 6",
+        "labels": {
+          "apigroup": "apigroup6"
+        }
+      }
+    ],
+    "control_plane_groups": [
+      {
+        "name": "CP Group 1",
+        "description": "Demo Control Plane Group 1",
+        "labels": {
+          "cloud": "gcp"
+        },
+        "members": [
+          "CP 1"
+        ]
       },
-      "members": [
-        "CP 1"
-      ]
-    },
-    {
-      "name": "CP Group 5",
-      "description": "Demo Control Plane Group 5",
-      "labels": {
-        "cloud": "aws"
+      {
+        "name": "CP Group 2",
+        "description": "Demo Control Plane Group 2",
+        "labels": {
+          "cloud": "gcp"
+        },
+        "members": [
+          "CP 2"
+        ]
       },
-      "members": [
-        "CP 6"
-      ]
-    }
-  ]
+      {
+        "name": "CP Group 3",
+        "description": "Demo Control Plane Group 3",
+        "labels": {
+          "cloud": "on-prem"
+        },
+        "members": [
+          "CP 1",
+          "CP 4",
+          "CP 5"
+        ]
+      },
+      {
+        "name": "CP Group 4",
+        "description": "Demo Control Plane Group 4",
+        "labels": {
+          "cloud": "aws"
+        },
+        "members": [
+          "CP 1"
+        ]
+      },
+      {
+        "name": "CP Group 5",
+        "description": "Demo Control Plane Group 5",
+        "labels": {
+          "cloud": "aws"
+        },
+        "members": [
+          "CP 6"
+        ]
+      }
+    ]
+  }
 }
 ```
 The above configuration will result in the following high level setup
@@ -357,47 +378,43 @@ graph TD;
 To provision Konnect resources, execute the following command: 
 
 ```bash
-$ act --input config_file=config/resources.json -W .github/workflows/provision-konnect.yaml 
+$ act --input config_file=examples/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
 ```
 
 #### Input parameters
 
-| Name               | Description                               | Required | Default                   |
-| ------------------ | ----------------------------------------- | -------- | ------------------------- |
-| konnect_server_url | The URL of the Konnect server             | No       | https://eu.api.konghq.com |
-| config_file        | The path to the resources config file     | Yes      | -                         |
-| vault_addr         | The address of the HashiCorp Vault server | No       | http://localhost:8300     |
+| Name        | Description                                            | Required | Default               |
+| ----------- | ------------------------------------------------------ | -------- | --------------------- |
+| config_file | The path to the resources config file                  | Yes      | -                     |
+| vault_addr  | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
+| action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
+| environment | The environment to provision                           | No       | `local`               |
 
 
-After provisioning, you can deploy the respective Kong DPs:
-
-> The provisioned Control Planes information is stored as an artifact after running the provisioning workflow. This artifact is used for deploying the respective Data Plane nodes.
+After provisioning, you can deploy the Kong DPs:
 
 ```bash
-$ act -W .github/workflows/deploy-dp.yaml
+$ act --input control_plane_name=<cp_name> \
+      --input service_account=<sa_name> \
+      -W .github/workflows/deploy-dp.yaml
 ```
 
 ### Input Parameters
 
-| Name            | Description                                             | Required | Default               |
-| --------------- | ------------------------------------------------------- | -------- | --------------------- |
-| namespace       | The Kubernetes namespace where the dps will be deployed | No       | kong                  |
-| kong_image_repo | The repository of the Kong Docker image                 | No       | kong/kong-gateway     |
-| kong_image_tag  | The tag of the Kong Docker image                        | No       | 3.7.0.0               |
-| vault_addr      | The address of the HashiCorp Vault server               | No       | http://localhost:8300 |
+| Name               | Description                                               | Required | Default                   |
+| ------------------ | --------------------------------------------------------- | -------- | ------------------------- |
+| namespace          | The Kubernetes namespace where the dps will be deployed   | No       | kong                      |
+| kong_image_repo    | The repository of the Kong Docker image                   | No       | kong/kong-gateway         |
+| kong_image_tag     | The tag of the Kong Docker image                          | No       | 3.7.0.0                   |
+| vault_addr         | The address of the HashiCorp Vault server                 | No       | http://localhost:8300     |
+| control_plane_name | The name of the control plane to deploy the data plane to | Yes      | -                         |
+| service_account    | The service account to use for authentication             | Yes      | -                         |
+| konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
+| action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
 
 
-To clean up everything on Konnect and Kubernetes, execute the following command:
+To desroy the resources in Konnect:
 
 ```bash
-$ act --input config_file=config/resources.json -W .github/workflows/destroy.yaml    
+$ act --input config_file=examples/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
 ```
-
-#### Input parameters
-
-| Name               | Description                                           | Required | Default                   |
-| ------------------ | ----------------------------------------------------- | -------- | ------------------------- |
-| konnect_server_url | The URL of the Konnect server                         | No       | https://eu.api.konghq.com |
-| config_file        | The path to the resources config file                 | Yes      | -                         |
-| vault_addr         | The address of the HashiCorp Vault server             | No       | http://localhost:8300     |
-| namespace          | The Kubernetes namespace where the dps where deployed | No       | kong                      |
