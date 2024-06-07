@@ -8,7 +8,7 @@ terraform {
   }
 }
 data "local_file" "resources" {
-  filename = "${path.module}/resources.json"
+  filename = "../../../environments/${var.environment}/centralised/resources.json"
 }
 
 locals {

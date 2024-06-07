@@ -10,10 +10,11 @@ terraform {
 
 
 data "local_file" "resources" {
-  filename = "${path.module}/resources.json"
+  filename = "../../../environments/${var.environment}/federated/resources.json"
 }
 
 locals {
+  cert_path       = "../../../environments/${var.environment}/federated/.tls/ca.crt"
   team            = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
   resources       = lookup(jsondecode(data.local_file.resources.content), "resources", [])
   control_planes  = [for resource in local.resources : resource if resource.type == "konnect::control_plane"]
@@ -40,7 +41,7 @@ resource "konnect_gateway_control_plane" "tfcps" {
 resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
   for_each = { for cp in konnect_gateway_control_plane.tfcps : cp.name => cp }
 
-  cert             = file("${path.module}/.tls/ca.crt")
+  cert             = file(local.cert_path)
   control_plane_id = each.value.id
 }
 
@@ -60,7 +61,7 @@ resource "konnect_system_account" "systemaccounts" {
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
   for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
 
-  name       = "${lower(replace(each.value.name, " ", "_"))}"
+  name       = lower(replace(each.value.name, " ", "_"))
   expires_at = local.expiration_date
   account_id = each.value.id
 
@@ -87,17 +88,17 @@ resource "konnect_system_account_role" "systemaccountroles" {
   entity_region    = lookup(local.team, "region", "")
   entity_type_name = "Control Planes"
   role_name        = "Admin"
-  account_id       = {
+  account_id = {
     for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
   }["npa_${lookup(local.team, "name", "")}_${each.value.name}"]
-  
+
 
   provider = konnect.global
-  
+
 }
 
 output "system_account_access_tokens" {
-  value = konnect_system_account_access_token.systemaccountaccesstokens
+  value     = konnect_system_account_access_token.systemaccountaccesstokens
   sensitive = true
 }
 

@@ -15,6 +15,10 @@ on:
         required: true
         type: string
         default: 'provision' # 'provision' or 'destroy'
+      environment:
+        description: 'Environment to provision'
+        type: string
+        default: 'local'
 
 jobs:
   provision-konnect:
@@ -22,6 +26,7 @@ jobs:
 
     env:
       TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
+      TF_VAR_environment: ${{ inputs.environment }}
       TERRAFORM_DIR: 'terraform/environments/local/federated'
 
     steps:
@@ -47,7 +52,7 @@ jobs:
           mkdir -p .tls
           touch .tls/ca.crt
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
-        working-directory: terraform/modules/federated
+        working-directory: ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}
 
       - name: Provision team
         id: provision-team
@@ -57,8 +62,7 @@ jobs:
           team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           pip install -r requirements.txt
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name)
-          echo "$output" > ${{ github.workspace }}/terraform/modules/federated/resources.json
-          cat ${{ github.workspace }}/terraform/modules/federated/resources.json
+          echo "$output" > ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}/resources.json
         working-directory: scripts/teams
         env:
           KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
@@ -142,7 +146,7 @@ jobs:
 
       - name: Setup teams to be removed
         run: |
-          echo '{}' | jq '.' > ${{ github.workspace }}/terraform/modules/federated/resources.json
+          echo '{}' | jq '.' > ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}/resources.json
   
       - name: Terraform destroy
         if: ${{ inputs.action == 'destroy' }}
