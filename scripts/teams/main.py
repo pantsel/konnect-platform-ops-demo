@@ -97,7 +97,7 @@ def provision_team(args, config):
     logging.info(args)
     logging.info(f"Reading team data from '{args.config_file}'")
 
-    # validate_config(config, logging)
+    validate_config(config, logging)
 
     team_name = config["metadata"]["name"]
 
