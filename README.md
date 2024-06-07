@@ -14,14 +14,14 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Prerequisites](#prerequisites)
 - [Prepare the demo environment](#prepare-the-demo-environment)
 - [Build Kong Golden Image](#build-kong-golden-image)
-  - [Flow Diagram](#flow-diagram)
+  - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
   - [Centralised approach](#centralised-approach)
-    - [Flow Diagram](#flow-diagram-1)
+    - [Flow](#flow-1)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
-    - [Flow](#flow)
+    - [Flow](#flow-2)
     - [Run the Provisioning workflow (Team Onboarding)](#run-the-provisioning-workflow-team-onboarding)
 - [Deploy Data Planes](#deploy-data-planes)
 <!-- /TOC -->
@@ -66,7 +66,7 @@ To create your `s3 access key` and `s3 access secret`:
 
 ## Build Kong Golden Image
 
-### Flow Diagram
+### Flow
 
 ```mermaid
 graph LR;
@@ -369,7 +369,7 @@ graph TD;
 
 ```
 
-#### Flow Diagram
+#### Flow
 
 ```mermaid
 graph TD;
