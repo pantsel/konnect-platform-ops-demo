@@ -15,6 +15,10 @@ on:
         required: true
         type: string
         default: 'provision' # 'provision' or 'destroy'
+      environment:
+        description: 'Environment to provision'
+        type: string
+        default: 'local'
 
 jobs:
   provision-konnect:
@@ -22,6 +26,7 @@ jobs:
 
     env:
       TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
+      TF_VAR_environment: ${{ inputs.environment }}
       TERRAFORM_DIR: 'terraform/environments/local/centralised'
 
     steps:
@@ -47,7 +52,7 @@ jobs:
           mkdir -p .tls
           touch .tls/ca.crt
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
-        working-directory: terraform/modules/centralised
+        working-directory: ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}
 
       - name: Provision teams
         id: provision-teams
@@ -58,7 +63,7 @@ jobs:
           plan_id=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=centralised planid=$plan_id)
           echo "$output" > ${{ github.workspace }}/terraform/modules/centralised/resources.json
-          cat ${{ github.workspace }}/terraform/modules/centralised/resources.json
+          cat ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}/resources.json
         working-directory: scripts/teams
         env:
           KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}

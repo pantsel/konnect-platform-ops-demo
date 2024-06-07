@@ -15,3 +15,9 @@ variable "konnect_region" {
   default     = "eu"
   type        = string
 }
+
+variable "environment" {
+  description = "The environment to run"
+  type        = string
+  default     = "local"
+}

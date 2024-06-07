@@ -12,6 +12,7 @@ data "local_file" "resources" {
 }
 
 locals {
+  cert_path = "../../../environments/${var.environment}/centralised/.tls/ca.crt"
   resources     = lookup(jsondecode(data.local_file.resources.content), "resources", {
     system_accounts = [],
     teams           = [],
@@ -68,7 +69,7 @@ resource "konnect_gateway_control_plane" "tfcpgroups" {
 resource "konnect_gateway_data_plane_client_certificate" "cacertcpgroup" {
   for_each = { for group in konnect_gateway_control_plane.tfcpgroups : group.name => group }
 
-  cert             = file("${path.module}/.tls/ca.crt")
+  cert             = file(local.cert_path)
   control_plane_id = each.value.id
 }
 
@@ -91,7 +92,7 @@ resource "konnect_gateway_control_plane" "tfcps" {
 resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
   for_each = { for cp in konnect_gateway_control_plane.tfcps : cp.name => cp}
 
-  cert             = file("${path.module}/.tls/ca.crt")
+  cert             = file(local.cert_path)
   control_plane_id = each.value.id
 }
 
