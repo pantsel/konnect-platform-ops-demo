@@ -27,7 +27,7 @@ jobs:
     env:
       TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
       TF_VAR_environment: ${{ inputs.environment }}
-      TERRAFORM_DIR: 'terraform/environments/local/centralised'
+      TERRAFORM_DIR: ${{ github.workspace }}/terraform/environments/local/centralised
 
     steps:
       - name: Checkout repository
@@ -52,7 +52,7 @@ jobs:
           mkdir -p .tls
           touch .tls/ca.crt
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
-        working-directory: ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Provision teams
         id: provision-teams
@@ -62,7 +62,7 @@ jobs:
           pip install -r requirements.txt
           plan_id=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=centralised planid=$plan_id)
-          echo "$output" > ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}/resources.json
+          echo "$output" > ${{ env.TERRAFORM_DIR }}/resources.json
         working-directory: scripts/teams
         env:
           KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
@@ -148,7 +148,7 @@ jobs:
       - name: Setup teams to be removed
         if: ${{ inputs.action == 'destroy' }}
         run: |
-          echo '{}' | jq '.' > ${{ github.workspace }}/${{ env.TERRAFORM_DIR }}/resources.json
+          echo '{}' | jq '.' > ${{ env.TERRAFORM_DIR }}/resources.json
       
       - name: Terraform destroy
         if: ${{ inputs.action == 'destroy' }}
