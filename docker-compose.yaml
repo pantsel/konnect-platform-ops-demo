@@ -15,6 +15,7 @@ services:
       - MINIO_DEFAULT_BUCKETS=tfstate
     volumes:
       - minio_data:/bitnami/minio/data
+      - ./scripts/create-minio-bucket.sh:/create-minio-bucket.sh
     networks:
       - app-tier
 
