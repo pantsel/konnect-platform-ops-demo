@@ -136,11 +136,11 @@ jobs:
             secret_name=$(_jq '.name')
             secret_value=$(_jq '.token')
 
-            vault kv put secret/${secret_name} value=${secret_value}
+            vault kv put secret/system-accounts/${secret_name} token=${secret_value}
 
             echo "Stored secret ${secret_name} in Vault."
           done
-        working-directory: terraform
+        working-directory: ${{env.TERRAFORM_DIR}}
         env:
           VAULT_ADDR: ${{ inputs.vault_addr }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}

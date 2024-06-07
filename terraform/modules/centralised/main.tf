@@ -123,7 +123,7 @@ resource "konnect_system_account" "systemaccounts" {
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
   for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
 
-  name       = "tf_sat_${lower(replace(each.value.name, " ", "_"))}"
+  name       = "npa_${lower(replace(each.value.name, " ", "_"))}"
   expires_at = local.expiration_date
   account_id = each.value.id
 
