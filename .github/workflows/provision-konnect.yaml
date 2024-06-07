@@ -72,9 +72,6 @@ jobs:
         run: |
           
           planid=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          # mc alias set $planid http://localhost:9000 minio-root-user minio-root-password
-          # ./create-minio-bucket.sh $planid $planid.tfstate
-
           docker exec minio /create-minio-bucket.sh $planid $planid.tfstate
 
         env:
