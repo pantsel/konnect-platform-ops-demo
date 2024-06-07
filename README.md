@@ -1,4 +1,4 @@
-# Konnect Platform Ops Demo
+# Konnect Platform Ops Demo <!-- omit in toc -->
 
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
 
@@ -7,6 +7,25 @@ A local demo showcasing the utilization of [Terraform](https://www.terraform.io/
 The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
 
 The Continuous Integration/Continuous Deployment (CI/CD) process employs the execution of [GitHub Actions](https://github.com/features/actions) locally through the utilization of [Act](https://github.com/nektos/act).
+
+## Table of Contents <!-- omit in toc -->
+
+<!-- TOC -->
+- [Prerequisites](#prerequisites)
+- [Prepare the demo environment](#prepare-the-demo-environment)
+- [Build Kong Golden Image](#build-kong-golden-image)
+  - [Flow Diagram](#flow-diagram)
+  - [Run the Build workflow](#run-the-build-workflow)
+- [Provision Konnect resources](#provision-konnect-resources)
+  - [Centralised approach](#centralised-approach)
+    - [Flow Diagram](#flow-diagram-1)
+    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
+  - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
+    - [Flow](#flow)
+    - [Run the Provisioning workflow (Team Onboarding)](#run-the-provisioning-workflow-team-onboarding)
+- [Deploy Data Planes](#deploy-data-planes)
+<!-- /TOC -->
+
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
@@ -44,11 +63,10 @@ To create your `s3 access key` and `s3 access secret`:
 
 ![Minio Console](./images/minio.png)
 
-## Using the environment
 
-### Build Kong Golden Image
+## Build Kong Golden Image
 
-#### Flow
+### Flow Diagram
 
 ```mermaid
 graph LR;
@@ -60,13 +78,13 @@ graph LR;
     F -.-> G[Publish];
 ```
 
-#### Run the workflow
+### Run the Build workflow
 
 ```bash
 $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .github/workflows/build-image.yaml    
 ```
 
-#### Input parameters
+***Input parameters***
 
 | Name                     | Description                                                | Required | Default        |
 | ------------------------ | ---------------------------------------------------------- | -------- | -------------- |
@@ -76,9 +94,9 @@ $ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .
 | kong_version             | The kong gateway ee version to base the resulting image on | No       | 3.7.0.0        |
 | continue_on_scan_failure | Continue the workflow even if the security scan fails      | No       | true           |
 
-### Provision Konnect resources
+## Provision Konnect resources
 
-In this demo, there are two approaches of resources in Konnect.
+In this demo, there are two documented approaches for provisioning resources in Konnect.
 
 1. **Centralised**: A central Platform team manages all Konnect resources
 2. **Federated**: Every team manages their own Konnect resources
@@ -88,7 +106,7 @@ In this demo, there are two approaches of resources in Konnect.
 
 The provisioning and deployment process is based on predefined resources. You can find an example in `examples/centralised/resources.json`.
 
-#### Resources Configuration Example
+***Resources Configuration Example***
 
 ```json
 {
@@ -285,6 +303,7 @@ The provisioning and deployment process is based on predefined resources. You ca
   }
 }
 ```
+
 The above configuration will result in the following high level setup
 
 ```mermaid
@@ -350,7 +369,7 @@ graph TD;
 
 ```
 
-#### Provisioning flow
+#### Flow Diagram
 
 ```mermaid
 graph TD;
@@ -373,15 +392,15 @@ graph TD;
     F --> J
 ```
 
-#### Run the Workflow
+#### Run the Provisioning workflow
 
-To provision Konnect resources, execute the following command: 
+To provision centralised Konnect resources, execute the following command: 
 
 ```bash
 $ act --input config_file=examples/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
 ```
 
-#### Input parameters
+***Input Parameters***
 
 | Name        | Description                                            | Required | Default               |
 | ----------- | ------------------------------------------------------ | -------- | --------------------- |
@@ -390,8 +409,152 @@ $ act --input config_file=examples/centralised/resources.json -W .github/workflo
 | action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
 | environment | The environment to provision                           | No       | `local`               |
 
+To desroy the resources in Konnect:
 
-After provisioning, you can deploy the Kong DPs:
+```bash
+$ act --input config_file=examples/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
+```
+
+### Federated approach (Teams onboarding)
+
+The provisioning and deployment process is based on predefined resources. You can find examples in `examples/federated`.
+
+***Resources Configuration Example***
+
+```json
+{
+  "metadata": {
+      "format_version": "1.0.0",
+      "type": "konnect::team",
+      "plan": "federated",
+      "region": "eu",
+      "name": "kronos",
+      "description": "Kronos team is building IaC services in the EU region"
+  },
+  "resources": [
+    {
+      "type": "konnect::control_plane",
+      "name": "kronos_cp_dev",
+      "description": "Control plane 1",
+      "labels": {
+        "env": "dev"
+      }
+    },
+    {
+      "type": "konnect::control_plane",
+      "name": "kronos_cp_acc",
+      "description": "Control plane 1",
+      "labels": {
+        "env": "acc"
+      }
+    },
+    {
+      "type": "konnect::control_plane",
+      "name": "kronos_cp_prd",
+      "description": "Control plane 1",
+      "labels": {
+        "env": "prd"
+      }
+    }
+  ]
+}
+```
+
+The above configuration will result in the following high level setup
+
+```mermaid
+graph TD;
+  subgraph Konnect
+    A[Team Kronos]
+    B["
+    Control Plane
+    kronos_cp_dev
+    "]
+    C["
+    Control Plane
+    kronos_cp_acc
+    "]
+    D["
+    Control Plane
+    kronos_cp_prd
+    "]
+
+    E["
+    System Account
+    npa_kronos_kronos_cp_dev
+    "]
+
+    F["
+    System Account
+    npa_kronos_kronos_cp_acc
+    "]
+
+    G["
+    System Account
+    npa_kronos_kronos_cp_prd
+    "]
+  end
+
+  A --> E -.-> |CP Admin|B
+  A --> F -.-> |CP Admin|C
+  A --> G -.-> |CP Admin|D
+
+```
+
+#### Flow
+
+```mermaid
+graph LR;
+  A[Create Team]
+  B[Create CPs]
+  C[Add Certificates to CPs]
+  D["
+  Create System Accounts
+  Access Tokens
+  Team membership
+  CP Admin role
+  "]
+  E[Store Credentials in Vault]
+
+  A --> B --> C --> D --> E
+```
+
+#### Run the Provisioning workflow (Team Onboarding)
+
+To onboard the example teams in Konnect, execute the following command: 
+
+```bash
+## Onboard team Kronos
+$ act --input config_file=examples/federated/kronos-team.json \
+  -W .github/workflows/provision-konnect-federated.yaml 
+
+# Onboard team Tiger
+$ act --input config_file=examples/federated/tiger-team.json \
+  -W .github/workflows/provision-konnect-federated.yaml 
+```
+
+To offboard the teams, you can execute the same commands with `--input action=destroy`.
+
+```bash
+## Offboard team Kronos
+$ act --input config_file=examples/federated/kronos-team.json \
+  --input action=destroy
+  -W .github/workflows/provision-konnect-federated.yaml 
+
+```
+
+***Input Parameters***
+
+| Name        | Description                                            | Required | Default               |
+| ----------- | ------------------------------------------------------ | -------- | --------------------- |
+| config_file | The path to the resources config file                  | Yes      | -                     |
+| vault_addr  | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
+| action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
+| environment | The environment to provision                           | No       | `local`               |
+
+## Deploy Data Planes
+
+After provisioning, you can deploy the Kong DPs to your local K8s:
 
 ```bash
 $ act --input control_plane_name=<cp_name> \
@@ -399,7 +562,7 @@ $ act --input control_plane_name=<cp_name> \
       -W .github/workflows/deploy-dp.yaml
 ```
 
-### Input Parameters
+***Input Parameters***
 
 | Name               | Description                                               | Required | Default                   |
 | ------------------ | --------------------------------------------------------- | -------- | ------------------------- |
@@ -411,10 +574,3 @@ $ act --input control_plane_name=<cp_name> \
 | service_account    | The service account to use for authentication             | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
-
-
-To desroy the resources in Konnect:
-
-```bash
-$ act --input config_file=examples/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
-```
