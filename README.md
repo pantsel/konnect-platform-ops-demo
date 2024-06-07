@@ -42,7 +42,7 @@ Services:
 - Hashicorp Vault: http://localhost:8300
 - Local Docker registry: http://localhost:5000
 
-To spin-up and prepare your local environment, execute the following command: 
+To spin-up and prepare your local environment, execute: 
 
 ```bash
 $ make prepare
