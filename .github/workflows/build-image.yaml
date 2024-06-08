@@ -78,9 +78,9 @@ jobs:
           chmod +x docker-entrypoint.sh
         working-directory: docker
 
-      - name: Download Kong Gateway RPM
+      - name: Download Kong Gateway
         run: |
-          curl -s -o kong.rpm https://packages.konghq.com/public/gateway-37/rpm/el/8/x86_64/kong-enterprise-edition-${{ inputs.kong_version }}.el8.x86_64.rpm
+          curl -s -o kong.deb https://packages.konghq.com/public/gateway-37/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ inputs.kong_version }}/kong-enterprise-edition_3.7.0.0_amd64.deb
         working-directory: docker
 
       - name: Build Docker image
