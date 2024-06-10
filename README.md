@@ -409,7 +409,7 @@ $ act --input config_file=examples/centralised/resources.json -W .github/workflo
 | action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
 | environment | The environment to provision                           | No       | `local`               |
 
-To desroy the resources in Konnect:
+To destroy the resources in Konnect:
 
 ```bash
 $ act --input config_file=examples/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
