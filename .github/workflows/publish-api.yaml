@@ -61,16 +61,19 @@ jobs:
           cat ${{ inputs.openapi_spec }}.tmp.json | deck file openapi2kong > kong.yaml
 
           # Merge Kong Gateway configuration files -  Add consumers
-          deck file merge -o kong.yaml kong.yaml apiops/patches/consumers.yaml
+          deck file merge -o kong.yaml kong.yaml apiops/additions/consumers.yaml
 
           # Add plugins to the Kong Gateway configuration
-          cat kong.yaml | deck file add-plugins apiops/patches/key-auth.yaml apiops/patches/prom.yaml -o kong.yaml
+          cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
           cat kong.yaml | deck file namespace --path-prefix=/petstore -o kong.yaml
 
-          # Add tags to the Kong Gateway configuration
-          cat kong.yaml | deck file add-tags tag1 tag2 -o kong.yaml
+          # Patch the Kong Gateway configuration
+          cat kong.yaml | deck file patch apiops/patches/patches.yaml -o kong.yaml
+
+          # Print the resulting Kong Gateway configuration
+          cat kong.yaml
 
       - name: Validate Generated Kong Gateway configuration
         run: |
