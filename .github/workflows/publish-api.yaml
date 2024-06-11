@@ -45,7 +45,7 @@ jobs:
 
       - name: Lint OpenAPI Specification
         run: |
-          spectral lint ${{ inputs.openapi_spec }} --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
+          spectral lint ${{ inputs.openapi_spec }} --ruleset apiops/.spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
           cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}
 
