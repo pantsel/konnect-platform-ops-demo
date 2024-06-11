@@ -71,7 +71,7 @@ jobs:
           deck file merge -o kong.yaml kong.yaml apiops/additions/consumers.yaml
 
           # Add plugins to the Kong Gateway configuration
-          cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml -o kong.yaml
+          cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml apiops/plugins/request-termination.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
           cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
