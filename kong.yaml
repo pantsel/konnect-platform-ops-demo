@@ -1,0 +1,611 @@
+_format_version: "3.0"
+plugins:
+- enabled: true
+  name: prometheus
+  tags:
+  - tag1
+  - tag2
+services:
+- host: petstore3.swagger.io
+  id: aa44db31-8600-530d-bc7a-346b9e620e09
+  name: swagger-petstore-openapi-3-0
+  path: /api/v3
+  plugins:
+  - config:
+      key_names:
+      - apikey
+    enabled: true
+    name: key-auth
+    tags:
+    - tag1
+    - tag2
+  port: 443
+  protocol: https
+  routes:
+  - id: fff97dd8-0145-5fa0-808b-84b4853b1086
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_addpet
+    paths:
+    - ~/pet$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/json
+        - application/x-www-form-urlencoded
+        - application/xml
+        body_schema: '{"$ref":"#/definitions/Pet","definitions":{"Category":{"properties":{"id":{"example":1,"format":"int64","type":"integer"},"name":{"example":"Dogs","type":"string"}},"type":"object","xml":{"name":"category"}},"Pet":{"properties":{"category":{"$ref":"#/definitions/Category"},"id":{"example":10,"format":"int64","type":"integer"},"name":{"example":"doggie","type":"string"},"photoUrls":{"items":{"type":"string","xml":{"name":"photoUrl"}},"type":"array","xml":{"wrapped":true}},"status":{"description":"pet
+          status in the store","enum":["available","pending","sold"],"type":"string"},"tags":{"items":{"$ref":"#/definitions/Tag"},"type":"array","xml":{"wrapped":true}}},"required":["name","photoUrls"],"type":"object","xml":{"name":"pet"}},"Tag":{"properties":{"id":{"format":"int64","type":"integer"},"name":{"type":"string"}},"type":"object","xml":{"name":"tag"}}}}'
+        version: draft4
+      enabled: true
+      id: 1938b06c-59b5-53be-a359-da3017629490
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: bf533848-b8c1-5bda-8f70-5cd8fa9aecf2
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_updatepet
+    paths:
+    - ~/pet$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/json
+        - application/x-www-form-urlencoded
+        - application/xml
+        body_schema: '{"$ref":"#/definitions/Pet","definitions":{"Category":{"properties":{"id":{"example":1,"format":"int64","type":"integer"},"name":{"example":"Dogs","type":"string"}},"type":"object","xml":{"name":"category"}},"Pet":{"properties":{"category":{"$ref":"#/definitions/Category"},"id":{"example":10,"format":"int64","type":"integer"},"name":{"example":"doggie","type":"string"},"photoUrls":{"items":{"type":"string","xml":{"name":"photoUrl"}},"type":"array","xml":{"wrapped":true}},"status":{"description":"pet
+          status in the store","enum":["available","pending","sold"],"type":"string"},"tags":{"items":{"$ref":"#/definitions/Tag"},"type":"array","xml":{"wrapped":true}}},"required":["name","photoUrls"],"type":"object","xml":{"name":"pet"}},"Tag":{"properties":{"id":{"format":"int64","type":"integer"},"name":{"type":"string"}},"type":"object","xml":{"name":"tag"}}}}'
+        version: draft4
+      enabled: true
+      id: a66ef7d5-70b4-5744-ad70-8110566991af
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 25e4c57d-6a19-58d3-9af4-090bf3315470
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_findpetsbystatus
+    paths:
+    - ~/pet/findByStatus$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 200689dd-f5c6-5d67-90a7-941423b8d069
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_pet-findbystatus_post
+    paths:
+    - ~/pet/findByStatus$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 6573c26a-0690-5013-81b8-c1ff2c9670d3
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_pet-findbystatus_put
+    paths:
+    - ~/pet/findByStatus$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 5396f2d5-fa7d-51a6-9fb9-6d19c87106b5
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_findpetsbytags
+    paths:
+    - ~/pet/findByTags$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 8aeace6a-b14a-5d36-8a5d-d6e64f2b8f5a
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_pet-findbytags_post
+    paths:
+    - ~/pet/findByTags$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 73dce2ba-3150-5d99-b5cb-2e84b78df6c0
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_pet-findbytags_put
+    paths:
+    - ~/pet/findByTags$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 1cf825f3-0cb2-57b4-bb83-7474b733928e
+    methods:
+    - DELETE
+    name: swagger-petstore-openapi-3-0_deletepet
+    paths:
+    - ~/pet/(?<petid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: d2aced75-fd5b-551d-bb5e-729629fc5922
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_getpetbyid
+    paths:
+    - ~/pet/(?<petid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 60078157-98f4-5acd-ae07-c0c1ce827267
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_updatepetwithform
+    paths:
+    - ~/pet/(?<petid>[^#?/]+)$
+    plugins:
+    - config:
+        parameter_schema:
+        - explode: false
+          in: path
+          name: petid
+          required: true
+          schema: '{"format":"int64","type":"integer"}'
+          style: simple
+        - explode: false
+          in: query
+          name: name
+          required: false
+          schema: '{"type":"string"}'
+          style: form
+        - explode: false
+          in: query
+          name: status
+          required: false
+          schema: '{"type":"string"}'
+          style: form
+        version: draft4
+      enabled: true
+      id: bb367448-50a8-5369-bd3d-06b6397a905d
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 5f4451fb-547d-5bf2-8dde-6115977314f2
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_pet-petid_put
+    paths:
+    - ~/pet/(?<petid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 7dd9131c-b271-5b36-b770-12708129c8a9
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_uploadfile
+    paths:
+    - ~/pet/(?<petid>[^#?/]+)/uploadImage$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/octet-stream
+        parameter_schema:
+        - explode: false
+          in: path
+          name: petid
+          required: true
+          schema: '{"format":"int64","type":"integer"}'
+          style: simple
+        - explode: false
+          in: query
+          name: additionalMetadata
+          required: false
+          schema: '{"type":"string"}'
+          style: form
+        version: draft4
+      enabled: true
+      id: 10052efa-6d7b-5b40-b984-b13209335c30
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: a26b5461-8b27-54f7-a5bb-b343cac9a083
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_pet-petid-uploadimage_put
+    paths:
+    - ~/pet/(?<petid>[^#?/]+)/uploadImage$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 7197e2f1-ef56-5d84-8d69-5ec857d2fcaa
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_getinventory
+    paths:
+    - ~/store/inventory$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 3c342284-0315-5926-9741-5f64a885c69b
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_store-inventory_post
+    paths:
+    - ~/store/inventory$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 16467497-c46b-5ade-b60c-25e992076148
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_store-inventory_put
+    paths:
+    - ~/store/inventory$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: ff8cfea7-a336-57f3-ae8e-80dcf97c94c8
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_placeorder
+    paths:
+    - ~/store/order$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/json
+        - application/x-www-form-urlencoded
+        - application/xml
+        body_schema: '{"$ref":"#/definitions/Order","definitions":{"Order":{"properties":{"complete":{"type":"boolean"},"id":{"example":10,"format":"int64","type":"integer"},"petId":{"example":198772,"format":"int64","type":"integer"},"quantity":{"example":7,"format":"int32","type":"integer"},"shipDate":{"format":"date-time","type":"string"},"status":{"description":"Order
+          Status","enum":["placed","approved","delivered"],"example":"approved","type":"string"}},"type":"object","xml":{"name":"order"}}}}'
+        version: draft4
+      enabled: true
+      id: 652dc7a6-07b8-5d11-8485-81695b8a49c5
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 173d5347-6157-5684-adee-f4bce5864774
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_store-order_put
+    paths:
+    - ~/store/order$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 2841c925-c6f2-5749-abe1-41efbafd4bf1
+    methods:
+    - DELETE
+    name: swagger-petstore-openapi-3-0_deleteorder
+    paths:
+    - ~/store/order/(?<orderid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 14da18fd-e67c-5d59-9d74-cbeaa676724e
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_getorderbyid
+    paths:
+    - ~/store/order/(?<orderid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 9ec8bff7-0513-556d-af26-f71ce0273bde
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_store-order-orderid_post
+    paths:
+    - ~/store/order/(?<orderid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 2c62c317-3a77-5584-a15d-e52406d3e05c
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_store-order-orderid_put
+    paths:
+    - ~/store/order/(?<orderid>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 82e25559-fbd8-519a-87b4-6495a344a466
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_createuser
+    paths:
+    - ~/user$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/json
+        - application/x-www-form-urlencoded
+        - application/xml
+        body_schema: '{"$ref":"#/definitions/User","definitions":{"User":{"properties":{"email":{"example":"john@email.com","type":"string"},"firstName":{"example":"John","type":"string"},"id":{"example":10,"format":"int64","type":"integer"},"lastName":{"example":"James","type":"string"},"password":{"example":"12345","type":"string"},"phone":{"example":"12345","type":"string"},"userStatus":{"description":"User
+          Status","example":1,"format":"int32","type":"integer"},"username":{"example":"theUser","type":"string"}},"type":"object","xml":{"name":"user"}}}}'
+        version: draft4
+      enabled: true
+      id: e9098b35-26e7-5578-966d-d7ffb122f40c
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 394de4e1-5cff-5544-b732-a9c85e44ddc2
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_user_put
+    paths:
+    - ~/user$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 89fcd748-402b-56d7-84f8-0fe94c2ede1d
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_createuserswithlistinput
+    paths:
+    - ~/user/createWithList$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/json
+        body_schema: '{"definitions":{"User":{"properties":{"email":{"example":"john@email.com","type":"string"},"firstName":{"example":"John","type":"string"},"id":{"example":10,"format":"int64","type":"integer"},"lastName":{"example":"James","type":"string"},"password":{"example":"12345","type":"string"},"phone":{"example":"12345","type":"string"},"userStatus":{"description":"User
+          Status","example":1,"format":"int32","type":"integer"},"username":{"example":"theUser","type":"string"}},"type":"object","xml":{"name":"user"}}},"items":{"$ref":"#/definitions/User"},"type":"array"}'
+        version: draft4
+      enabled: true
+      id: d1b38bc8-6582-584a-9344-fc8104a1d171
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: e853ae00-e04d-56de-b7fb-f18f1a9bc9f0
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_user-createwithlist_put
+    paths:
+    - ~/user/createWithList$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: fb2c6669-efb5-5e5b-9587-f2f35a9c1837
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_loginuser
+    paths:
+    - ~/user/login$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 5cc41c80-6f25-5f40-aec0-70787566f507
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_user-login_post
+    paths:
+    - ~/user/login$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 7279463e-08ab-51a5-bc0c-851e35c7fabd
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_user-login_put
+    paths:
+    - ~/user/login$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: b8fe0646-2488-5d76-8bb3-9ee932462d10
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_logoutuser
+    paths:
+    - ~/user/logout$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: f8e5e35b-5c53-5d55-aeaa-2b615a57a659
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_user-logout_post
+    paths:
+    - ~/user/logout$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: c68d3c51-59fe-5bea-96f4-c00f54979079
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_user-logout_put
+    paths:
+    - ~/user/logout$
+    plugins: []
+    regex_priority: 200
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: fa3d87ed-935f-542e-84b7-74d69878b42b
+    methods:
+    - DELETE
+    name: swagger-petstore-openapi-3-0_deleteuser
+    paths:
+    - ~/user/(?<username>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: bb488719-87be-58a5-8382-bc18a1f861eb
+    methods:
+    - GET
+    name: swagger-petstore-openapi-3-0_getuserbyname
+    paths:
+    - ~/user/(?<username>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: e9032028-f168-59b7-9d94-4ceb9d9c59fb
+    methods:
+    - POST
+    name: swagger-petstore-openapi-3-0_user-username_post
+    paths:
+    - ~/user/(?<username>[^#?/]+)$
+    plugins: []
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  - id: 1ecf5032-4501-5294-8d27-89374e128984
+    methods:
+    - PUT
+    name: swagger-petstore-openapi-3-0_updateuser
+    paths:
+    - ~/user/(?<username>[^#?/]+)$
+    plugins:
+    - config:
+        allowed_content_types:
+        - application/json
+        - application/x-www-form-urlencoded
+        - application/xml
+        body_schema: '{"$ref":"#/definitions/User","definitions":{"User":{"properties":{"email":{"example":"john@email.com","type":"string"},"firstName":{"example":"John","type":"string"},"id":{"example":10,"format":"int64","type":"integer"},"lastName":{"example":"James","type":"string"},"password":{"example":"12345","type":"string"},"phone":{"example":"12345","type":"string"},"userStatus":{"description":"User
+          Status","example":1,"format":"int32","type":"integer"},"username":{"example":"theUser","type":"string"}},"type":"object","xml":{"name":"user"}}}}'
+        parameter_schema:
+        - explode: false
+          in: path
+          name: username
+          required: true
+          schema: '{"type":"string"}'
+          style: simple
+        version: draft4
+      enabled: true
+      id: e84dcdf6-d435-5e8d-a15f-caee3a32e701
+      name: request-validator
+      tags:
+      - tag1
+      - tag2
+    regex_priority: 100
+    strip_path: false
+    tags:
+    - tag1
+    - tag2
+  tags:
+  - tag1
+  - tag2
+upstreams: []

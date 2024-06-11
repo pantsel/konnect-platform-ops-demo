@@ -1,0 +1,84 @@
+name: Publish API
+
+on:
+  workflow_call:
+    inputs:
+      openapi_spec:
+        description: "Path to the OpenAPI Specification file"
+        type: string
+      konnect_addr:
+        description: "Kong Konnect address"
+        type: string
+        default: "https://eu.api.konghq.com"
+      konnect_control_plane_name:
+        description: "Kong Konnect control plane name"
+        type: string
+        required: true
+
+jobs:
+  publish-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
+
+      - name: Lint OpenAPI Specification
+        run: |
+          spectral lint ${{ inputs.openapi_spec }} --ruleset .spectral.yaml
+        working-directory: ${{ github.workspace }}
+
+      - name: Add Request Validation Plugin to every PUT and POST operation
+        run: |
+
+          jq '.paths |= with_entries(.value.post |= (.["x-kong-plugin-request-validator"] = { "enabled": true }) | .value.put |= (.["x-kong-plugin-request-validator"] = { "enabled": true }))' ${{ inputs.openapi_spec }} > apiops/oas/petstore.json.tmp.json
+
+      - name: Convert OpenAPI Specification to Kong Gateway configuration
+        run: |
+
+          cat ${{ inputs.openapi_spec }}.tmp.json | \
+            deck file openapi2kong | \
+            deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml | \
+            deck file add-tags tag1 tag2 > kong.yaml
+
+      - name: Validate Generated Kong Gateway configuration
+        run: |
+
+          deck file validate kong.yaml
+
+        working-directory: ${{ github.workspace }}
+
+      - name: Get a backup of the current Kong Gateway configuration
+        run: |
+
+          deck gateway dump \
+            --konnect-addr=${{ inputs.konnect_addr }} \
+            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }} -o kong_backup_${{ env.NOW }}.yaml
+
+      - name: Diff Kong Gateway configuration
+        run: |
+
+          deck gateway sync kong.yaml  \
+            --konnect-addr=${{ inputs.konnect_addr }} \
+            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }} > diff_${{ env.NOW }}.txt
+
+      - name: Archive diff artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: |
+            kong_backup_${{ env.NOW }}.yaml
+            diff_${{ env.NOW }}.txt
+
+      - name: Sync Kong Gateway configuration
+        run: |
+
+          deck gateway sync kong.yaml  \
+            --konnect-addr=${{ inputs.konnect_addr }} \
+            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }}

@@ -1,0 +1,7 @@
+---
+_format_version: '3.0'
+add-plugins:
+- overwrite: false
+  plugins:
+    - name: prometheus
+      enabled: true
