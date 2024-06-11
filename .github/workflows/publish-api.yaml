@@ -23,6 +23,10 @@ on:
         type: string
         required: true
 
+env:
+  DECK_API_NAME: petstore
+  DECK_CONFIG_OWNER: team1
+
 jobs:
   publish-api:
     runs-on: ubuntu-latest
@@ -67,7 +71,7 @@ jobs:
           cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
-          cat kong.yaml | deck file namespace --path-prefix=/petstore -o kong.yaml
+          cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
 
           # Patch the Kong Gateway configuration
           cat kong.yaml | deck file patch apiops/patches/patches.yaml -o kong.yaml
