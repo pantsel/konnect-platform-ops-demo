@@ -58,6 +58,9 @@ jobs:
 
           jq '.paths |= with_entries(.value.post |= (.["x-kong-plugin-request-validator"] = { "enabled": true }) | .value.put |= (.["x-kong-plugin-request-validator"] = { "enabled": true }))' ${{ inputs.openapi_spec }} > ${{ inputs.openapi_spec }}.tmp.json
 
+          # Print the updated OpenAPI Specification
+          cat ${{ inputs.openapi_spec }}.tmp.json
+
       - name: Generate Kong Gateway configuration
         run: |
 
