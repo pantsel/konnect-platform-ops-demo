@@ -14,6 +14,14 @@ on:
         description: "Kong Konnect control plane name"
         type: string
         required: true
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      service_account:
+        description: 'The service account to use for authentication'
+        type: string
+        required: true
 
 jobs:
   publish-api:
@@ -22,6 +30,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Import Service Account Token
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ inputs.service_account }} token | SERVICE_ACCOUNT_TOKEN ;
 
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
@@ -56,15 +73,15 @@ jobs:
 
           deck gateway dump \
             --konnect-addr=${{ inputs.konnect_addr }} \
-            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }} -o kong_backup_${{ env.NOW }}.yaml
 
       - name: Diff Kong Gateway configuration
         run: |
 
-          deck gateway sync kong.yaml  \
+          deck gateway diff kong.yaml  \
             --konnect-addr=${{ inputs.konnect_addr }} \
-            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }} > diff_${{ env.NOW }}.txt
 
       - name: Archive diff artifact
@@ -80,5 +97,5 @@ jobs:
 
           deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_addr }} \
-            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }}
