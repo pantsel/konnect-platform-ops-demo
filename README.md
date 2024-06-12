@@ -24,6 +24,9 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy Data Planes](#deploy-data-planes)
+- [Promoting API configuration](#promoting-api-configuration)
+  - [Flow](#flow-3)
+  - [Run the workflow](#run-the-workflow)
 <!-- /TOC -->
 
 
@@ -574,3 +577,41 @@ $ act --input control_plane_name=<cp_name> \
 | service_account    | The service account to use for authentication             | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
+
+## Promoting API configuration
+
+This is the process of configuring Kong to proxy traffic to upstream APIs based on a provided Open API Specification (OAS).
+
+### Flow
+
+```mermaid
+graph LR;
+  A[OAS]
+  B[Lint]
+  C[Add Request Validation Plugin*]
+  D["Deck Ops
+    openapi2kong
+    file merge
+    add plugins
+    namespace
+    patch
+  "]
+  E[Validate state file]
+  F[Backup]
+  G[Diff]
+  H[Arhive artifacts]
+  I[Sync]
+
+  A --> B --> C --> D --> E --> F --> G --> H --> I
+```
+
+### Run the workflow
+
+After you have provisioned the Konnect resources and a local Kong DP is up and running:
+
+```bash
+$ act --input openapi_spec=apiops/oas/openapi.json \
+    --input konnect_control_plane_name=<control_plabe_name> \
+    --input service_account=<service_account_name>  \
+    -W .github/workflows/promote-api.yaml
+```
