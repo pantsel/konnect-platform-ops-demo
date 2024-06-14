@@ -53,25 +53,25 @@ jobs:
           cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}
 
-      - name: Add Request Validation Plugin to every PUT and POST operation
+      - name: Patch Open API Specification
         run: |
+          
+          yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ inputs.openapi_spec }} apiops/patches/oas.yaml > oas-patched.yaml
+          cat oas-patched.yaml
 
-          jq '.paths |= with_entries(.value.post |= (.["x-kong-plugin-request-validator"] = { "enabled": true }) | .value.put |= (.["x-kong-plugin-request-validator"] = { "enabled": true }))' ${{ inputs.openapi_spec }} > ${{ inputs.openapi_spec }}.tmp.json
-
-          # Print the updated OpenAPI Specification
-          cat ${{ inputs.openapi_spec }}.tmp.json
+        working-directory: ${{ github.workspace }}
 
       - name: Generate Kong Gateway configuration
         run: |
 
           # Convert OpenAPI Specification to Kong Gateway configuration
-          cat ${{ inputs.openapi_spec }}.tmp.json | deck file openapi2kong > kong.yaml
+          cat oas-patched.yaml | deck file openapi2kong --generate-security > kong.yaml
 
           # Merge Kong Gateway configuration files -  Add consumers
           deck file merge -o kong.yaml kong.yaml apiops/additions/consumers.yaml
 
           # Add plugins to the Kong Gateway configuration
-          cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml apiops/plugins/request-termination.yaml -o kong.yaml
+          # cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml apiops/plugins/request-termination.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
           cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
