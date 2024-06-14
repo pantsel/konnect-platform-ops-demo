@@ -582,24 +582,29 @@ $ act --input control_plane_name=<cp_name> \
 
 This is the process of configuring Kong to proxy traffic to upstream APIs based on a provided Open API Specification (OAS).
 
+Useful links:
+
+https://docs.konghq.com/deck/latest/
+
+https://github.com/Kong/go-apiops/tree/main
+
 ### Flow
 
 ```mermaid
 graph LR;
   A[OAS]
-  B[Lint]
-  C[Add Request Validation Plugin*]
+  B[Patch OAS]
+  C[Lint]
   D["Deck Ops
     openapi2kong
     file merge
-    add plugins
     namespace
     patch
   "]
-  E[Validate state file]
+  E[Validate]
   F[Backup]
   G[Diff]
-  H[Arhive artifacts]
+  H[Archive artifacts]
   I[Sync]
 
   A --> B --> C --> D --> E --> F --> G --> H --> I
@@ -610,8 +615,19 @@ graph LR;
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
 
 ```bash
-$ act --input openapi_spec=apiops/oas/openapi.json \
-    --input konnect_control_plane_name=<control_plabe_name> \
+$ act --input openapi_spec=apiops/oas/openapi.yaml \
+    --input control_plane_name=<control_plabe_name> \
     --input service_account=<service_account_name>  \
     -W .github/workflows/promote-api.yaml
 ```
+
+***Input Parameters***
+
+| Name               | Description                                             | Required | Default                   |
+| ------------------ | ------------------------------------------------------- | -------- | ------------------------- |
+| openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
+| vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
+| control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
+| service_account    | The service account to use for authentication           | Yes      | -                         |
+| konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
+

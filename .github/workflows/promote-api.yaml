@@ -6,11 +6,11 @@ on:
       openapi_spec:
         description: "Path to the OpenAPI Specification file"
         type: string
-      konnect_addr:
-        description: "Kong Konnect address"
+      konnect_server_url:
+        description: "Kong Konnect server url"
         type: string
         default: "https://eu.api.konghq.com"
-      konnect_control_plane_name:
+      control_plane_name:
         description: "Kong Konnect control plane name"
         type: string
         required: true
@@ -47,18 +47,18 @@ jobs:
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
 
-      - name: Lint OpenAPI Specification
-        run: |
-          spectral lint ${{ inputs.openapi_spec }} --ruleset apiops/.ruleset.yaml -o oas_lint_results_${{ env.NOW }}.txt
-          cat oas_lint_results_${{ env.NOW }}.txt
-        working-directory: ${{ github.workspace }}
-
       - name: Patch Open API Specification
         run: |
           
           yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ inputs.openapi_spec }} apiops/patches/oas.yaml > oas-patched.yaml
           cat oas-patched.yaml
 
+        working-directory: ${{ github.workspace }}
+
+      - name: Lint OpenAPI Specification
+        run: |
+          spectral lint oas-patched.yaml --ruleset apiops/.ruleset.yaml -o oas_lint_results_${{ env.NOW }}.txt
+          cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}
 
       - name: Generate Kong Gateway configuration
@@ -93,17 +93,17 @@ jobs:
         run: |
 
           deck gateway dump \
-            --konnect-addr=${{ inputs.konnect_addr }} \
+            --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
-            --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }} -o kong_backup_${{ env.NOW }}.yaml
+            --konnect-control-plane-name=${{ inputs.control_plane_name }} -o kong_backup_${{ env.NOW }}.yaml
 
       - name: Diff Kong Gateway configuration
         run: |
 
           deck gateway diff kong.yaml  \
-            --konnect-addr=${{ inputs.konnect_addr }} \
+            --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
-            --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }} > diff_${{ env.NOW }}.txt
+            --konnect-control-plane-name=${{ inputs.control_plane_name }} > diff_${{ env.NOW }}.txt
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
@@ -118,6 +118,6 @@ jobs:
         run: |
 
           deck gateway sync kong.yaml  \
-            --konnect-addr=${{ inputs.konnect_addr }} \
+            --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
-            --konnect-control-plane-name=${{ inputs.konnect_control_plane_name }}
+            --konnect-control-plane-name=${{ inputs.control_plane_name }}
