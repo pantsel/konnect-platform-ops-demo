@@ -420,7 +420,7 @@ $ act --input config_file=examples/platformops/centralised/resources.json --inpu
 
 ### Federated approach (Teams onboarding)
 
-The provisioning and deployment process is based on predefined resources. You can find examples in `examples/federated`.
+The provisioning and deployment process is based on predefined resources. You can find examples in `examples/platformops/federated`.
 
 ***Resources Configuration Example***
 
