@@ -1,4 +1,4 @@
-# Konnect Platform Ops Demo <!-- omit in toc -->
+# Konnect Ops Demo <!-- omit in toc -->
 
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
 
@@ -11,6 +11,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 ## Table of Contents <!-- omit in toc -->
 
 <!-- TOC -->
+- [Useful links](#useful-links)
 - [Prerequisites](#prerequisites)
 - [Prepare the demo environment](#prepare-the-demo-environment)
 - [Build Kong Golden Image](#build-kong-golden-image)
@@ -29,6 +30,10 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Run the workflow](#run-the-workflow)
 <!-- /TOC -->
 
+## Useful links
+
+- [Kong Konnect Terraform Provider](https://github.com/Kong/terraform-provider-konnect)
+- [Kong GO APIOps](https://github.com/Kong/go-apiops)
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
