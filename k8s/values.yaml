@@ -15,6 +15,7 @@ env:
   lua_ssl_trusted_certificate: system
   konnect_mode: "on"
   vitals: "off"
+  log_level: "debug"
 ingressController:
   enabled: false
   installCRDs: false
