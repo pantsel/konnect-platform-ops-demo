@@ -68,7 +68,7 @@ jobs:
           secrets: |
             secret/data/certificates/demo * | DP_
 
-      - name: Import Service Account Token
+      - name: Import System Account Token
         if: ${{ inputs.action == 'deploy' }}
         id: import-token
         uses: hashicorp/vault-action@v2

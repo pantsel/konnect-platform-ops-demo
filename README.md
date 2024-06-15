@@ -107,7 +107,7 @@ In this demo, there are two documented approaches for provisioning resources in 
 
 ### Centralised approach
 
-The provisioning and deployment process is based on predefined resources. You can find an example in `examples/centralised/resources.json`.
+The provisioning and deployment process is based on predefined resources. You can find an example in `examples/platformops/centralised/resources.json`.
 
 ***Resources Configuration Example***
 
@@ -400,7 +400,7 @@ graph TD;
 To provision centralised Konnect resources, execute the following command: 
 
 ```bash
-$ act --input config_file=examples/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
+$ act --input config_file=examples/platformops/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
 ```
 
 ***Input Parameters***
@@ -415,7 +415,7 @@ $ act --input config_file=examples/centralised/resources.json -W .github/workflo
 To destroy the resources in Konnect:
 
 ```bash
-$ act --input config_file=examples/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
+$ act --input config_file=examples/platformops/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
 ```
 
 ### Federated approach (Teams onboarding)
@@ -528,11 +528,11 @@ To onboard the example teams in Konnect, execute the following command:
 
 ```bash
 ## Onboard team Kronos
-$ act --input config_file=examples/federated/kronos-team.json \
+$ act --input config_file=examples/platformops/federated/kronos-team.json \
   -W .github/workflows/provision-konnect-federated.yaml 
 
 # Onboard team Tiger
-$ act --input config_file=examples/federated/tiger-team.json \
+$ act --input config_file=examples/platformops/federated/tiger-team.json \
   -W .github/workflows/provision-konnect-federated.yaml 
 ```
 
@@ -540,7 +540,7 @@ To offboard the teams, you can execute the same commands with `--input action=de
 
 ```bash
 ## Offboard team Kronos
-$ act --input config_file=examples/federated/kronos-team.json \
+$ act --input config_file=examples/platformops/federated/kronos-team.json \
   --input action=destroy
   -W .github/workflows/provision-konnect-federated.yaml 
 
