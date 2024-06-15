@@ -49,17 +49,16 @@ jobs:
 
       - name: Patch Open API Specification
         run: |
-          
-          yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ inputs.openapi_spec }} apiops/patches/oas.yaml > oas-patched.yaml
+          yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
           cat oas-patched.yaml
-
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Lint OpenAPI Specification
         run: |
-          spectral lint oas-patched.yaml --ruleset apiops/.ruleset.yaml -o oas_lint_results_${{ env.NOW }}.txt
+          spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
+          # inso lint spec ${{ github.workspace }}/examples/apiops/oas-patched.yaml --workingDir ${{ github.workspace }}/examples/apiops
           cat oas_lint_results_${{ env.NOW }}.txt
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Generate Kong Gateway configuration
         run: |
@@ -68,7 +67,7 @@ jobs:
           cat oas-patched.yaml | deck file openapi2kong --generate-security > kong.yaml
 
           # Merge Kong Gateway configuration files -  Add consumers
-          deck file merge -o kong.yaml kong.yaml apiops/additions/consumers.yaml
+          deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
 
           # Add plugins to the Kong Gateway configuration
           # cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml apiops/plugins/request-termination.yaml -o kong.yaml
@@ -77,47 +76,48 @@ jobs:
           cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
 
           # Patch the Kong Gateway configuration
-          cat kong.yaml | deck file patch apiops/patches/patches.yaml -o kong.yaml
+          cat kong.yaml | deck file patch patches/patches.yaml -o kong.yaml
 
           # Print the resulting Kong Gateway configuration
           cat kong.yaml
 
+        working-directory: ${{ github.workspace }}/examples/apiops
+
       - name: Validate Generated Kong Gateway configuration
         run: |
-
           deck file validate kong.yaml
-
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Get a backup of the current Kong Gateway configuration
         run: |
-
           deck gateway dump \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }} -o kong_backup_${{ env.NOW }}.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Diff Kong Gateway configuration
         run: |
-
           deck gateway diff kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }} > diff_${{ env.NOW }}.txt
+        working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: |
-            kong_backup_${{ env.NOW }}.yaml
-            diff_${{ env.NOW }}.txt
-            oas_lint_results_${{ env.NOW }}.txt
+            ${{ github.workspace }}/examples/apiops/kong_backup_${{ env.NOW }}.yaml
+            ${{ github.workspace }}/examples/apiops/diff_${{ env.NOW }}.txt
+            ${{ github.workspace }}/examples/apiops/oas_lint_results_${{ env.NOW }}.txt
 
       - name: Sync Kong Gateway configuration
         run: |
-
           deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }}
+        working-directory: ${{ github.workspace }}/examples/apiops
+

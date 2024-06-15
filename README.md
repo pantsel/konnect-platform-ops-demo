@@ -615,8 +615,8 @@ graph LR;
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
 
 ```bash
-$ act --input openapi_spec=apiops/oas/openapi.yaml \
-    --input control_plane_name=<control_plabe_name> \
+$ act --input openapi_spec=examples/apiops/openapi.yaml \
+    --input control_plane_name=<control_plane_name> \
     --input service_account=<service_account_name>  \
     -W .github/workflows/promote-api.yaml
 ```
@@ -628,6 +628,6 @@ $ act --input openapi_spec=apiops/oas/openapi.yaml \
 | openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
 | vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
-| service_account    | The service account to use for authentication           | Yes      | -                         |
+| service_account    | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
 
