@@ -594,18 +594,38 @@ https://github.com/Kong/go-apiops/tree/main
 graph LR;
   A[OAS]
   B[Patch OAS]
-  C[Lint]
+  C[Lint OAS]
   D["Deck Ops
-    openapi2kong
-    file merge
-    namespace
-    patch
+    --------------
+    - openapi2kong
+    - file merge
+    - namespace
+    - patch
+    ...
   "]
-  E[Validate]
-  F[Backup]
-  G[Diff]
-  H[Archive artifacts]
-  I[Sync]
+  E[Validate future state
+  --------------
+  deck file validate
+  ]
+  F["Backup current state
+  --------------
+  deck gateway dump"]
+  G[Diff current vs future state
+  --------------
+  deck gateway diff
+  ]
+  H[
+  Archive artifacts
+  --------------
+  - linting results
+  - test results
+  - diff results
+  - current state backup
+  ]
+  I[Sync future state
+  --------------
+  deck gateway sync
+  ]
 
   A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
