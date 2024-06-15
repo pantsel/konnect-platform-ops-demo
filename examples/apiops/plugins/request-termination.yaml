@@ -1,0 +1,12 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$..routes[*]"
+  overwrite: false
+  plugins:
+    - name: request-termination
+      config:
+        echo: true
+        status_code: 200
+      enabled: true

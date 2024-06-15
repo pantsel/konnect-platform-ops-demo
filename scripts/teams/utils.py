@@ -18,6 +18,6 @@ def merge_arrays(arr1, arr2):
     return merged_list
 
 def validate_config(config, logging):
-    # ToDo: Add more validation
+    # TODO: Add more validation checks
     
     return True

@@ -1,4 +1,4 @@
-# Konnect Platform Ops Demo <!-- omit in toc -->
+# Konnect Ops Demo <!-- omit in toc -->
 
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
 
@@ -11,6 +11,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 ## Table of Contents <!-- omit in toc -->
 
 <!-- TOC -->
+- [Useful links](#useful-links)
 - [Prerequisites](#prerequisites)
 - [Prepare the demo environment](#prepare-the-demo-environment)
 - [Build Kong Golden Image](#build-kong-golden-image)
@@ -24,8 +25,15 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy Data Planes](#deploy-data-planes)
+- [Promoting API configuration](#promoting-api-configuration)
+  - [Flow](#flow-3)
+  - [Run the workflow](#run-the-workflow)
 <!-- /TOC -->
 
+## Useful links
+
+- [Kong Konnect Terraform Provider](https://github.com/Kong/terraform-provider-konnect)
+- [Kong GO APIOps](https://github.com/Kong/go-apiops)
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
@@ -34,6 +42,9 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Helm](https://helm.sh/)
 - [`act` - Local GitHub Actions Runner](https://github.com/nektos/act)
 - [Make](https://www.gnu.org/software/make/)
+- [Kong Deck](https://docs.konghq.com/deck/latest/)
+- [jq - Command-line utility for parsing, manipulating, and transforming JSON data](https://jqlang.github.io/jq/)
+- [yq - Command-line YAML, JSON and XML processor](https://github.com/mikefarah/yq)
 
 ## Prepare the demo environment
 
@@ -104,7 +115,7 @@ In this demo, there are two documented approaches for provisioning resources in 
 
 ### Centralised approach
 
-The provisioning and deployment process is based on predefined resources. You can find an example in `examples/centralised/resources.json`.
+The provisioning and deployment process is based on predefined resources. You can find an example in `examples/platformops/centralised/resources.json`.
 
 ***Resources Configuration Example***
 
@@ -397,7 +408,7 @@ graph TD;
 To provision centralised Konnect resources, execute the following command: 
 
 ```bash
-$ act --input config_file=examples/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
+$ act --input config_file=examples/platformops/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
 ```
 
 ***Input Parameters***
@@ -412,12 +423,12 @@ $ act --input config_file=examples/centralised/resources.json -W .github/workflo
 To destroy the resources in Konnect:
 
 ```bash
-$ act --input config_file=examples/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
+$ act --input config_file=examples/platformops/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
 ```
 
 ### Federated approach (Teams onboarding)
 
-The provisioning and deployment process is based on predefined resources. You can find examples in `examples/federated`.
+The provisioning and deployment process is based on predefined resources. You can find examples in `examples/platformops/federated`.
 
 ***Resources Configuration Example***
 
@@ -525,11 +536,11 @@ To onboard the example teams in Konnect, execute the following command:
 
 ```bash
 ## Onboard team Kronos
-$ act --input config_file=examples/federated/kronos-team.json \
+$ act --input config_file=examples/platformops/federated/kronos-team.json \
   -W .github/workflows/provision-konnect-federated.yaml 
 
 # Onboard team Tiger
-$ act --input config_file=examples/federated/tiger-team.json \
+$ act --input config_file=examples/platformops/federated/tiger-team.json \
   -W .github/workflows/provision-konnect-federated.yaml 
 ```
 
@@ -537,7 +548,7 @@ To offboard the teams, you can execute the same commands with `--input action=de
 
 ```bash
 ## Offboard team Kronos
-$ act --input config_file=examples/federated/kronos-team.json \
+$ act --input config_file=examples/platformops/federated/kronos-team.json \
   --input action=destroy
   -W .github/workflows/provision-konnect-federated.yaml 
 
@@ -574,3 +585,77 @@ $ act --input control_plane_name=<cp_name> \
 | service_account    | The service account to use for authentication             | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
+
+## Promoting API configuration
+
+This is the process of configuring Kong to proxy traffic to upstream APIs based on a provided Open API Specification (OAS).
+
+Useful links:
+
+https://docs.konghq.com/deck/latest/
+
+https://github.com/Kong/go-apiops/tree/main
+
+### Flow
+
+```mermaid
+graph LR;
+  A[OAS]
+  B[Patch OAS]
+  C[Lint OAS]
+  D["Deck Ops
+    --------------
+    - openapi2kong
+    - file merge
+    - namespace
+    - patch
+    ...
+  "]
+  E[Validate future state
+  --------------
+  deck file validate
+  ]
+  F["Backup current state
+  --------------
+  deck gateway dump"]
+  G[Diff current vs future state
+  --------------
+  deck gateway diff
+  ]
+  H[
+  Archive artifacts
+  --------------
+  - linting results
+  - test results
+  - diff results
+  - current state backup
+  ]
+  I[Sync future state
+  --------------
+  deck gateway sync
+  ]
+
+  A --> B --> C --> D --> E --> F --> G --> H --> I
+```
+
+### Run the workflow
+
+After you have provisioned the Konnect resources and a local Kong DP is up and running:
+
+```bash
+$ act --input openapi_spec=examples/apiops/openapi.yaml \
+    --input control_plane_name=<control_plane_name> \
+    --input service_account=<service_account_name>  \
+    -W .github/workflows/promote-api.yaml
+```
+
+***Input Parameters***
+
+| Name               | Description                                             | Required | Default                   |
+| ------------------ | ------------------------------------------------------- | -------- | ------------------------- |
+| openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
+| vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
+| control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
+| service_account    | The Konnect system account to use for authentication    | Yes      | -                         |
+| konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
+

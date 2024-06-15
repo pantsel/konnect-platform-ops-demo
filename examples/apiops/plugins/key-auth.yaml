@@ -1,0 +1,12 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$..services[*]"
+  overwrite: false
+  plugins:
+    - name: key-auth
+      config:
+        key_names:
+        - apikey
+      enabled: true
