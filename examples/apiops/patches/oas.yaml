@@ -31,7 +31,7 @@ x-kong-plugin-request-termination:
     echo: true
 
 security: 
-  - openId: ["scope:read", "scope:write"]
+  - openId: ["profile", "email"]
 # the above directive applies the "openId" security scheme to all operations in the spec
 # and requires the "scope1" and "scope2" scopes to be present in the token.
 
@@ -39,20 +39,21 @@ components:
   securitySchemes:
     openId:
       type: openIdConnect
-      openIdConnectUrl: https://example.com/.well-known/openid-configuration
+      openIdConnectUrl: http://192.168.178.42:8080/realms/master/.well-known/openid-configuration
       x-kong-security-openid-connect:
         # we specify that the Kong OpenID Connect plugin is to be used to implement this
         # "security scheme object". Any custom configuration can be added as usual
         # for plugins.
         enabled: true
         config:
-          token_endpoint: https://kc.playground.local:8448/realms/master/protocol/openid-connect/token
+          token_endpoint: http://192.168.178.42:8080/realms/master/protocol/openid-connect/token
+          authorization_endpoint: http://192.168.178.42:8080/realms/master/protocol/openid-connect/auth
           run_on_preflight: false
           consumer_optional: true
           display_errors: true
+          preserve_query_args: true
           client_id:
-            - kong
-          client_secret:
-            - eLCl0DWA0TemBRDimSdRyvTeRzzhwU3z
+            - demo
           auth_methods:
             - client_credentials
+          
