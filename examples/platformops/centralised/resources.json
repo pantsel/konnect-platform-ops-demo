@@ -10,24 +10,24 @@
   "resources": {
     "teams": [
       {
-        "name": "Platform Team",
+        "name": "platform",
         "description": "Platform Team is responsible for the development and maintenance of the APIM platform."
       },
       {
-        "name": "Team 1",
+        "name": "team1",
         "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
       },
       {
-        "name": "Team 2",
+        "name": "team2",
         "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
       }
     ],
     "system_accounts": [
       {
-        "name": "Platform System Account",
+        "name": "platform_system_account",
         "description": "System account for Platform Team",
         "team_memberships": [
-          "Platform Team"
+          "platform"
         ],
         "roles": [
           {
@@ -38,97 +38,97 @@
         ]
       },
       {
-        "name": "Team 1 System Account",
+        "name": "team1_system_account",
         "description": "System account for Team 1",
         "team_memberships": [
-          "Team 1"
+          "team1"
         ],
         "roles": [
           {
             "entity_type_name": "Control Planes",
             "role_name": "Admin",
-            "entity_name": "CP 1"
+            "entity_name": "cp1"
           },
           {
             "entity_type_name": "Control Planes",
             "entity_region": "eu",
             "role_name": "Admin",
-            "entity_name": "CP 2"
+            "entity_name": "cp2"
           },
           {
             "entity_type_name": "Control Planes",
             "entity_region": "eu",
             "role_name": "Admin",
-            "entity_name": "CP 3"
+            "entity_name": "cp3"
           }
         ]
       },
       {
-        "name": "Team 2 System Account",
+        "name": "team2_system_account",
         "description": "System account for Team 2",
         "team_memberships": [
-          "Team 2"
+          "team2"
         ],
         "roles": [
           {
             "entity_type_name": "Control Planes",
             "entity_region": "eu",
             "role_name": "Admin",
-            "entity_name": "CP 4"
+            "entity_name": "cp4"
           },
           {
             "entity_type_name": "Control Planes",
             "entity_region": "eu",
             "role_name": "Admin",
-            "entity_name": "CP 5"
+            "entity_name": "cp5"
           },
           {
             "entity_type_name": "Control Planes",
             "entity_region": "eu",
             "role_name": "Admin",
-            "entity_name": "CP 6"
+            "entity_name": "cp6"
           }
         ]
       }
     ],
     "control_planes": [
       {
-        "name": "CP 1",
+        "name": "cp1",
         "description": "Demo Control Plane 1",
         "labels": {
           "apigroup": "apigroup1"
         }
       },
       {
-        "name": "CP 2",
+        "name": "cp2",
         "description": "Demo Control Plane 2",
         "labels": {
           "apigroup": "apigroup2"
         }
       },
       {
-        "name": "CP 3",
+        "name": "cp3",
         "description": "Demo Control Plane 3",
         "labels": {
           "apigroup": "apigroup3"
         }
       },
       {
-        "name": "CP 4",
+        "name": "cp4",
         "description": "Demo Control Plane 4",
         "labels": {
           "apigroup": "apigroup4"
         }
       },
       {
-        "name": "CP 5",
+        "name": "cp5",
         "description": "Demo Control Plane 5",
         "labels": {
           "apigroup": "apigroup5"
         }
       },
       {
-        "name": "CP 6",
+        "name": "cp6",
         "description": "Demo Control Plane 6",
         "labels": {
           "apigroup": "apigroup6"
@@ -137,55 +137,55 @@
     ],
     "control_plane_groups": [
       {
-        "name": "CP Group 1",
+        "name": "cp_grp1",
         "description": "Demo Control Plane Group 1",
         "labels": {
           "cloud": "gcp"
         },
         "members": [
-          "CP 1"
+          "cp1"
         ]
       },
       {
-        "name": "CP Group 2",
+        "name": "cp_grp2",
         "description": "Demo Control Plane Group 2",
         "labels": {
           "cloud": "gcp"
         },
         "members": [
-          "CP 2"
+          "cp2"
         ]
       },
       {
-        "name": "CP Group 3",
+        "name": "cp_grp3",
         "description": "Demo Control Plane Group 3",
         "labels": {
           "cloud": "on-prem"
         },
         "members": [
-          "CP 1",
-          "CP 4",
-          "CP 5"
+          "cp1",
+          "cp4",
+          "cp5"
         ]
       },
       {
-        "name": "CP Group 4",
+        "name": "cp_grp4",
         "description": "Demo Control Plane Group 4",
         "labels": {
           "cloud": "aws"
         },
         "members": [
-          "CP 1"
+          "cp1"
         ]
       },
       {
-        "name": "CP Group 5",
+        "name": "cp_grp5",
         "description": "Demo Control Plane Group 5",
         "labels": {
           "cloud": "aws"
         },
         "members": [
-          "CP 6"
+          "cp6"
         ]
       }
     ]

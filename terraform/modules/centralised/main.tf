@@ -43,7 +43,7 @@ locals {
       }
     ]
   ])
-  control_plane_groups = lookup(jsondecode(data.local_file.resources.content), "control_plane_groups", [])
+  control_plane_groups = lookup(local.resources, "control_plane_groups", [])
   days_to_hours        = 365 * 24 // 1 year
   expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
