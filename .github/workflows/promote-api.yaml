@@ -26,7 +26,7 @@ on:
 env:
   DECK_API_NAME: petstore # To be used as a tag
   DECK_CONFIG_OWNER: team1 # To be used as a tag
-  DECK_CONFIG_OIDC_ISSUER: https://dev-fo5n3sm5yt1jxf53.eu.auth0.com/.well-known/openid-configuration
+  DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
 
 jobs:
   publish-api:

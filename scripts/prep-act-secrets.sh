@@ -33,6 +33,9 @@ docker_password=${docker_password:-secret}
 read -s -p $'\n'"Enter Vault token (default: root): " vault_token
 vault_token=${vault_token:-root}
 
+read -s -p $'\n'"Enter OpenID Connect issuer (default: https://example.com/.well-known/openid-configuration): " oidc_issuer
+oidc_issuer=${oidc_issuer:-https://example.com/.well-known/openid-configuration}
+
 if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."
     exit 1
@@ -45,4 +48,5 @@ S3_SECRET_KEY=$s3_secret_key
 DOCKER_USERNAME=$docker_username
 DOCKER_PASSWORD=$docker_password
 VAULT_TOKEN=$vault_token
+OIDC_ISSUER=$oidc_issuer
 EOF
