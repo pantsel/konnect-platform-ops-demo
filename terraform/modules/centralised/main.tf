@@ -48,6 +48,7 @@ locals {
   expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
+# Provision the control plane groups
 resource "konnect_gateway_control_plane" "tfcpgroups" {
   for_each = { for group in local.control_plane_groups : group.name => group }
 
@@ -73,6 +74,7 @@ resource "konnect_gateway_data_plane_client_certificate" "cacertcpgroup" {
   control_plane_id = each.value.id
 }
 
+# Provision the control planes
 resource "konnect_gateway_control_plane" "tfcps" {
   for_each = { for cp in local.control_planes : cp.name => cp }
 
@@ -96,6 +98,7 @@ resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
   control_plane_id = each.value.id
 }
 
+# Add the respective control planes to the control plane groups
 resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembership" {
   for_each = { for group in local.control_plane_groups : group.name => group }
   id    = {
@@ -108,6 +111,7 @@ resource "konnect_gateway_control_plane_membership" "gatewaycontrolplanemembersh
   ]
 }
 
+# Provision system accounts
 resource "konnect_system_account" "systemaccounts" {
   for_each = { for account in local.system_accounts : account.name => account }
 
