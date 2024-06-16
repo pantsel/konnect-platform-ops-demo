@@ -34,6 +34,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 
 - [Kong Konnect Terraform Provider](https://github.com/Kong/terraform-provider-konnect)
 - [Kong GO APIOps](https://github.com/Kong/go-apiops)
+- [Deck Commands](https://docs.konghq.com/deck/latest/#deck-commands)
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)

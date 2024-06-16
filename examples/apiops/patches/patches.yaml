@@ -9,7 +9,3 @@ patches:
       select_tags:
       - ${{ env "DECK_API_NAME" }}
       - ${{ env "DECK_CONFIG_OWNER" }}
-- selectors:
-  - "$..services[0].plugins[0].config"
-  values:
-    issuer: ${{ env "DECK_CONFIG_OIDC_ISSUER"}}

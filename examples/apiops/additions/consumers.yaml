@@ -2,8 +2,5 @@ _format_version: '3.0'
 
 consumers:
   - username: bob
-    keyauth_credentials:
-      - key: bobkey
   - username: alice
-    keyauth_credentials:
-      - key: alicekey
+  - username: demo

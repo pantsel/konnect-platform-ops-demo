@@ -24,8 +24,8 @@ on:
         required: true
 
 env:
-  DECK_API_NAME: petstore
-  DECK_CONFIG_OWNER: team1
+  DECK_API_NAME: petstore # To be used as a tag
+  DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: https://dev-fo5n3sm5yt1jxf53.eu.auth0.com/.well-known/openid-configuration
 
 jobs:
@@ -61,11 +61,11 @@ jobs:
           cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
-      - name: Generate Kong Gateway configuration
+      - name: DeckOps
         run: |
 
           # Convert OpenAPI Specification to Kong Gateway configuration
-          cat oas-patched.yaml | deck file openapi2kong --generate-security > kong.yaml
+          cat oas-patched.yaml | deck file openapi2kong > kong.yaml
 
           # Merge Kong Gateway configuration files -  Add consumers
           deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
