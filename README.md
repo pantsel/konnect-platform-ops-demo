@@ -25,7 +25,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy Data Planes](#deploy-data-planes)
-- [Promoting API configuration](#promoting-api-configuration)
+- [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-3)
   - [Run the workflow](#run-the-workflow)
 <!-- /TOC -->
@@ -587,15 +587,9 @@ $ act --input control_plane_name=<cp_name> \
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
 
-## Promoting API configuration
+## Promoting API configuration (State file management)
 
 This is the process of configuring Kong to proxy traffic to upstream APIs based on a provided Open API Specification (OAS).
-
-Useful links:
-
-https://docs.konghq.com/deck/latest/
-
-https://github.com/Kong/go-apiops/tree/main
 
 ### Flow
 
