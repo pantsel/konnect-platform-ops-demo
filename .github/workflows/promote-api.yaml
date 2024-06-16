@@ -18,8 +18,8 @@ on:
         description: 'Vault Address'
         default: 'http://localhost:8300'
         type: string
-      service_account:
-        description: 'The service account to use for authentication'
+      system_account:
+        description: 'The system account to use for authentication'
         type: string
         required: true
 
@@ -36,14 +36,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Import Service Account Token
+      - name: Import system account Token
         id: import-token
         uses: hashicorp/vault-action@v2
         with:
           url: ${{ inputs.vault_addr }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/system-accounts/${{ inputs.service_account }} token | SERVICE_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/${{ inputs.system_account }} token | system_account_TOKEN ;
 
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
@@ -96,7 +96,7 @@ jobs:
         run: |
           deck gateway dump \
             --konnect-addr=${{ inputs.konnect_server_url }} \
-            --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
+            --konnect-token=${{ steps.import-token.outputs.system_account_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }} -o kong_backup_${{ env.NOW }}.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
@@ -104,7 +104,7 @@ jobs:
         run: |
           deck gateway diff kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
-            --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
+            --konnect-token=${{ steps.import-token.outputs.system_account_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }} > diff_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
@@ -121,7 +121,7 @@ jobs:
         run: |
           deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
-            --konnect-token=${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }} \
+            --konnect-token=${{ steps.import-token.outputs.system_account_TOKEN }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }}
         working-directory: ${{ github.workspace }}/examples/apiops
 

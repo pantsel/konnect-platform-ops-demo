@@ -572,7 +572,7 @@ After provisioning, you can deploy the Kong DPs to your local K8s:
 
 ```bash
 $ act --input control_plane_name=<cp_name> \
-      --input service_account=<sa_name> \
+      --input system_account=<sa_name> \
       -W .github/workflows/deploy-dp.yaml
 ```
 
@@ -585,7 +585,7 @@ $ act --input control_plane_name=<cp_name> \
 | kong_image_tag     | The tag of the Kong Docker image                          | No       | 3.7.0.0                   |
 | vault_addr         | The address of the HashiCorp Vault server                 | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to deploy the data plane to | Yes      | -                         |
-| service_account    | The service account to use for authentication             | Yes      | -                         |
+| system_account    | The system account to use for authentication             | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
 
@@ -642,7 +642,7 @@ After you have provisioned the Konnect resources and a local Kong DP is up and r
 ```bash
 $ act --input openapi_spec=examples/apiops/openapi.yaml \
     --input control_plane_name=<control_plane_name> \
-    --input service_account=<service_account_name>  \
+    --input system_account=<system_account_name>  \
     -W .github/workflows/promote-api.yaml
 ```
 
@@ -653,6 +653,6 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
 | vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
-| service_account    | The Konnect system account to use for authentication    | Yes      | -                         |
+| system_account    | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
 

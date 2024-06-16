@@ -6,7 +6,7 @@ do
   control_plane_name="cp_grp${i}"
   echo "Running command for ${control_plane_name}"
   act --input control_plane_name=${control_plane_name} \
-      --input service_account=npa_platform_system_account \
+      --input system_account=npa_platform_system_account \
       --input action=deploy \
       -W .github/workflows/deploy-dp.yaml
 done

@@ -23,8 +23,8 @@ on:
         description: 'The name of the control plane to deploy the data plane to'
         type: string
         required: true
-      service_account:
-        description: 'The service account to use for authentication'
+      system_account:
+        description: 'The system account to use for authentication'
         type: string
         required: true
       konnect_server_url:
@@ -76,14 +76,14 @@ jobs:
           url: ${{ inputs.vault_addr }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/system-accounts/${{ inputs.service_account }} token | SERVICE_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/${{ inputs.system_account }} token | system_account_TOKEN ;
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
           # Make the request and capture the response code and body
-          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-token.outputs.SERVICE_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
+          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-token.outputs.system_account_TOKEN }}" -H "Content-Type: application/json")
           http_code=${response: -3}
           response_body=${response:0:-3}
 
