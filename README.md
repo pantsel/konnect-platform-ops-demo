@@ -6,6 +6,8 @@ A local demo showcasing the utilization of [Terraform](https://www.terraform.io/
 
 The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
 
+In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow.
+
 The Continuous Integration/Continuous Deployment (CI/CD) process employs the execution of [GitHub Actions](https://github.com/features/actions) locally through the utilization of [Act](https://github.com/nektos/act).
 
 ## Table of Contents <!-- omit in toc -->
