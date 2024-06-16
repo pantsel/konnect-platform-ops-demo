@@ -1,0 +1,27 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$..services[0]"
+  overwrite: false
+  plugins:
+    - name: openid-connect
+      config:
+        issuer: ${{ env "DECK_CONFIG_OIDC_ISSUER"}}
+        run_on_preflight: false
+        consumer_optional: true
+        display_errors: true
+        preserve_query_args: true
+        scopes_required:
+          - read:profile
+          - read:email
+        scopes:
+          - read:profile
+          - read:email
+        token_post_args_names:
+          - audience
+        token_post_args_values:
+          - http://petstore.demo.local
+        auth_methods:
+          - client_credentials
+      enabled: true

@@ -21,39 +21,3 @@ x-kong-plugin-request-validator:
     # validation, since this is inherited to the Operation objects.
     # alternatively it can be specified on the Path or Operation levels as well
     # to only apply to that subset of the spec.
-
-x-kong-plugin-request-termination:
-  # We just add the request termination plugin to the spec, for demonstration purposes.
-  # This plugin will always return a 200 response with an echo of the request.
-  name: request-termination
-  config:
-    status_code: 200
-    echo: true
-
-security: 
-  - openId: ["profile", "email"]
-# the above directive applies the "openId" security scheme to all operations in the spec
-# and requires the "scope1" and "scope2" scopes to be present in the token.
-
-components:
-  securitySchemes:
-    openId:
-      type: openIdConnect
-      openIdConnectUrl: http://192.168.178.42:8080/realms/master/.well-known/openid-configuration
-      x-kong-security-openid-connect:
-        # we specify that the Kong OpenID Connect plugin is to be used to implement this
-        # "security scheme object". Any custom configuration can be added as usual
-        # for plugins.
-        enabled: true
-        config:
-          token_endpoint: http://192.168.178.42:8080/realms/master/protocol/openid-connect/token
-          authorization_endpoint: http://192.168.178.42:8080/realms/master/protocol/openid-connect/auth
-          run_on_preflight: false
-          consumer_optional: true
-          display_errors: true
-          preserve_query_args: true
-          client_id:
-            - demo
-          auth_methods:
-            - client_credentials
-          

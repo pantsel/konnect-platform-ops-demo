@@ -26,6 +26,7 @@ on:
 env:
   DECK_API_NAME: petstore
   DECK_CONFIG_OWNER: team1
+  DECK_CONFIG_OIDC_ISSUER: https://dev-fo5n3sm5yt1jxf53.eu.auth0.com/.well-known/openid-configuration
 
 jobs:
   publish-api:
@@ -70,7 +71,10 @@ jobs:
           deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
 
           # Add plugins to the Kong Gateway configuration
-          # cat kong.yaml | deck file add-plugins apiops/plugins/key-auth.yaml apiops/plugins/prom.yaml apiops/plugins/request-termination.yaml -o kong.yaml
+          cat kong.yaml | deck file add-plugins \
+            plugins/openid-connect.yaml \
+            plugins/request-termination.yaml \
+            plugins/rate-limiting.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
           cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
