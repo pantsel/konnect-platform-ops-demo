@@ -68,7 +68,7 @@ jobs:
           KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
           KONNECT_ADDRESS: https://global.api.konghq.com
 
-      - name: Create MinIO bucket if not exists
+      - name: Create S3 bucket if not exists
         run: |
           
           planid=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
@@ -144,7 +144,7 @@ jobs:
           VAULT_ADDR: ${{ inputs.vault_addr }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
 
-      - name: Setup teams to be removed
+      - name: Empty resources.json
         if: ${{ inputs.action == 'destroy' }}
         run: |
           echo '{}' | jq '.' > ${{ env.TERRAFORM_DIR }}/resources.json
