@@ -27,7 +27,7 @@ jobs:
     env:
       TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
       TF_VAR_environment: ${{ inputs.environment }}
-      TERRAFORM_DIR: ${{ github.workspace }}/terraform/environments/local/centralised
+      TERRAFORM_DIR: ${{ github.workspace }}/terraform/environments/${{ env.TF_VAR_environment }}/centralised
 
     steps:
       - name: Checkout repository
