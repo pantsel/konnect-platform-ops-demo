@@ -40,14 +40,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- A functional local Kubernetes (k8s) environment
-- [Terraform](https://www.terraform.io/)
-- [Helm](https://helm.sh/)
-- [`act` - Local GitHub Actions Runner](https://github.com/nektos/act)
-- [Make](https://www.gnu.org/software/make/)
-- [Kong Deck](https://docs.konghq.com/deck/latest/)
-- [jq - Command-line utility for parsing, manipulating, and transforming JSON data](https://jqlang.github.io/jq/)
-- [yq - Command-line YAML, JSON and XML processor](https://github.com/mikefarah/yq)
+- [Kind] (https://kind.sigs.k8s.io/)
 
 ## Prepare the demo environment
 
