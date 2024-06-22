@@ -656,11 +656,11 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 $ curl -u demo:<client-secret> http://localhost:8000/petstore/pets
 ```
 
-To obtain the client client-secret, follow these steps:
+To obtain the `client-secret`, follow these steps:
 
 - Open your web browser and navigate to Keycloak (http://localhost:8080).
-- Log in using the username admin and the password admin.
-- Once logged in, select the Demo realm.
-- Go to Clients in the left-hand menu.
-- Click on the demo client.
-- Navigate to the Credentials tab to find the client client-secret.
+- Log in using the username `admin` and the password `admin`.
+- Once logged in, select the `Demo realm`.
+- Go to `Clients` in the left-hand menu.
+- Click on the `demo` client.
+- Navigate to the `Credentials` tab to find the client-secret.
