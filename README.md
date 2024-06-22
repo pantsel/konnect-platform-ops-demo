@@ -656,6 +656,12 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 
 ***Make a reaquest to the demo API***
 
+Make sure you can access your Kong Dataplane:
+
+```bash
+$ kubectl port-forward deployment/<deployment_name>  8000:8000 -n kong
+```
+
 ```curl
 $ curl -u demo:<client-secret> http://localhost:8000/petstore/pets
 ```
