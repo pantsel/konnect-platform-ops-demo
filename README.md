@@ -1,6 +1,7 @@
 # Konnect Ops Demo <!-- omit in toc -->
 
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
+> Additionally, note that the demo environment has only been tested on macOS and may not function correctly on Windows.
 
 A local demo showcasing the utilization of [Terraform](https://www.terraform.io/) and [Helm](https://helm.sh/) for the provisioning of Konnect Resources and deployment of Kong Data Planes (DPs) within Kubernetes (K8s) environments.
 
