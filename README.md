@@ -40,7 +40,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- [Kind] (https://kind.sigs.k8s.io/)
+- [Kind](https://kind.sigs.k8s.io/)
 
 ## Prepare the demo environment
 
