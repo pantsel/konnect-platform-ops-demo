@@ -654,7 +654,7 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | system_account    | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
 
-***Make a reaquest to the demo API***
+***Make a request to the demo API***
 
 Make sure you can access your Kong Dataplane:
 
