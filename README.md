@@ -16,6 +16,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 <!-- TOC -->
 - [Useful links](#useful-links)
 - [Prerequisites](#prerequisites)
+- [Components](#components)
 - [Prepare the demo environment](#prepare-the-demo-environment)
 - [Build Kong Golden Image](#build-kong-golden-image)
   - [Flow](#flow)
@@ -43,13 +44,15 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
 - [Kind](https://kind.sigs.k8s.io/) - A tool for running local Kubernetes clusters using Docker container “nodes”.
 
-## Prepare the demo environment
+## Components
 
-Services:
 - MinIO: http://localhost:9000
 - Hashicorp Vault: http://localhost:8300
 - Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
+- kind cluster
+
+## Prepare the demo environment
 
 To spin-up and prepare your local environment, execute: 
 
