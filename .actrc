@@ -1,7 +1,0 @@
---artifact-server-path=.tmp
---secret-file=act.secrets
---pull=false
---action-offline-mode
---platform=ubuntu-latest=pantsel/gh-runner:latest
---container-options -v /Users/panagis.tselentis@konghq.com/.kube/config:/.kube/config
---network=host
