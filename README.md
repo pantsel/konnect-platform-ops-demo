@@ -6,7 +6,7 @@ A local demo showcasing the utilization of [Terraform](https://www.terraform.io/
 
 The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
 
-In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow.
+In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow. [Keycloak](https://www.keycloak.org/) is utilized as an IDP for the example APIs OIDC configuration.
 
 The Continuous Integration/Continuous Deployment (CI/CD) process employs the execution of [GitHub Actions](https://github.com/features/actions) locally through the utilization of [Act](https://github.com/nektos/act).
 
@@ -47,6 +47,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 Services:
 - MinIO: http://localhost:9000
 - Hashicorp Vault: http://localhost:8300
+- Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
 
 To spin-up and prepare your local environment, execute: 
