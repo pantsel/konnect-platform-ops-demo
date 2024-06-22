@@ -83,9 +83,9 @@ services:
     networks:
       - konnect-platform-ops-demo
     image: quay.io/keycloak/keycloak:24.0.2
-    command: start-dev
-    # volumes:
-    #   - ${PWD}/misc:/kc_data
+    command: start-dev --import-realm
+    volumes:
+      - ${PWD}/kc:/opt/keycloak/data/import
     healthcheck:
       test: ["CMD", "curl", "-f", "https://keycloak:8080/auth/realms/master"]
       interval: 30s

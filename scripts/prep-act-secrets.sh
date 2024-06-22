@@ -35,8 +35,8 @@ vault_token=${vault_token:-root}
 
 HOST_IP=$(./scripts/get-host-ip.sh)
 
-read -s -p $'\n'"Enter OpenID Connect issuer (default: http://$HOST_IP:8080/realms/master): " oidc_issuer
-oidc_issuer=${oidc_issuer:-http://$HOST_IP:8080/realms/master}
+read -s -p $'\n'"Enter OpenID Connect issuer (default: http://$HOST_IP:8080/realms/demo): " oidc_issuer
+oidc_issuer=${oidc_issuer:-http://$HOST_IP:8080/realms/demo}
 
 if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."
