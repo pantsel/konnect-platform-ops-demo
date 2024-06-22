@@ -1,6 +1,6 @@
 networks:
-  app-tier:
-    driver: bridge
+  konnect-platform-ops-demo:
+    driver: host
 
 services:
   minio:
@@ -17,7 +17,7 @@ services:
       - minio_data:/bitnami/minio/data
       - ./scripts/create-minio-bucket.sh:/create-minio-bucket.sh
     networks:
-      - app-tier
+      - konnect-platform-ops-demo
 
   vault:
     container_name: vault
@@ -38,7 +38,7 @@ services:
     volumes:
       - vault_data:/data
     networks:
-      - app-tier
+      - konnect-platform-ops-demo
 
   registry:
     container_name: registry
@@ -51,11 +51,11 @@ services:
     volumes:
       - registry_data:/var/lib/registry
     networks:
-      - app-tier
+      - konnect-platform-ops-demo
 
   postgres-kc:
     networks:
-      - app-tier
+      - konnect-platform-ops-demo
     image: postgres:13.1
     container_name: postgres-kc
     hostname: postgres-kc
@@ -81,7 +81,7 @@ services:
     depends_on:
       - postgres-kc
     networks:
-      - app-tier
+      - konnect-platform-ops-demo
     image: quay.io/keycloak/keycloak:24.0.2
     command: start-dev
     # volumes:

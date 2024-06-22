@@ -9,7 +9,7 @@ on:
       vault_addr:
         description: 'Vault Address'
         type: string
-        default: 'http://localhost:8300'
+        default: 'http://192.168.178.42:8300'
       action:
         description: 'Action to perform'
         required: true
@@ -72,7 +72,7 @@ jobs:
         run: |
           
           planid=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          docker exec minio /create-minio-bucket.sh $planid $planid.tfstate
+          ./scripts/create-minio-bucket.sh $planid $planid.tfstate
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}

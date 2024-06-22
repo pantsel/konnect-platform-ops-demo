@@ -3,7 +3,11 @@
 export VAULT_ADDR=http://localhost:8300
 export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 
-prepare: gencerts docker prep-secrets vault-secrets
+prepare: gencerts actrc docker prep-secrets vault-secrets
+
+actrc:
+	@echo "Setting up .actrc"
+	@./scripts/prep-actrc.sh
 
 gencerts:
 	@echo "Generating certificates..."
@@ -27,6 +31,10 @@ vault-secrets:
 		ca=@/tmp/.tls/ca.crt
 	@echo "Vault secrets setup completed"
 
+check-deps:
+	@echo "Checking dependencies.."
+	@./scripts/check-deps.sh
+
 stop:
 	@echo "Stopping containers.."
 	@docker-compose down
@@ -37,4 +45,4 @@ clean: stop
 	@rm -rf act.secrets
 	@rm -rf .tmp
 
-.PHONY: prepare gencerts prep-secrets docker vault-secrets clean stop
+.PHONY: prepare actrc gencerts prep-secrets docker vault-secrets clean stop check-deps

@@ -74,7 +74,7 @@ class Konnect:
         # if team name already exists in existing_teams, return the team
         for existing_team in existing_teams:
             if existing_team["name"] == team["name"]:
-                logging.info(f"Team '{team["name"]}' already exists.")
+                logging.info(f"Team \"{team['name']}\" already exists.")
                 return existing_team
 
         try:
@@ -93,11 +93,11 @@ class Konnect:
             }
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()  # Raise an exception if the request was not successful
-            logging.info(f"Team '{team["name"]}' created successfully.")
+            logging.info(f"Team '{team['name']}' created successfully.")
             logging.info(response.json())   
             return response.json()
         except requests.exceptions.RequestException as e:
-            logging.error(f"An error occurred while creating team '{team["name"]}': {e}")
+            logging.error(f"An error occurred while creating team '{team['name']}': {e}")
             sys.exit(1)
 
     @staticmethod
@@ -127,14 +127,14 @@ class Konnect:
             payload = role
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()  # Raise an exception if the request was not successful
-            logging.info(f"Role '{role["role_name"]}' assigned to team '{team_id}' and region '{role["entity_region"]}' successfully.")
+            logging.info(f"Role '{role['role_name']}' assigned to team '{team_id}' and region '{role['entity_region']}' successfully.")
             return response.json()
         except requests.exceptions.RequestException as e:
             
             # if status code is 409, it means the role is already assigned to the team
             if response.status_code == 409:
-                logging.info(f"Role '{role["role_name"]}' is already assigned to team '{team_id}' and region '{role["entity_region"]}'")
+                logging.info(f"Role '{role['role_name']}' is already assigned to team '{team_id}' and region '{role['entity_region']}'")
                 return response.json()
             
-            logging.error(f"An error occurred while assigning role '{role["role_name"]}' to team '{team_id}' and region '{role["entity_region"]}': {e}")
+            logging.error(f"An error occurred while assigning role '{role['role_name']}' to team '{team_id}' and region '{role['entity_region']}': {e}")
             sys.exit(1)
