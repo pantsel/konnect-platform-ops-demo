@@ -2,8 +2,9 @@
 
 export VAULT_ADDR=http://localhost:8300
 export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
+KIND_CLUSTER_NAME=konnect-platform-ops-demo
 
-prepare: gencerts actrc docker prep-secrets vault-secrets
+prepare: check-deps gencerts actrc kind docker prep-secrets vault-secrets
 
 actrc:
 	@echo "Setting up .actrc"
@@ -20,6 +21,14 @@ prep-secrets:
 docker:
 	@echo "Spinning up containers"
 	@docker-compose up -d
+
+kind:
+	@echo "Setting up kind cluster.."
+	@if ! kind get clusters | grep -q ${KIND_CLUSTER_NAME}; then \
+		kind create cluster --name  ${KIND_CLUSTER_NAME}; \
+	else \
+		echo "Kind Cluster ${KIND_CLUSTER_NAME} already exists"; \
+	fi
 
 vault-secrets:
 	@echo "Setting up vault secrets.."
@@ -41,8 +50,9 @@ stop:
 
 clean: stop
 	@echo "Cleaning up.."
+	@kind delete cluster --name  ${KIND_CLUSTER_NAME}
 	@rm -rf .tls
 	@rm -rf act.secrets
 	@rm -rf .tmp
 
-.PHONY: prepare actrc gencerts prep-secrets docker vault-secrets clean stop check-deps
+.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps

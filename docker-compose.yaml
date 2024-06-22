@@ -1,6 +1,6 @@
 networks:
   konnect-platform-ops-demo:
-    driver: host
+    driver: bridge
 
 services:
   minio:

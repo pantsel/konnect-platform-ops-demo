@@ -3,5 +3,5 @@
 --pull=false
 --action-offline-mode
 --platform=ubuntu-latest=pantsel/gh-runner:latest
---container-options -v __KUBECONFIG_PATH__:/.kube/config
+--container-options -v __KUBECONFIG_PATH__:/.kube
 --network=host

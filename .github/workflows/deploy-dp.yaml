@@ -98,9 +98,9 @@ jobs:
           echo "Request succeeded with status code $http_code"
           echo "$response_body" | jq -c .data[0] > kong_gateway_control_plane_info.json
 
-      - name: kubectl current context
+      - name: kubectl use context
         run: |
-          kubectl config current-context
+          kubectl config use-context kind-konnect-platform-ops-demo
           
       - name: Create Kong namespace if not exists
         if: ${{ inputs.action == 'deploy' }}
