@@ -58,7 +58,7 @@ jobs:
         id: provision-team
         if: ${{ inputs.action == 'provision' }}
         run: |
-
+          pip install -r requirements.txt
           team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           pip install -r requirements.txt
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name)
@@ -70,9 +70,9 @@ jobs:
 
       - name: Create MinIO bucket if not exists
         run: |
-          
+          ls -lha
           team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          docker exec minio /create-minio-bucket.sh $team_name $team_name.tfstate
+          ./create-minio-bucket.sh $team_name $team_name.tfstate
         
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}

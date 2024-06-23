@@ -1,12 +1,13 @@
 # Konnect Ops Demo <!-- omit in toc -->
 
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
+> Additionally, note that the demo environment has only been tested on macOS and may not function properly on Windows.
 
 A local demo showcasing the utilization of [Terraform](https://www.terraform.io/) and [Helm](https://helm.sh/) for the provisioning of Konnect Resources and deployment of Kong Data Planes (DPs) within Kubernetes (K8s) environments.
 
 The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
 
-In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow.
+In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow. [Keycloak](https://www.keycloak.org/) is utilized as an IDP for the example APIs OIDC configuration.
 
 The Continuous Integration/Continuous Deployment (CI/CD) process employs the execution of [GitHub Actions](https://github.com/features/actions) locally through the utilization of [Act](https://github.com/nektos/act).
 
@@ -15,6 +16,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 <!-- TOC -->
 - [Useful links](#useful-links)
 - [Prerequisites](#prerequisites)
+- [Components](#components)
 - [Prepare the demo environment](#prepare-the-demo-environment)
 - [Build Kong Golden Image](#build-kong-golden-image)
   - [Flow](#flow)
@@ -40,21 +42,17 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- A functional local Kubernetes (k8s) environment
-- [Terraform](https://www.terraform.io/)
-- [Helm](https://helm.sh/)
-- [`act` - Local GitHub Actions Runner](https://github.com/nektos/act)
-- [Make](https://www.gnu.org/software/make/)
-- [Kong Deck](https://docs.konghq.com/deck/latest/)
-- [jq - Command-line utility for parsing, manipulating, and transforming JSON data](https://jqlang.github.io/jq/)
-- [yq - Command-line YAML, JSON and XML processor](https://github.com/mikefarah/yq)
+- [Kind](https://kind.sigs.k8s.io/) - A tool for running local Kubernetes clusters using Docker container “nodes”.
 
-## Prepare the demo environment
+## Components
 
-Services:
 - MinIO: http://localhost:9000
 - Hashicorp Vault: http://localhost:8300
+- Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
+- kind cluster
+
+## Prepare the demo environment
 
 To spin-up and prepare your local environment, execute: 
 
@@ -656,3 +654,23 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | system_account    | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
 
+***Make a request to the demo API***
+
+Make sure you can access your Kong Dataplane:
+
+```bash
+$ kubectl port-forward deployment/<deployment_name>  8000:8000 -n kong
+```
+
+```curl
+$ curl -u demo:<client-secret> http://localhost:8000/petstore/pets
+```
+
+To obtain the `client-secret`, follow these steps:
+
+- Open your web browser and navigate to Keycloak (http://localhost:8080).
+- Log in using the username `admin` and the password `admin`.
+- Once logged in, select the `Demo realm`.
+- Go to `Clients` in the left-hand menu.
+- Click on the `demo` client.
+- Navigate to the `Credentials` tab to find the client-secret.

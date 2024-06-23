@@ -13,15 +13,11 @@ add-plugins:
         display_errors: true
         preserve_query_args: true
         scopes_required:
-          - read:profile
-          - read:email
+          - email profile
         scopes:
-          - read:profile
-          - read:email
-        token_post_args_names:
-          - audience
-        token_post_args_values:
-          - http://petstore.demo.local
+          - openid
+          - email
+          - profile
         auth_methods:
           - client_credentials
       enabled: true

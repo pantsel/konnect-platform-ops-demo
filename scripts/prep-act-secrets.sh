@@ -33,8 +33,10 @@ docker_password=${docker_password:-secret}
 read -s -p $'\n'"Enter Vault token (default: root): " vault_token
 vault_token=${vault_token:-root}
 
-read -s -p $'\n'"Enter OpenID Connect issuer (default: https://example.com/.well-known/openid-configuration): " oidc_issuer
-oidc_issuer=${oidc_issuer:-https://example.com/.well-known/openid-configuration}
+HOST_IP=$(./scripts/get-host-ip.sh)
+
+read -s -p $'\n'"Enter OpenID Connect issuer (default: http://$HOST_IP:8080/realms/demo): " oidc_issuer
+oidc_issuer=${oidc_issuer:-http://$HOST_IP:8080/realms/demo}
 
 if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."

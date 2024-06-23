@@ -62,6 +62,7 @@ jobs:
           pip install -r requirements.txt
           plan_id=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
           output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=centralised planid=$plan_id)
+          echo ls -lha /${{ env.TERRAFORM_DIR }}/
           echo "$output" > ${{ env.TERRAFORM_DIR }}/resources.json
         working-directory: scripts/teams
         env:
@@ -72,7 +73,7 @@ jobs:
         run: |
           
           planid=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          docker exec minio /create-minio-bucket.sh $planid $planid.tfstate
+          ./create-minio-bucket.sh $planid $planid.tfstate
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}

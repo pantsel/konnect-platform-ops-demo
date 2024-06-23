@@ -57,3 +57,5 @@ __pycache__/
 docker/*.sh
 docker/*.rpm
 docker/*.deb
+.actrc
+*.log
