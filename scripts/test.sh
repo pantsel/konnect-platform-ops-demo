@@ -9,7 +9,7 @@ make prepare
 act --input config_file=examples/platformops/federated/kronos-team.json \
   -W .github/workflows/provision-konnect-federated.yaml 
 
-echo "Waiting for 10 seconds for changes to be propagated..."
+echo "Waiting for 10 seconds for changes to propagate..."
 sleep 10
 
 # Deploy DP
@@ -34,9 +34,8 @@ PID=$!
 echo "Port forwarding started in the background with PID: $PID"
 echo "Logs are being written to port-forward.log"
 
-# Wait for 5 seconds to allow the port-forward to start
-echo "Waiting for 5 seconds for changes to propagate"
-sleep 5
+echo "Waiting for 10 seconds for changes to propagate..."
+sleep 10
 
 # Test the API
 http -a demo:h2f8jgfkUclMa8GEmxJWNxOp00yzF6Wv :8000/petstore/pets | jq
@@ -49,5 +48,4 @@ act --input config_file=examples/platformops/federated/kronos-team.json \
     --input action=destroy \
     -W .github/workflows/provision-konnect-federated.yaml 
 
-# Delete kong namespace
-kind delete cluster --name konnect-platform-ops-demo
+make clean
