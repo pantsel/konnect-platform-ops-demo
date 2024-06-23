@@ -35,7 +35,7 @@ echo "Port forwarding started in the background with PID: $PID"
 echo "Logs are being written to port-forward.log"
 
 # Wait for 5 seconds to allow the port-forward to start
-echo "Waiting for 5 seconds for port-forward to start"
+echo "Waiting for 5 seconds for changes to propagate"
 sleep 5
 
 # Test the API
@@ -50,4 +50,4 @@ act --input config_file=examples/platformops/federated/kronos-team.json \
     -W .github/workflows/provision-konnect-federated.yaml 
 
 # Delete kong namespace
-kubectl delete namespace kong
+kind delete cluster --name konnect-platform-ops-demo
