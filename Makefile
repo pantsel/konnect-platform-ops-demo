@@ -4,25 +4,25 @@ export VAULT_ADDR=http://localhost:8300
 export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 
-prepare: check-deps gencerts actrc kind docker prep-secrets vault-secrets
+prepare: check-deps gencerts actrc kind docker prep-secrets vault-secrets ## Prepare the project
 
-actrc:
+actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
 	@./scripts/prep-actrc.sh
 
-gencerts:
+gencerts: ## Generate certificates
 	@echo "Generating certificates..."
 	@./scripts/generate-certs.sh
 
-prep-secrets:
+prep-secrets: ## Prepare secrets
 	@echo "Preparing secrets.."
 	@./scripts/prep-act-secrets.sh
 
-docker:
+docker: ## Spin up docker containers
 	@echo "Spinning up containers"
 	@docker-compose up -d
 
-kind:
+kind: ## Setup kind cluster
 	@echo "Setting up kind cluster.."
 	@if ! kind get clusters | grep -q ${KIND_CLUSTER_NAME}; then \
 		kind create cluster --name  ${KIND_CLUSTER_NAME}; \
@@ -30,7 +30,7 @@ kind:
 		echo "Kind Cluster ${KIND_CLUSTER_NAME} already exists"; \
 	fi
 
-vault-secrets:
+vault-secrets: ## Setup vault secrets
 	@echo "Setting up vault secrets.."
 	@./scripts/check-vault.sh
 	@docker cp .tls vault:/tmp
@@ -40,23 +40,28 @@ vault-secrets:
 		ca=@/tmp/.tls/ca.crt
 	@echo "Vault secrets setup completed"
 
-check-deps:
+check-deps: ## Check dependencies
 	@echo "Checking dependencies.."
 	@./scripts/check-deps.sh
 
-stop:
+stop: ## Stop all containers
 	@echo "Stopping containers.."
 	@docker-compose down
 
-clean: stop
+clean: stop ## Clean everything up
 	@echo "Cleaning up.."
 	@kind delete cluster --name  ${KIND_CLUSTER_NAME}
 	@rm -rf .tls
 	@rm -rf act.secrets
 	@rm -rf .tmp
 
-test:
-	@echo "Running federated tests.."
-	@./scripts/test-federated.sh
+test: ## Run simple tests
+	@echo "Running tests.."
+	@./scripts/test.sh
 
-.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps
+help: ## Show this help
+	@echo "Available targets:"
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n\n"} \
+	/^[a-zA-Z_-]+:.*##/ { printf "  %-15s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps test
