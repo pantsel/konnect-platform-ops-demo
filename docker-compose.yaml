@@ -76,7 +76,6 @@ services:
       POSTGRES_PG_TIMEOUT: 60000
 
   keycloak:
-    #hostname: keycloak.local
     container_name: keycloak
     depends_on:
       - postgres-kc
@@ -94,22 +93,15 @@ services:
     restart: on-failure
     ports:
       - 8080:8080
-      - 8448:8448
     environment:
-      # KC_PROXY_ADDRESS_FORWARDING: true
       KC_HOSTNAME_STRICT: false
-      #KC_HOSTNAME: keycloak.local
-      # KC_PROXY: edge
       KC_HTTP_ENABLED: true
-      # DB_VENDOR: H2
       KC_DB: postgres
-      # DB_URL: 'jdbc:postgresql://postgres:5432/postgres?ssl=allow'
       KC_DB_URL_HOST: postgres-kc
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloak
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      # KEYCLOAK_IMPORT: "/data/kong_realm_template.json"
       PROXY_ADDRESS_FORWARDING: "true"
       # KC_LOG_LEVEL: DEBUG
 
