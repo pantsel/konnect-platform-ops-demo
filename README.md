@@ -93,7 +93,10 @@ graph LR;
 ### Run the Build workflow
 
 ```bash
-$ act --input image_repo=myrepo/kong --input image_tag=latest workflow_call -W .github/workflows/build-image.yaml    
+$ act --input image_repo=myrepo/kong \
+  --input image_tag=latest \
+  -P ubuntu-latest=-self-hosted \
+  workflow_call -W .github/workflows/build-image.yaml    
 ```
 
 ***Input parameters***
