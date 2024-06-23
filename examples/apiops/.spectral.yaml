@@ -1,1 +1,18 @@
-extends: ["spectral:oas"]
+extends: ["spectral:oas", "@stoplight/spectral-owasp-ruleset"]
+
+rules:
+  operation-id-required:
+    description: "Every OpenAPI operation must have an operationId specified."
+    message: "Operation object is missing operationId."
+    severity: error
+    given: "$.paths[*][*]"
+    then:
+      field: operationId
+      function: truthy
+  
+  # OWASP API Security
+  # Overwrite default severity to warn just for demo purposes
+  owasp:api2:2023-write-restricted: warn
+  owasp:api4:2023-rate-limit: warn
+  owasp:api4:2023-integer-limit-legacy: warn
+  owasp:api4:2023-string-limit: warn
