@@ -36,6 +36,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install extra rulesets for Spectral
+        run: |
+          npm install --save -D @stoplight/spectral-owasp-ruleset@^2.0
+
       - name: Import system account Token
         id: import-token
         uses: hashicorp/vault-action@v2
@@ -58,7 +62,11 @@ jobs:
         run: |
           spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
           # inso lint spec ${{ github.workspace }}/examples/apiops/oas-patched.yaml --workingDir ${{ github.workspace }}/examples/apiops
-          cat oas_lint_results_${{ env.NOW }}.txt
+        working-directory: ${{ github.workspace }}/examples/apiops
+
+      - name: Show linting results
+        if: always()
+        run: cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: DeckOps

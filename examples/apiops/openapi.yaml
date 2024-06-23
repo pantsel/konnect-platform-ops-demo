@@ -5,7 +5,8 @@ info:
   license:
     name: MIT
 servers:
-  - url: http://petstore.swagger.io/v1
+  - url: https://petstore.swagger.io/v1
+    x-internal: true
 paths:
   /pets:
     get:
@@ -21,15 +22,37 @@ paths:
           schema:
             type: integer
             maximum: 100
+            minimum: 1
             format: int32
       responses:
         '200':
           description: A paged array of pets
           headers:
+            Access-Control-Allow-Origin:
+              description: Indicates whether the response can be shared with resources with the given origin
+              schema:
+                type: string
+                maxLength: 100
+            RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+                format: int32
+            RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+                format: int32
+            RateLimit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+                format: int32
             x-next:
               description: A link to the next page of responses
               schema:
                 type: string
+                maxLength: 50
           content:
             application/json:    
               schema:
@@ -99,8 +122,10 @@ components:
           format: int64
         name:
           type: string
+          maxLength: 24
         tag:
           type: string
+          maxLength: 16
     Pets:
       type: array
       maxItems: 100
@@ -115,5 +140,8 @@ components:
         code:
           type: integer
           format: int32
+          minimum: 400
+          maximum: 599
         message:
           type: string
+          maxLength: 100
