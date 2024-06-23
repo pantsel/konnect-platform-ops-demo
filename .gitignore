@@ -58,3 +58,4 @@ docker/*.sh
 docker/*.rpm
 docker/*.deb
 .actrc
+*.log

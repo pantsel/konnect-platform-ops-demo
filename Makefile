@@ -55,4 +55,8 @@ clean: stop
 	@rm -rf act.secrets
 	@rm -rf .tmp
 
+test:
+	@echo "Running federated tests.."
+	@./scripts/test-federated.sh
+
 .PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps
