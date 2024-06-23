@@ -40,9 +40,6 @@ sleep 10
 # Test the API
 http -a demo:h2f8jgfkUclMa8GEmxJWNxOp00yzF6Wv :8000/petstore/pets | jq
 
-# Kill the port-forward process
-kill $PID 
-
 # Deprovision Kronos team
 act --input config_file=examples/platformops/federated/kronos-team.json \
     --input action=destroy \
