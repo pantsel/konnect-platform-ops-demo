@@ -3,6 +3,7 @@
 export VAULT_ADDR=http://localhost:8300
 export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
+RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
 prepare: check-deps gencerts actrc kind docker prep-secrets vault-secrets ## Prepare the project
 
@@ -17,6 +18,10 @@ gencerts: ## Generate certificates
 prep-secrets: ## Prepare secrets
 	@echo "Preparing secrets.."
 	@./scripts/prep-act-secrets.sh
+
+runner: ## Build the act runner docker image
+	@echo "Building act runner image.."
+	@./scripts/build-runner.sh $(RUNNER_IMAGE)
 
 docker: ## Spin up docker containers
 	@echo "Spinning up containers"
@@ -64,4 +69,4 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n\n"} \
 	/^[a-zA-Z_-]+:.*##/ { printf "  %-15s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps test
+.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps test runner

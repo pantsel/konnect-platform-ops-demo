@@ -2,6 +2,7 @@
 --secret-file=act.secrets
 --pull=false
 --action-offline-mode
+--container-architecture=linux/amd64
 --platform=ubuntu-latest=pantsel/gh-runner:latest
 --container-options -v __KUBECONFIG_PATH__:/.kube
 --network=host

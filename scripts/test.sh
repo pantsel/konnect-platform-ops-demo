@@ -14,8 +14,8 @@ sleep 10
 
 # Deploy DP
 act --input control_plane_name=kronos_cp_dev \
-      --input system_account=npa_kronos_kronos_cp_dev \
-      -W .github/workflows/deploy-dp.yaml
+    --input system_account=npa_kronos_kronos_cp_dev \
+    -W .github/workflows/deploy-dp.yaml
 
 # Promote API
 act --input openapi_spec=examples/apiops/openapi.yaml \
