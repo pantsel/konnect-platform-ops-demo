@@ -54,21 +54,6 @@ jobs:
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
         working-directory: ${{ env.TERRAFORM_DIR }}
 
-      - name: Provision teams
-        id: provision-teams
-        if: ${{ inputs.action == 'provision' }}
-        run: |
-
-          pip install -r requirements.txt
-          plan_id=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=centralised planid=$plan_id)
-          echo ls -lha /${{ env.TERRAFORM_DIR }}/
-          echo "$output" > ${{ env.TERRAFORM_DIR }}/resources.json
-        working-directory: scripts/teams
-        env:
-          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
-          KONNECT_ADDRESS: https://global.api.konghq.com
-
       - name: Create S3 bucket if not exists
         run: |
           
@@ -105,6 +90,7 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
 
       - name: Terraform Plan
         if: ${{ inputs.action == 'provision' }}
@@ -113,17 +99,19 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
 
       - name: Terraform Apply
         if: ${{ inputs.action == 'provision' }}
         id: tfapply
         run: |
           terraform apply -auto-approve tfplan
-          echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
-          echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
+          # echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
+          # echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
 
       - name: Store System Account tokens in Vault
         if: ${{ inputs.action == 'provision' }}
@@ -157,14 +145,4 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
-
-      - name: Remove teams
-        if: ${{ inputs.action == 'destroy' }}
-        run: |
-          planid=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          pip install -r requirements.txt
-          python3 main.py --config-file=../../${{ inputs.config_file }} --wipe=true --extra-labels genplan=centralised planid=$planid
-        working-directory: scripts/teams
-        env:
-          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
-          KONNECT_ADDRESS: https://global.api.konghq.com
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
