@@ -54,20 +54,6 @@ jobs:
           echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
         working-directory: ${{ env.TERRAFORM_DIR }}
 
-      - name: Provision team
-        id: provision-team
-        if: ${{ inputs.action == 'provision' }}
-        run: |
-          pip install -r requirements.txt
-          team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          pip install -r requirements.txt
-          output=$(python3 main.py --config-file=${{ github.workspace }}/${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name)
-          echo "$output" > ${{ env.TERRAFORM_DIR }}/resources.json
-        working-directory: scripts/teams
-        env:
-          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
-          KONNECT_ADDRESS: https://global.api.konghq.com
-
       - name: Create MinIO bucket if not exists
         run: |
           ls -lha
@@ -102,7 +88,8 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
-
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
+      
       - name: Terraform Plan
         if: ${{ inputs.action == 'provision' }}
         run: |
@@ -110,7 +97,8 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
-
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
+        
       - name: Terraform Apply
         if: ${{ inputs.action == 'provision' }}
         id: tfapply
@@ -121,6 +109,7 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
 
       - name: Store System Account tokens in Vault
         if: ${{ inputs.action == 'provision' }}
@@ -142,10 +131,6 @@ jobs:
         env:
           VAULT_ADDR: ${{ inputs.vault_addr }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
-
-      - name: Setup teams to be removed
-        run: |
-          echo '{}' | jq '.' > ${{ env.TERRAFORM_DIR }}/resources.json
   
       - name: Terraform destroy
         if: ${{ inputs.action == 'destroy' }}
@@ -154,14 +139,4 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
-
-      - name: Remove team
-        if: ${{ inputs.action == 'destroy' }}
-        run: |
-          team_name=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config_file }})
-          pip install -r requirements.txt
-          python3 main.py --config-file=../../${{ inputs.config_file }} --extra-labels genplan=federated teamid=$team_name --wipe=true
-        working-directory: scripts/teams
-        env:
-          KONNECT_ACCESS_TOKEN: ${{ secrets.KONNECT_PAT }}
-          KONNECT_ADDRESS: https://global.api.konghq.com
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}

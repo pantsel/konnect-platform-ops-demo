@@ -132,11 +132,6 @@ jobs:
         env:
           VAULT_ADDR: ${{ inputs.vault_addr }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
-
-      - name: Empty resources.json
-        if: ${{ inputs.action == 'destroy' }}
-        run: |
-          echo '{}' | jq '.' > ${{ env.TERRAFORM_DIR }}/resources.json
       
       - name: Terraform destroy
         if: ${{ inputs.action == 'destroy' }}
