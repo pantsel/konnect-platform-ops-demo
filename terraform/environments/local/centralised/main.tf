@@ -24,12 +24,23 @@ module "centralised" {
   }
 }
 
-output "system_account_access_tokens" {
-  value = module.centralised.system_account_access_tokens
-  sensitive = true
+# output "system_account_access_tokens" {
+#   value = module.centralised.system_account_access_tokens
+#   sensitive = true
+# }
+
+# output "kong_gateway_control_plane_info" {
+#   value = module.centralised.kong_gateway_control_plane_info
+# }
+
+output "konnect_team_tfteams" {
+  value = module.centralised.konnect_team_tfteams
 }
 
-output "kong_gateway_control_plane_info" {
-  value = module.centralised.kong_gateway_control_plane_info
+output "konnect_gateway_control_plane_tfcps" {
+  value = module.centralised.konnect_gateway_control_plane_tfcps
 }
 
+output "team_roles" {
+  value = module.centralised.team_roles
+}

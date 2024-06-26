@@ -3,77 +3,50 @@
     "format_version": "1.0.0",
     "type": "konnect::resources",
     "plan": "centralised",
-    "region": "us",
-    "name": "rsgrpus",
-    "description": "US resource group"
+    "region": "eu",
+    "name": "rsgrpeu",
+    "description": "EU resource group"
   },
   "resources": {
     "teams": [
       {
         "name": "platform",
         "description": "Platform Team is responsible for the development and maintenance of the APIM platform.",
-        "roles": [
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp1"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp2"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp3"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp4"
-          }
-        ]
+        "id": "f4fa624c-6854-4a23-8502-1612e3ca27d5",
+        "system_team": false,
+        "labels": {
+          "genby": "provutils",
+          "genplan": "centralised",
+          "planid": "rsgrpeu"
+        },
+        "created_at": "2024-06-25T11:33:06Z",
+        "updated_at": "2024-06-25T11:33:06Z"
       },
       {
         "name": "team1",
         "description": "Team 1 is responsible for the development and maintenance of their respective APIs.",
-        "roles": [
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp1"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp2"
-          }
-        ]
+        "id": "2a96b914-5f61-4a79-8d30-eabd82885dd4",
+        "system_team": false,
+        "labels": {
+          "genby": "provutils",
+          "genplan": "centralised",
+          "planid": "rsgrpeu"
+        },
+        "created_at": "2024-06-25T11:33:07Z",
+        "updated_at": "2024-06-25T11:33:07Z"
       },
       {
         "name": "team2",
         "description": "Team 2 is responsible for the development and maintenance of their respective APIs.",
-        "roles": [
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp3"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "us",
-            "role_name": "Admin",
-            "entity_name": "cp4"
-          }
-        ]
+        "id": "156bd1a2-e792-4b72-899a-019f4059b598",
+        "system_team": false,
+        "labels": {
+          "genby": "provutils",
+          "genplan": "centralised",
+          "planid": "rsgrpeu"
+        },
+        "created_at": "2024-06-25T11:33:07Z",
+        "updated_at": "2024-06-25T11:33:07Z"
       }
     ],
     "system_accounts": [
@@ -197,8 +170,7 @@
           "cloud": "gcp"
         },
         "members": [
-          "cp1",
-          "cp2"
+          "cp1"
         ]
       },
       {
@@ -208,8 +180,7 @@
           "cloud": "gcp"
         },
         "members": [
-          "cp3",
-          "cp4"
+          "cp2"
         ]
       },
       {
@@ -219,7 +190,28 @@
           "cloud": "on-prem"
         },
         "members": [
-          "cp5",
+          "cp1",
+          "cp4",
+          "cp5"
+        ]
+      },
+      {
+        "name": "cp_grp4",
+        "description": "Demo Control Plane Group 4",
+        "labels": {
+          "cloud": "aws"
+        },
+        "members": [
+          "cp1"
+        ]
+      },
+      {
+        "name": "cp_grp5",
+        "description": "Demo Control Plane Group 5",
+        "labels": {
+          "cloud": "aws"
+        },
+        "members": [
           "cp6"
         ]
       }
