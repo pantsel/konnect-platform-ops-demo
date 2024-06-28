@@ -1,0 +1,116 @@
+{
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect::resources",
+    "plan": "centralised",
+    "region": "us",
+    "name": "rsgrpus",
+    "description": "US resource group"
+  },
+  "resources": {
+    "teams": [
+      {
+        "name": "platform",
+        "description": "Platform Team is responsible for the development and maintenance of the APIM platform.",
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "us",
+            "role_name": "Admin",
+            "entity_name": "cgwcp1"
+          }
+        ]
+      },
+      {
+        "name": "team1",
+        "description": "Team 1 is responsible for the development and maintenance of their respective APIs.",
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "us",
+            "role_name": "Admin",
+            "entity_name": "cgwcp1"
+          }
+        ]
+      },
+      {
+        "name": "team2",
+        "description": "Team 2 is responsible for the development and maintenance of their respective APIs.",
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "us",
+            "role_name": "Admin",
+            "entity_name": "cgwcp1"
+          }
+        ]
+      }
+    ],
+    "system_accounts": [
+      {
+        "name": "platform_system_account",
+        "description": "System account for Platform Team",
+        "team_memberships": [
+          "platform"
+        ],
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "us",
+            "role_name": "Admin",
+            "entity_name": "*"
+          }
+        ]
+      },
+      {
+        "name": "team1_system_account",
+        "description": "System account for Team 1",
+        "team_memberships": [
+          "team1"
+        ],
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "us",
+            "role_name": "Admin",
+            "entity_name": "cgwcp1"
+          }
+        ]
+      },
+      {
+        "name": "team2_system_account",
+        "description": "System account for Team 2",
+        "team_memberships": [
+          "team2"
+        ],
+        "roles": [
+          {
+            "entity_type_name": "Control Planes",
+            "entity_region": "us",
+            "role_name": "Admin",
+            "entity_name": "cgwcp1"
+          }
+        ]
+      }
+    ],
+    "control_planes": [
+      {
+        "name": "cgwcp1",
+        "description": "Demo Cloud Gateway Control Plane 1",
+        "labels": {
+          "apigroup": "apigroup1"
+        },
+        "cloud_gateways": [
+          {
+            "name": "cgw1",
+            "description": "Demo Cloud Gateway 1",
+            "labels": {
+              "apigroup": "apigroup1"
+            },
+            "region": "us-east-2"
+          }
+        ]
+      }
+    ]
+  }
+}
