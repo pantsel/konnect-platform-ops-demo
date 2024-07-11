@@ -8,7 +8,8 @@ terraform {
   }
 }
 data "local_file" "resources" {
-  filename = "../../../environments/${var.environment}/centralised/resources.json"
+  # filename = "../../../environments/${var.environment}/centralised/resources.json"
+  filename = var.resources_file
 }
 
 locals {
@@ -46,6 +47,17 @@ locals {
   control_plane_groups = lookup(local.resources, "control_plane_groups", [])
   days_to_hours        = 365 * 24 // 1 year
   expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
+}
+
+# Provision the teams
+resource "konnect_team" "teams" {
+  for_each = { for team in local.teams : team.name => team }
+  name        = each.value.name
+  description = each.value.description
+
+  labels = merge(lookup(each.value, "labels", {}), {
+    generated_by = "terraform"
+  })
 }
 
 # Provision the control plane groups
@@ -162,7 +174,7 @@ resource "konnect_system_account_team" "systemaccountteams" {
     for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
   }[lower(each.value.system_account_name)]
   team_id    = {
-    for team in local.teams : lower(team.name) => team.id
+    for team in konnect_team.teams : lower(team.name) => team.id
   }[lower(each.value.team_name)]
 
   provider = konnect.global

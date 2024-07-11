@@ -15,3 +15,8 @@ variable "konnect_region" {
   default     = "eu"
   type        = string
 }
+
+variable "resources_file" {
+  description = "The path to the resources file"
+  type        = string
+}

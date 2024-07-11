@@ -10,7 +10,7 @@ terraform {
 
 
 data "local_file" "resources" {
-  filename = "../../../environments/${var.environment}/federated/resources.json"
+  filename = var.resources_file
 }
 
 locals {
@@ -20,6 +20,16 @@ locals {
   control_planes  = [for resource in local.resources : resource if resource.type == "konnect::control_plane"]
   days_to_hours   = 365 * 24 // 1 year
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
+}
+
+# Provision the teams
+resource "konnect_team" "team" {
+  name        = local.team.name
+  description = local.team.description
+
+  labels = merge(lookup(local.team, "labels", {}), {
+    generated_by = "terraform"
+  })
 }
 
 # Create a Konnect Gateway Control Plane for each control plane in the resources
@@ -74,7 +84,7 @@ resource "konnect_system_account_team" "systemaccountteam" {
   for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
 
   account_id = each.value.id
-  team_id    = lookup(local.team, "id", "")
+  team_id    = konnect_team.team.id
 
   provider = konnect.global
 }
