@@ -106,8 +106,8 @@ jobs:
         id: tfapply
         run: |
           terraform apply -auto-approve tfplan
-          # echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
-          # echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
+          echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
+          echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
