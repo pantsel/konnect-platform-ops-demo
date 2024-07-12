@@ -43,6 +43,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 ## Prerequisites
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
 - [Kind](https://kind.sigs.k8s.io/) - A tool for running local Kubernetes clusters using Docker container “nodes”.
+- [Act](https://github.com/nektos/act) - Run your GitHub Actions locally!
 
 ## Components
 
