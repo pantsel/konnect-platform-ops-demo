@@ -89,3 +89,7 @@ resource "konnect_cloud_gateway_custom_domain" "tfcloudgatewaycustomdomain" {
 #
 #  network_id = konnect_cloud_gateway_network.tfcloudgatewaynetwork.id
 #}
+
+output "kong_gateway_control_plane_info" {
+  value = length(konnect_gateway_control_plane.tfgatewaycontrolplane) > 0 ? konnect_gateway_control_plane.tfgatewaycontrolplane : konnect_gateway_control_plane.tfgatewaycontrolplane
+}

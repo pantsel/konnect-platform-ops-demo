@@ -6,7 +6,4 @@ add-plugins:
   overwrite: false
   plugins:
     - name: key-auth
-      config:
-        key_names:
-        - apikey
-      enabled: true
+      _config: common_key_auth

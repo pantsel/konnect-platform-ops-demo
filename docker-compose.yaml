@@ -22,6 +22,7 @@ services:
   vault:
     container_name: vault
     image: hashicorp/vault
+    # command: server
     command: server -dev -dev-root-token-id="root"
     ports:
       - '8300:8300'

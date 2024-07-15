@@ -28,3 +28,7 @@ output "system_account_access_tokens" {
   value = module.centralised.system_account_access_tokens
   sensitive = true
 }
+
+output "kong_gateway_control_plane_info" {
+  value = module.centralised.kong_gateway_control_plane_info
+}

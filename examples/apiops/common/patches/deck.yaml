@@ -1,0 +1,8 @@
+---
+_format_version: '1.0'
+patches:
+- selectors:
+  - "$..services[*].routes[*]"
+  values:
+    hosts: 
+      - ${{ env "DECK_HOSTNAME" }}

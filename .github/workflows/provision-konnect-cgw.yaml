@@ -18,7 +18,7 @@ on:
       environment:
         description: 'Environment to provision'
         type: string
-        default: 'local'
+        default: 'cloud'
 
 jobs:
   provision-konnect:
@@ -47,13 +47,13 @@ jobs:
           secrets: |
             secret/data/certificates/demo ca | CA_CRT
 
-      - name: Save CA Certificate to file
-        run: |
-          pwd
-          mkdir -p .tls
-          touch .tls/ca.crt
-          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
-        working-directory: ${{ env.TERRAFORM_DIR }}
+      # - name: Save CA Certificate to file
+      #   run: |
+      #     pwd
+      #     mkdir -p .tls
+      #     touch .tls/ca.crt
+      #     echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
+      #   working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Create S3 bucket if not exists
         run: |
@@ -107,10 +107,29 @@ jobs:
         id: tfapply
         run: |
           terraform apply -auto-approve tfplan
+          echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
           echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+
+      - name: Store Control Plane info in Vault
+        if: ${{ inputs.action == 'provision' }}
+        run: |
+          control_plane_info=$(cat kong_gateway_control_plane_info.json)
+          control_plane_info_formatted=$(echo "${control_plane_info}" | jq -c '.')
+          
+
+          echo $control_plane_info_formatted
+
+          vault kv put secret/control-plane-info ja="${control_plane_info_formatted}"
+
+          echo "Stored secret control-plane-info in Vault."
+
+        working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          VAULT_ADDR: ${{ inputs.vault_addr }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
 
       - name: Store System Account tokens in Vault
         if: ${{ inputs.action == 'provision' }}

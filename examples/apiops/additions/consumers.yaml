@@ -1,6 +1,0 @@
-_format_version: '3.0'
-
-consumers:
-  - username: bob
-  - username: alice
-  - username: demo

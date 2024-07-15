@@ -1,0 +1,7 @@
+_plugin_configs:
+  common_oidc:
+    auth_methods:
+    - bearer    
+    issuer: https://my-oidc-issuer.com
+    bearer_token_param_type:
+    - header

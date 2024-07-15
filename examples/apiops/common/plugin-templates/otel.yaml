@@ -1,0 +1,19 @@
+_plugin_configs:
+  common_opentelemetry:
+    batch_flush_delay: null
+    batch_span_count: null
+    connect_timeout: 1000
+    endpoint: http://tempo.shared.pve-1.schenkeveld.io:4318/v1/traces
+    header_type: preserve
+    headers: {}
+    http_response_header_for_traceid: traceID
+    queue:
+      initial_retry_delay: 0.01
+      max_batch_size: 200
+      max_bytes: null
+      max_coalescing_delay: 3
+      max_entries: 10000
+      max_retry_delay: 60
+      max_retry_time: 60
+    read_timeout: 5000
+    send_timeout: 5000

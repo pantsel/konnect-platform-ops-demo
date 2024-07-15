@@ -1,0 +1,131 @@
+name: Publish API
+
+on:
+  workflow_call:
+    inputs:
+      konnect_server_url:
+        description: "Kong Konnect server url"
+        type: string
+        default: "https://eu.api.konghq.com"
+      control_plane_name:
+        description: "Kong Konnect control plane name"
+        type: string
+        required: true
+      vault_addr:
+        description: 'Vault Address'
+        default: 'http://localhost:8300'
+        type: string
+      system_account:
+        description: 'The system account to use for authentication'
+        type: string
+        required: true
+      deck_api_name:
+        description: 'The deck_api_name'
+        type: string
+        required: true
+      deck_api_owner:
+        description: 'The deck_api_owner'
+        type: string
+        required: true
+      environment:
+        description: 'The environment to deploy the API to'
+        type: string
+        required: true
+
+env:
+  DECK_API_NAME: ${{ inputs.deck_api_name }} # To be used as a tag
+  DECK_API_OWNER: ${{ inputs.deck_api_owner }} # To be used as a tag
+  DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
+
+jobs:
+  publish-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Import system account token
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ inputs.vault_addr }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ inputs.system_account }} token | system_account_TOKEN ;
+
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
+
+      - name: Publish API Product
+        run: |
+          get_control_planes_response=$(curl --request GET \
+            --url "${{ inputs.konnect_server_url }}/v2/control-planes?filter%5Bname%5D=${{ inputs.control_plane_name }}" \
+            --header "Authorization: Bearer ${{ secrets.KONNECT_PAT }}")
+
+          echo $get_control_planes_response
+
+          CONTROL_PLANE_ID=$(echo $get_control_planes_response | jq -r '.data[0].id')
+
+          get_services_response=$(curl --request GET \
+            --url "${{ inputs.konnect_server_url }}/v2/control-planes/$CONTROL_PLANE_ID/core-entities/services" \
+            --header "Authorization: Bearer ${{ secrets.KONNECT_PAT }}")
+
+          SERVICE_ID=$(echo $get_services_response | jq -r --arg name $DECK_API_NAME '.data[] | select(.name == $name) | .id')
+
+          get_portals_response=$(curl --request GET \
+            --url "${{ inputs.konnect_server_url }}/v2/portals" \
+            --header "Authorization: Bearer ${{ secrets.KONNECT_PAT }}")
+
+          PORTAL_ID=$(echo $get_portals_response | jq -r '.data[0].id')
+
+          get_api_products_response=$(curl --request GET \
+              --url "${{ inputs.konnect_server_url }}/v2/api-products/?filter%5Bname%5D=${DECK_API_NAME}" \
+              --header "Authorization:Bearer ${{ secrets.KONNECT_PAT }}")
+
+          if [[ $(echo "$get_api_products_response" | jq '.data | length') -eq 0 ]]; then
+              echo "No data found, going to create a new API product."
+              
+              post_api_product_response=$(curl --request POST \
+                  --url ${{ inputs.konnect_server_url }}/v2/api-products \
+                  --header "Authorization:Bearer ${{ secrets.KONNECT_PAT }}" \
+                  --header Content-Type:application/json \
+                  --data "{\"name\":\"$DECK_API_NAME\", \"description\": \"Petstore API\", \"portal_ids\": [\"$PORTAL_ID\"]}")
+
+              echo $post_api_product_response
+
+              API_PRODUCT_ID=$(echo $post_api_product_response | jq -r '.id')
+
+          else
+              API_PRODUCT_ID=$(echo $get_api_products_response | jq -r '.data[0].id')
+          fi
+
+          api_products_md_base64_data=$(cat md-files/overview.md | base64)
+
+          post_api_products_doc_response=$(curl --request POST \
+              --url ${{ inputs.konnect_server_url }}/v2/api-products/$API_PRODUCT_ID/documents  \
+              --header "Authorization:Bearer ${{ secrets.KONNECT_PAT }}" \
+              --header 'Content-Type:application/json' \
+              --data "{\"slug\":\"overview\",\"status\":\"published\",\"title\":\"Overview\",\"content\":\"$api_products_md_base64_data\"}")
+
+          echo $post_api_products_doc_response
+
+          post_api_version_response=$(curl --request POST \
+              --url ${{ inputs.konnect_server_url }}/v2/api-products/$API_PRODUCT_ID/product-versions \
+              --header "Authorization:Bearer ${{ secrets.KONNECT_PAT }}" \
+              --header Content-Type:application/json \
+              --data "{\"name\":\"v1\",\"publish_status\":\"published\",\"deprecated\":false,\"gateway_service\":{\"control_plane_id\":\"$CONTROL_PLANE_ID\",\"id\":\"$SERVICE_ID\"}}")
+
+          echo $post_api_version_response
+
+          API_PRODUCT_VERSION_ID=$(echo $post_api_version_response | jq -r '.id')
+
+          api_products_version_spec_base64_data=$(cat openapi-spec/openapi-spec.yaml | base64)
+
+          post_api_version_response=$(curl --request POST \
+              --url ${{ inputs.konnect_server_url }}/v2/api-products/$API_PRODUCT_ID/product-versions/$API_PRODUCT_VERSION_ID/specifications \
+              --header "Authorization:Bearer ${{ secrets.KONNECT_PAT }}" \
+              --header Content-Type:application/json \
+              --data "{\"name\":\"oas.yaml\",\"content\":\"$api_products_version_spec_base64_data\"}")
+
+        working-directory: ${{ github.workspace }}/examples/apiops/apis/${{ env.DECK_API_NAME }}

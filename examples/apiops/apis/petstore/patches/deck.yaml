@@ -1,0 +1,18 @@
+---
+_format_version: '3.0'
+patches:
+- selectors:
+  - "$"
+  values:
+    _info:
+      defaults: {}
+      select_tags:
+      - ${{ env "DECK_API_NAME" }}
+      - ${{ env "DECK_API_OWNER" }}
+- selectors:
+  - "$..services[*]"
+  values:
+    host: petstore3.swagger.io
+    protocol: https
+    port: 443
+    # path: /api/v3
