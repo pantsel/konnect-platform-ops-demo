@@ -45,8 +45,12 @@ RUN setcap -r /usr/bin/vault
 
 # Install Kong deck
 RUN curl -sL https://github.com/kong/deck/releases/download/v1.38.1/deck_1.38.1_linux_amd64.tar.gz -o deck.tar.gz
-RUN tar -xf deck.tar.gz -C /tmp
-RUN cp /tmp/deck /usr/local/bin/
+RUN tar -xf deck.tar.gz -C /usr/local/bin/
+
+
+# Install Inso
+RUN curl -LO https://github.com/Kong/insomnia/releases/download/core%409.3.2/inso-linux-9.3.2.tar.xz
+RUN tar -xf inso-linux-9.3.2.tar.xz -C /usr/local/bin/
 
 # Download and extract the GitHub Actions runner
 RUN cd /home/docker && mkdir actions-runner && cd actions-runner \

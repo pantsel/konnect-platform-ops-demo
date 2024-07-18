@@ -573,7 +573,7 @@ After provisioning, you can deploy the Kong DPs to your local K8s:
 
 ```bash
 $ act --input control_plane_name=<cp_name> \
-      --input system_account=<sa_name> \
+      --input system_account=<system_account_access_token_name> \
       -W .github/workflows/deploy-dp.yaml
 ```
 
@@ -643,7 +643,7 @@ After you have provisioned the Konnect resources and a local Kong DP is up and r
 ```bash
 $ act --input openapi_spec=examples/apiops/openapi.yaml \
     --input control_plane_name=<control_plane_name> \
-    --input system_account=<system_account_name>  \
+    --input system_account=<system_account_access_token_name>  \
     -W .github/workflows/promote-api.yaml
 ```
 

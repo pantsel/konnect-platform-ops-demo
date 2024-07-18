@@ -8,7 +8,7 @@ terraform {
   }
 }
 data "local_file" "resources" {
-  filename = "/Users/maartenschenkeveld/Lab/kong-cicd/konnect-platform-ops-demo/examples/platformops/centralised/resources.json"
+  filename = var.resources_file
 }
 
 locals {

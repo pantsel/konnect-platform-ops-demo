@@ -22,6 +22,8 @@ module "centralised" {
   providers = {
     konnect.global = konnect.global
   }
+
+  resources_file = var.resources_file
 }
 
 output "system_account_access_tokens" {
