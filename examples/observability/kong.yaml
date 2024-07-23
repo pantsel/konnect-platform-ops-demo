@@ -1,0 +1,23 @@
+_format_version: '3.0'
+_info:
+  defaults: {}
+  select_tags:
+  - global
+  - platform_team
+
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+
+  - name: opentelemetry
+    config:
+      endpoint: http://tempo.kong-observability.svc.cluster.local:4318/v1/traces
+      resource_attributes:
+        namespace: kong
+        service.name: kong-dp
+      send_timeout: 5000
+    

@@ -1,0 +1,17 @@
+serviceMonitor:
+  enabled: false
+
+replicas: 1
+
+persistence:
+  enabled: true
+
+tempo: 
+  reportingEnabled: false
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
