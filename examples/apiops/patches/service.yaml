@@ -1,0 +1,9 @@
+---
+_format_version: '3.0'
+patches:
+- selectors:
+  - "$..services[0]"
+  values:
+    protocol: "http"
+    host: "otel-echo-server-service.echo-server.svc.cluster.local"
+    port: 3030

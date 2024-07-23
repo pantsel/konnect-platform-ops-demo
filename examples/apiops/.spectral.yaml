@@ -16,3 +16,4 @@ rules:
   owasp:api4:2023-rate-limit: warn
   owasp:api4:2023-integer-limit-legacy: warn
   owasp:api4:2023-string-limit: warn
+  owasp:api8:2023-no-server-http: warn

@@ -81,14 +81,13 @@ jobs:
           # Add plugins to the Kong Gateway configuration
           cat kong.yaml | deck file add-plugins \
             plugins/openid-connect.yaml \
-            plugins/request-termination.yaml \
             plugins/rate-limiting.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
           cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
 
           # Patch the Kong Gateway configuration
-          cat kong.yaml | deck file patch patches/patches.yaml -o kong.yaml
+          cat kong.yaml | deck file patch patches/select_tags.yaml patches/service.yaml -o kong.yaml
 
           # Print the resulting Kong Gateway configuration
           cat kong.yaml
