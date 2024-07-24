@@ -4,6 +4,8 @@ patches:
 - selectors:
   - "$..services[0]"
   values:
-    protocol: "http"
-    host: "otel-echo-server-service.echo-server.svc.cluster.local"
-    port: 3030
+    url: ${{ env "DECK_API_URL" }}
+  remove:
+    - host
+    - port
+    - protocol

@@ -1,0 +1,112 @@
+name: Deploy API
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: string
+        default: 'deploy' # 'deploy' or 'destroy'
+      namespace:
+        description: 'Kubernetes namespace'
+        type: string
+        default: 'petstore'
+      release_name:
+        description: 'Helm release name'
+        type: string
+        default: 'petstore-api'
+      promote_api:
+        description: 'Promote API to Konnect'
+        type: string
+        default: "false"
+      control_plane_name:
+        description: 'The name of the control plane to deploy the data plane to'
+        type: string
+        required: false
+      system_account:
+        description: 'The system account to use for authentication'
+        type: string
+        required: false
+      openapi_spec:
+        description: 'Path to the OpenAPI Specification file'
+        type: string
+        required: false
+
+env:
+  NAMESPACE: ${{ inputs.namespace }}
+  RELEASE_NAME: ${{ inputs.release_name }}
+  KUBECONFIG: /.kube/config
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: kubectl use context
+        run: |
+          kubectl config use-context kind-konnect-platform-ops-demo
+
+      - name: Create Kong namespace if not exists
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Example API
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          helm upgrade --install $RELEASE_NAME . -n $NAMESPACE
+        working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
+
+      - name: Wait for API to be ready
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          kubectl wait --for=condition=ready pod -l app=$RELEASE_NAME -n $NAMESPACE --timeout=300s
+        working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
+
+      - name: Save API details
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          echo "API_K8S_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          echo "API_K8S_NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+          echo "API_K8S_SERVICE_PORT=3030" >> $GITHUB_ENV
+        working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
+
+      - name: Destroy Example API
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          helm uninstall $RELEASE_NAME -n $NAMESPACE --ignore-not-found=true
+        working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
+
+      - name: Cleanup Kong namespace
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          kubectl delete namespace $NAMESPACE --ignore-not-found=true
+
+  # Promote API to Konnect
+  # This is an optional job that can be triggered after the API is deployed.
+  # Set the `promote_api` input to `true` to enable this job.
+  # It requires the control plane name, system account, and OpenAPI Specification file.
+  promote-api:
+    needs: deploy-api
+    if: ${{ inputs.promote_api == 'true' && needs.deploy-api.result == 'success' && inputs.control_plane_name && inputs.system_account && inputs.openapi_spec }}
+    uses: ./.github/workflows/promote-api.yaml
+    with:
+      openapi_spec: ${{ inputs.openapi_spec }}
+      control_plane_name: ${{ inputs.control_plane_name }}
+      system_account: ${{ inputs.system_account }}
+      api_url: 'http://${{ inputs.release_name }}.${{ inputs.namespace }}.svc.cluster.local:3030'
+    secrets: inherit

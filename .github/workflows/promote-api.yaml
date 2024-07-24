@@ -5,6 +5,7 @@ on:
     inputs:
       openapi_spec:
         description: "Path to the OpenAPI Specification file"
+        required: true
         type: string
       konnect_server_url:
         description: "Kong Konnect server url"
@@ -22,11 +23,16 @@ on:
         description: 'The system account to use for authentication'
         type: string
         required: true
+      api_url:
+        description: 'API URL'
+        type: string
+        required: false
 
 env:
   DECK_API_NAME: petstore # To be used as a tag
   DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
+  DECK_API_URL: ${{ inputs.api_url || 'http://localhost:8080' }}
 
 jobs:
   publish-api:
