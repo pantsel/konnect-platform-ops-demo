@@ -32,7 +32,7 @@ env:
   DECK_API_NAME: petstore # To be used as a tag
   DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
-  DECK_API_URL: ${{ inputs.api_url || 'http://localhost:8080' }}
+  DECK_API_URL: ${{ inputs.api_url }}
 
 jobs:
   publish-api:
@@ -93,7 +93,12 @@ jobs:
           cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
 
           # Patch the Kong Gateway configuration
-          cat kong.yaml | deck file patch patches/select_tags.yaml patches/service.yaml -o kong.yaml
+          cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
+
+          # Patch the service URL only if DECK_API_URL is set
+          if [ -n "${{ env.DECK_API_URL }}" ]; then
+            cat kong.yaml | deck file patch patches/service.yaml -o kong.yaml
+          fi
 
           # Print the resulting Kong Gateway configuration
           cat kong.yaml

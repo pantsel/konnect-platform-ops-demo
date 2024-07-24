@@ -68,21 +68,15 @@ jobs:
       - name: Deploy Example API
         if: ${{ inputs.action == 'deploy' }}
         run: |
-          helm upgrade --install $RELEASE_NAME . -n $NAMESPACE
+          helm upgrade --install $RELEASE_NAME . \
+            -n $NAMESPACE \
+            -f values.yaml --set env[1].value=$RELEASE_NAME
         working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
 
       - name: Wait for API to be ready
         if: ${{ inputs.action == 'deploy' }}
         run: |
           kubectl wait --for=condition=ready pod -l app=$RELEASE_NAME -n $NAMESPACE --timeout=300s
-        working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
-
-      - name: Save API details
-        if: ${{ inputs.action == 'deploy' }}
-        run: |
-          echo "API_K8S_NAME=$RELEASE_NAME" >> $GITHUB_ENV
-          echo "API_K8S_NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
-          echo "API_K8S_SERVICE_PORT=3030" >> $GITHUB_ENV
         working-directory: ${{ github.workspace }}/k8s/otlp-echo-server
 
       - name: Destroy Example API
@@ -96,7 +90,7 @@ jobs:
         run: |
           kubectl delete namespace $NAMESPACE --ignore-not-found=true
 
-  # Promote API to Konnect
+  # Promote API to Konnect Control Plane
   # This is an optional job that can be triggered after the API is deployed.
   # Set the `promote_api` input to `true` to enable this job.
   # It requires the control plane name, system account, and OpenAPI Specification file.

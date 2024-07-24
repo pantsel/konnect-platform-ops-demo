@@ -587,7 +587,7 @@ $ act --input control_plane_name=<cp_name> \
 | kong_image_tag     | The tag of the Kong Docker image                          | No       | 3.7.0.0                   |
 | vault_addr         | The address of the HashiCorp Vault server                 | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to deploy the data plane to | Yes      | -                         |
-| system_account    | The system account to use for authentication             | Yes      | -                         |
+| system_account     | The system account to use for authentication              | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
 
@@ -655,8 +655,9 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
 | vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
-| system_account    | The Konnect system account to use for authentication    | Yes      | -                         |
+| system_account     | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
+| api_url            | Upstream service URL                                    | No       | OAS server                |
 
 ***Make a request to the demo API***
 
