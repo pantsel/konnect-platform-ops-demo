@@ -38,6 +38,8 @@ HOST_IP=$(./scripts/get-host-ip.sh)
 read -s -p $'\n'"Enter OpenID Connect issuer (default: http://$HOST_IP:8080/realms/demo/.well-known/openid-configuration): " oidc_issuer
 oidc_issuer=${oidc_issuer:-http://$HOST_IP:8080/realms/demo/.well-known/openid-configuration}
 
+read -s -p $'\n'"Enter Datadog API key (optional): " dd_api_key
+
 if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."
     exit 1
@@ -51,4 +53,5 @@ DOCKER_USERNAME=$docker_username
 DOCKER_PASSWORD=$docker_password
 VAULT_TOKEN=$vault_token
 OIDC_ISSUER=$oidc_issuer
+DD_API_KEY=$dd_api_key
 EOF
