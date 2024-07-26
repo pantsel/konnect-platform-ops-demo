@@ -21,7 +21,7 @@ on:
         default: 'deploy' # 'deploy' or 'destroy'
       # Observability stack to deploy
       # Supported values: datadog, grafana
-      # Grafana stack includes Loki, Tempo, Prometheus, Jaeger, Fluent Bit
+      # Grafana stack includes Loki, Tempo, Prometheus, Fluent Bit
       # Datadog stack needs DD_API_KEY secret
       observability_stack:
         description: 'Observability stack to deploy'

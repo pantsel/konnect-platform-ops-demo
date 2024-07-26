@@ -32,6 +32,8 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-3)
   - [Run the workflow](#run-the-workflow)
+  - [Deploy the demo API](#deploy-the-demo-api)
+  - [Configure Kong Gateway](#configure-kong-gateway)
 <!-- /TOC -->
 
 ## Useful links
@@ -641,6 +643,14 @@ graph LR;
 
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
 
+### Deploy the demo API
+
+```bash
+$ act --input action=deploy -W .github/workflows/deploy-api.yaml
+```
+
+### Configure Kong Gateway
+
 ```bash
 $ act --input openapi_spec=examples/apiops/openapi.yaml \
     --input control_plane_name=<control_plane_name> \
@@ -657,7 +667,7 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
 | system_account     | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
-| api_url            | Upstream service URL                                    | No       | OAS server                |
+| api_url            | Upstream service URL                                    | No       | OAS server definition     |
 
 ***Make a request to the demo API***
 
