@@ -1,5 +1,4 @@
-name: Deploy Kong Data Plane
-
+name: Deploy Observability Tools
 on:
   workflow_call:
     inputs:
@@ -20,18 +19,37 @@ on:
         required: true
         type: string
         default: 'deploy' # 'deploy' or 'destroy'
-
+      # Observability stack to deploy
+      # Supported values: datadog, grafana
+      # Grafana stack includes Loki, Tempo, Prometheus, Jaeger, Fluent Bit
+      # Datadog stack needs DD_API_KEY secret
+      observability_stack:
+        description: 'Observability stack to deploy'
+        required: true
+        type: string
+        default: 'datadog'
 jobs: 
   prepare:
     runs-on: ubuntu-latest
 
     env:
       NAMESPACE: ${{ inputs.namespace }}
+      DECK_CONFIG_NAMESPACE: ${{ inputs.namespace }}
       KUBECONFIG: /.kube/config
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: set-env
+        id: set-env
+        run: |
+
+          if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
+            echo "DECK_CONFIG_OPENTELEMETRY_ENDPOINT=http://datadog-agent.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
+          else
+            echo "DECK_CONFIG_OPENTELEMETRY_ENDPOINT=http://tempo.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
+          fi
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -46,10 +64,25 @@ jobs:
       - name: Configure global observability plugins
         if: ${{ inputs.action == 'deploy' }}
         run: |
-          deck gateway sync ${{ github.workspace }}/examples/observability/kong.yaml  \
+
+          # Add Global observability plugins to the Kong Gateway configuration
+          if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
+            cat kong.yaml | deck file add-plugins \
+              plugins/datadog.yaml \
+              plugins/file-log.yaml \
+              -o kong.yaml
+          else
+            cat kong.yaml | deck file add-plugins \
+              plugins/http-log.yaml \
+              -o kong.yaml
+          fi
+
+          deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ secrets.KONNECT_PAT }} \
             --konnect-control-plane-name=${{ inputs.control_plane_name }}
+
+        working-directory: ${{ github.workspace }}/examples/observability/
       
       - name: kubectl use context
         run: |
@@ -65,21 +98,101 @@ jobs:
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add fluent https://fluent.github.io/helm-charts
+          helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
+          helm repo add datadog https://helm.datadoghq.com
           helm repo update
 
-      - name: Deploy Grafana tempo
+      - name: Deploy Prometeus operator
+        if: ${{ inputs.action == 'deploy' }}
         run: |
-          helm upgrade --install tempo grafana/tempo -n $NAMESPACE --values ${{ github.workspace }}/k8s/tempo/values.yaml
+          helm upgrade --install kong-prometheus prometheus-community/kube-prometheus-stack \
+            -n $NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml
+
+      #####################################################################
+      ## DATADOG STACK DEPLOYMENT                                        ##
+      #####################################################################      
+      - name: Deploy Datadog Agent
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'datadog'}}
+        run: |
+
+          # Check if the DD_API_KEY secret is set
+          if [ -z "${{ secrets.DD_API_KEY }}" ]; then
+            echo "DD_API_KEY secret is required for Datadog stack deployment"
+            exit 1
+          fi
+
+          kubectl create secret generic datadog-secret --from-literal api-key=${{ secrets.DD_API_KEY }} -n $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install datadog-agent datadog/datadog \
+            -n $NAMESPACE --values ${{ github.workspace }}/k8s/datadog/values.yaml
+
+      #####################################################################
+      ## GRAFANA STACK DEPLOYMENT                                        ##
+      #####################################################################
 
       - name: Create Grafana Kong dashboard ConfigMap
-        if: ${{ inputs.action == 'deploy' }}
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
         run: |
           kubectl -n $NAMESPACE create cm grafana-kong-official --from-file=${{ github.workspace }}/k8s/grafana/dashboards/kong-official.json --dry-run=client -o yaml | kubectl apply -f -
           kubectl -n $NAMESPACE label cm grafana-kong-official grafana_dashboard="1"
 
-      - name: Deploy Prometheus Stack
-        if: ${{ inputs.action == 'deploy' }}
+      - name: Deploy Grafana tempo
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
         run: |
-          helm upgrade --install kong-prometheus prometheus-community/kube-prometheus-stack -n $NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml
+          helm upgrade --install tempo grafana/tempo -n $NAMESPACE --values ${{ github.workspace }}/k8s/tempo/values.yaml
+
+      - name: Deploy Loki stack
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
+        run: |
+          helm upgrade --install loki grafana/loki-stack \
+            -n $NAMESPACE --values ${{ github.workspace }}/k8s/loki/values.yaml
+
+      - name: Deploy fluent-bit
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
+        run: |
+          helm upgrade --install fluent-bit fluent/fluent-bit \
+            -n $NAMESPACE --values ${{ github.workspace }}/k8s/fluent-bit/values.yaml
+
+      # - name: Deploy Jaeger
+      #   if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
+      #   run: |
+      #     helm upgrade --install jaeger jaegertracing/jaeger \
+      #       -n $NAMESPACE --values ${{ github.workspace }}/k8s/jaeger/values.yaml
+
+      ##############################################################################
+      ## DESTROY OBSERVABILITY STACK                                              ##
+      ##############################################################################
+
+      - name: Destroy Observability Stack
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          helm uninstall kong-prometheus -n $NAMESPACE || true
+          helm uninstall datadog-agent -n $NAMESPACE || true
+          helm uninstall tempo -n $NAMESPACE || true
+          helm uninstall loki -n $NAMESPACE || true
+          helm uninstall fluent-bit -n $NAMESPACE || true
+          # helm uninstall jaeger -n $NAMESPACE || true
+          kubectl delete secret datadog-secret || true
+
+      - name: Destroy Grafana Kong dashboard ConfigMap
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          kubectl -n $NAMESPACE delete cm grafana-kong-official || true
+
+      - name: Destroy Kong observability namespace
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          kubectl delete namespace $NAMESPACE || true
+      
+      - name: Destroy Kong Gateway configuration
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          deck gateway reset --konnect-addr=${{ inputs.konnect_server_url }} \
+            --konnect-token=${{ secrets.KONNECT_PAT }} \
+            --konnect-control-plane-name=${{ inputs.control_plane_name }} \
+            --select-tag=observability \
+            --select-tag=platform_team \
+            --force
+        working-directory: ${{ github.workspace }}/examples/observability/
       
       

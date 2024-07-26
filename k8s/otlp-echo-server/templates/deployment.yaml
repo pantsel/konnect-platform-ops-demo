@@ -4,6 +4,9 @@ metadata:
   name: {{ .Release.Name }}-deployment
   labels:
     app: {{ .Release.Name }}
+    tags.datadoghq.com/env: "demo"
+    tags.datadoghq.com/service: {{ .Release.Name }}
+    tags.datadoghq.com/version: "1.0"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -13,6 +16,9 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}
+        tags.datadoghq.com/env: "demo"
+        tags.datadoghq.com/service: {{ .Release.Name }}
+        tags.datadoghq.com/version: "1.0"
     spec:
       containers:
         - name: {{ .Release.Name }}
@@ -21,6 +27,18 @@ spec:
           ports:
             - containerPort: 3030
           env:
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
             {{- range .Values.env }}
             - name: {{ .name }}
               value: {{ .value | quote }}

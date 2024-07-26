@@ -1,0 +1,22 @@
+datadog:
+  otlp:
+    receiver:
+      protocols:
+        http:
+          enabled: true
+  kubelet:
+    tlsVerify: false
+  apm:
+    socketEnabled: true
+  env:
+    - name: DD_HOSTNAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+  apiKeyExistingSecret: datadog-secret
+  site: datadoghq.eu
+  tags:
+    - env:demo
+  logs:
+    enabled: true
+    containerCollectAll: true

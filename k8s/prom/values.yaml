@@ -1118,6 +1118,16 @@ grafana:
       uid: tempo
       editable: false
       url: http://tempo.kong-observability.svc.cluster.local:3100
+    - name: jaeger
+      type: jaeger
+      uid: jaeger
+      editable: false
+      url: http://jaeger-query.kong-observability.svc.cluster.local:16686
+    - name: loki
+      type: loki
+      uid: loki
+      editable: false
+      url: http://loki.kong-observability.svc.cluster.local:3100
 
   # - name: prometheus-sample
   #   access: proxy

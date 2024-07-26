@@ -105,6 +105,20 @@ services:
       PROXY_ADDRESS_FORWARDING: "true"
       # KC_LOG_LEVEL: DEBUG
 
+  datadog:
+    container_name: datadog
+    networks:
+      - konnect-platform-ops-demo
+    image: gcr.io/datadoghq/agent:7
+    environment:
+      - DD_API_KEY=6671b0fa7538bde2c409b9ff5d2aa6dd
+      - DD_SITE=datadoghq.eu
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+
 volumes:
   minio_data:
     driver: local

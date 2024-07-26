@@ -11,7 +11,7 @@ service:
 
 env:
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
-    value: http://tempo.kong-observability.svc.cluster.local:4318/v1/traces
+    value: http://datadog-agent.kong-observability.svc.cluster.local:4318/v1/traces
   - name: SERVICE_NAME
     value: otel-echo-server
   

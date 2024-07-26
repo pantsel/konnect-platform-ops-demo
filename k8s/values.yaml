@@ -8,6 +8,20 @@ secretVolumes:
 admin:
   enabled: false
 
+extraLabels:
+  tags.datadoghq.com/env: "demo"
+  tags.datadoghq.com/service: "kong-dp"
+  tags.datadoghq.com/version: "3.7.0.0"
+
+# Annotation to be added to Kong pods
+podAnnotations:
+  kuma.io/gateway: enabled
+  traffic.sidecar.istio.io/includeInboundPorts: ""
+  ad.datadoghq.com/proxy.check_names: '["kong"]'
+  ad.datadoghq.com/proxy.init_configs: '[{}]'
+  ad.datadoghq.com/proxy.instances: '[{"openmetrics_endpoint": "http://%%host%%:8100/metrics"}]'
+  ad.datadoghq.com/proxy.logs: '[{"source": "kong", "service": "kong-proxy"}]'
+
 env:
   role: data_plane
   database: "off"
@@ -18,7 +32,7 @@ env:
   tracing_instrumentations: "all"
   tracing_sampling_rate: "1.0"
   status_listen: "0.0.0.0:8100 http2"
-  log_level: "info"
+  port_maps: "80:8000, 443:8443, 8100:8100"
 
 ingressController:
   enabled: false
