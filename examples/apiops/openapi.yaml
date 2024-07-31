@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
 servers:
-  - url: https://petstore.swagger.io/v1
+  - url: petstore-api.petstore.svc.cluster.local:3030
     x-internal: true
 paths:
   /pets:
