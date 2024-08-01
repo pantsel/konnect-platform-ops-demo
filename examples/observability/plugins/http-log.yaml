@@ -20,5 +20,5 @@ add-plugins:
             return ""
           end
           return h:match("%-[a-f0-9]+%-([a-f0-9]+)%-")
-      http_endpoint: http://fluent-bit.${{ env DECK_CONFIG_NAMESPACE }}.svc.cluster.local:8080
+      http_endpoint: http://fluent-bit.${{ env "DECK_CONFIG_NAMESPACE"}}.svc.cluster.local:8080
         

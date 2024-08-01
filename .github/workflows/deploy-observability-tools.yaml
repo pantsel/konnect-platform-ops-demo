@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      NAMESPACE: ${{ inputs.namespace }}
       DECK_CONFIG_NAMESPACE: ${{ inputs.namespace }}
       KUBECONFIG: /.kube/config
 
@@ -83,7 +82,7 @@ jobs:
             --konnect-control-plane-name=${{ inputs.control_plane_name }}
 
         working-directory: ${{ github.workspace }}/examples/observability/
-      
+
       - name: kubectl use context
         run: |
           kubectl config use-context kind-konnect-platform-ops-demo
@@ -91,7 +90,7 @@ jobs:
       - name: Create Kong observability namespace if not exists
         if: ${{ inputs.action == 'deploy' }}
         run: |
-          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create namespace $DECK_CONFIG_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Add Required Helm Repositories
         if: ${{ inputs.action == 'deploy' }}
@@ -107,7 +106,7 @@ jobs:
         if: ${{ inputs.action == 'deploy' }}
         run: |
           helm upgrade --install kong-prometheus prometheus-community/kube-prometheus-stack \
-            -n $NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml
+            -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml
 
       #####################################################################
       ## DATADOG STACK DEPLOYMENT                                        ##
@@ -122,9 +121,9 @@ jobs:
             exit 1
           fi
 
-          kubectl create secret generic datadog-secret --from-literal api-key=${{ secrets.DD_API_KEY }} -n $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic datadog-secret --from-literal api-key=${{ secrets.DD_API_KEY }} -n $DECK_CONFIG_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
           helm upgrade --install datadog-agent datadog/datadog \
-            -n $NAMESPACE --values ${{ github.workspace }}/k8s/datadog/values.yaml
+            -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/datadog/values.yaml
 
       #####################################################################
       ## GRAFANA STACK DEPLOYMENT                                        ##
@@ -133,31 +132,31 @@ jobs:
       - name: Create Grafana Kong dashboard ConfigMap
         if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
         run: |
-          kubectl -n $NAMESPACE create cm grafana-kong-official --from-file=${{ github.workspace }}/k8s/grafana/dashboards/kong-official.json --dry-run=client -o yaml | kubectl apply -f -
-          kubectl -n $NAMESPACE label cm grafana-kong-official grafana_dashboard="1"
+          kubectl -n $DECK_CONFIG_NAMESPACE create cm grafana-kong-official --from-file=${{ github.workspace }}/k8s/grafana/dashboards/kong-official.json --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $DECK_CONFIG_NAMESPACE label cm grafana-kong-official grafana_dashboard="1"
 
       - name: Deploy Grafana tempo
         if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
         run: |
-          helm upgrade --install tempo grafana/tempo -n $NAMESPACE --values ${{ github.workspace }}/k8s/tempo/values.yaml
+          helm upgrade --install tempo grafana/tempo -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/tempo/values.yaml
 
       - name: Deploy Loki stack
         if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
         run: |
           helm upgrade --install loki grafana/loki-stack \
-            -n $NAMESPACE --values ${{ github.workspace }}/k8s/loki/values.yaml
+            -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/loki/values.yaml
 
       - name: Deploy fluent-bit
         if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
         run: |
           helm upgrade --install fluent-bit fluent/fluent-bit \
-            -n $NAMESPACE --values ${{ github.workspace }}/k8s/fluent-bit/values.yaml
+            -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/fluent-bit/values.yaml
 
       # - name: Deploy Jaeger
       #   if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
       #   run: |
       #     helm upgrade --install jaeger jaegertracing/jaeger \
-      #       -n $NAMESPACE --values ${{ github.workspace }}/k8s/jaeger/values.yaml
+      #       -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/jaeger/values.yaml
 
       ##############################################################################
       ## DESTROY OBSERVABILITY STACK                                              ##
@@ -166,23 +165,23 @@ jobs:
       - name: Destroy Observability Stack
         if: ${{ inputs.action == 'destroy' }}
         run: |
-          helm uninstall kong-prometheus -n $NAMESPACE || true
-          helm uninstall datadog-agent -n $NAMESPACE || true
-          helm uninstall tempo -n $NAMESPACE || true
-          helm uninstall loki -n $NAMESPACE || true
-          helm uninstall fluent-bit -n $NAMESPACE || true
-          # helm uninstall jaeger -n $NAMESPACE || true
+          helm uninstall kong-prometheus -n $DECK_CONFIG_NAMESPACE || true
+          helm uninstall datadog-agent -n $DECK_CONFIG_NAMESPACE || true
+          helm uninstall tempo -n $DECK_CONFIG_NAMESPACE || true
+          helm uninstall loki -n $DECK_CONFIG_NAMESPACE || true
+          helm uninstall fluent-bit -n $DECK_CONFIG_NAMESPACE || true
+          # helm uninstall jaeger -n $DECK_CONFIG_NAMESPACE || true
           kubectl delete secret datadog-secret || true
 
       - name: Destroy Grafana Kong dashboard ConfigMap
         if: ${{ inputs.action == 'destroy' }}
         run: |
-          kubectl -n $NAMESPACE delete cm grafana-kong-official || true
+          kubectl -n $DECK_CONFIG_NAMESPACE delete cm grafana-kong-official || true
 
       - name: Destroy Kong observability namespace
         if: ${{ inputs.action == 'destroy' }}
         run: |
-          kubectl delete namespace $NAMESPACE || true
+          kubectl delete namespace $DECK_CONFIG_NAMESPACE || true
       
       - name: Destroy Kong Gateway configuration
         if: ${{ inputs.action == 'destroy' }}

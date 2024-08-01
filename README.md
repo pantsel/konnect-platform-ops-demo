@@ -28,10 +28,14 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
+- [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
+  - [Available demo observability stacks](#available-demo-observability-stacks)
+  - [Deploy](#deploy)
+    - [Grafana](#grafana)
+    - [Datadog](#datadog)
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-3)
-  - [Run the workflow](#run-the-workflow)
   - [Deploy the demo API](#deploy-the-demo-api)
   - [Configure Kong Gateway](#configure-kong-gateway)
 <!-- /TOC -->
@@ -570,6 +574,56 @@ $ act --input config_file=examples/platformops/federated/kronos-team.json \
 | action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
 | environment | The environment to provision                           | No       | `local`               |
 
+
+## Deploy the Observability stack (Optional)
+
+Konnect provides out of the box visualization of Logs and Metrics via **Konnect Analytics**. In some cases, Kong Dataplanes may need to integrate with 3rd party observability tools for more use-case specific and fine grained observability.
+
+This repository provides examples of how can this be accomplished using common approaches, global plugins and patterns.
+
+### Available demo observability stacks
+
+There different observability stack examples included is this repo are:
+
+1. Datadog Stack (Prometheus, Datadog agent)
+2. Grafana Stack (Prometheus, Fluentbit, Loki, Tempo, Kong Dashboards)
+
+### Deploy
+
+> If you want to deploy the **Datadog** stack, make sure you have a Datadog account and a valid Datadog API key (https://www.datadoghq.com/). You can define your datadog API key in `act.secrets` as `DD_API_KEY`.
+
+The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
+
+```bash
+$ act --input control_plane_name=<control_plane_name> \
+   --input observability_stack=<datadog | grafana> \
+    -W .github/workflows/deploy-observability-tools.yaml   
+```
+
+#### Grafana
+
+Port forward Grafana to localhost:3000
+
+In your browser navigate to http://localhost:3000
+
+Login with `username: admin` and `password: prom-operator`.
+
+
+**View Kong Metrics**
+![Kong Dashboard](./images/grafana_kong_official.png)
+
+
+**View Logs and Traces**
+![Logs and Traces](./images/grafana_loki_tempo.png)
+
+
+#### Datadog
+
+View all metrics, traces and logs in your datadog dashboards.
+
+
+
+
 ## Deploy Data Planes
 
 After provisioning, you can deploy the Kong DPs to your local K8s:
@@ -638,8 +692,6 @@ graph LR;
 
   A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
-
-### Run the workflow
 
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
 
