@@ -29,10 +29,8 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
-  - [Available demo observability stacks](#available-demo-observability-stacks)
-  - [Deploy](#deploy)
-    - [Grafana](#grafana)
-    - [Datadog](#datadog)
+  - [Datadog (default)](#datadog-default)
+  - [Grafana](#grafana)
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-3)
@@ -581,26 +579,36 @@ Konnect provides out of the box visualization of Logs and Metrics via **Konnect 
 
 This repository provides examples of how can this be accomplished using common approaches, global plugins and patterns.
 
-### Available demo observability stacks
+**Available demo observability stacks**
 
 There different observability stack examples included is this repo are:
 
 1. Datadog Stack (Prometheus, Datadog agent)
 2. Grafana Stack (Prometheus, Fluentbit, Loki, Tempo, Kong Dashboards)
 
-### Deploy
+### Datadog (default)
 
-> If you want to deploy the **Datadog** stack, make sure you have a Datadog account and a valid Datadog API key (https://www.datadoghq.com/). You can define your datadog API key in `act.secrets` as `DD_API_KEY`.
+> Make sure you have a Datadog account and a valid Datadog API key (https://www.datadoghq.com/). You can define your datadog API key in `act.secrets` as `DD_API_KEY`.
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
 
 ```bash
 $ act --input control_plane_name=<control_plane_name> \
-   --input observability_stack=<datadog | grafana> \
+   --input observability_stack=datadog \
     -W .github/workflows/deploy-observability-tools.yaml   
 ```
 
-#### Grafana
+View all metrics, traces and logs in your datadog dashboards.
+
+### Grafana
+
+The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
+
+```bash
+$ act --input control_plane_name=<control_plane_name> \
+   --input observability_stack=grafana \
+    -W .github/workflows/deploy-observability-tools.yaml   
+```
 
 Port forward Grafana to localhost:3000
 
@@ -616,10 +624,6 @@ Login with `username: admin` and `password: prom-operator`.
 **View Logs and Traces**
 ![Logs and Traces](./images/grafana_loki_tempo.png)
 
-
-#### Datadog
-
-View all metrics, traces and logs in your datadog dashboards.
 
 
 
