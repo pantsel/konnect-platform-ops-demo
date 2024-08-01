@@ -592,6 +592,9 @@ There different observability stack examples included is this repo are:
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
 
+The workflow will configure `prometheus`, `datadog`, `opentelemetry` and `file-log` global plugins on the requested Control Plane 
+and deploy the `Prometheus Operator` together with a `Datadog agent` on your local kind cluster.
+
 ```bash
 $ act --input control_plane_name=<control_plane_name> \
    --input observability_stack=datadog \
@@ -603,6 +606,9 @@ View all metrics, traces and logs in your datadog dashboards.
 ### Grafana
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
+
+The workflow will configure `prometheus`, `datadog`, `opentelemetry` and `http-log` global plugins on the requested Control Plane 
+and deploy the `Prometheus Operator` together with `Kong Grafana dashboards`, `fluentbit`, `loki` and `tempo` on your local kind cluster.
 
 ```bash
 $ act --input control_plane_name=<control_plane_name> \
