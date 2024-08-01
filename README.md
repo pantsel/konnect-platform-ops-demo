@@ -581,7 +581,7 @@ This repository provides examples of how can this be accomplished using common a
 
 **Available demo observability stacks**
 
-There different observability stack examples included is this repo are:
+The different observability stack examples included is this repo are:
 
 1. Datadog Stack (Prometheus, Datadog agent)
 2. Grafana Stack (Prometheus, Fluentbit, Loki, Tempo, Kong Dashboards)
