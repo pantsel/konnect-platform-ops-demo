@@ -707,11 +707,19 @@ After you have provisioned the Konnect resources and a local Kong DP is up and r
 
 ### Deploy the demo API
 
+Workflow: `.github/workflows/deploy-api.yaml`
+
 ```bash
+## Without any observability stack
 $ act --input action=deploy -W .github/workflows/deploy-api.yaml
+
+## If you have deployed an observability stack
+$ act --input action=deploy --input observability_stach=<detadog|grafana> -W .github/workflows/deploy-api.yaml
 ```
 
 ### Configure Kong Gateway
+
+Workflow: `.github/workflows/promote-api.yaml`
 
 ```bash
 $ act --input openapi_spec=examples/apiops/openapi.yaml \
