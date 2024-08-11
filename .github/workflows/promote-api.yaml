@@ -61,6 +61,7 @@ jobs:
       - name: Patch Open API Specification
         run: |
           yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
+          yq e -i 'del(.servers[] | select(.x-internal == false))' oas-patched.yaml
           cat oas-patched.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 

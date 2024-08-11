@@ -24,6 +24,11 @@ on:
         description: 'Konnect Gateway Service ID'
         type: string
         required: true
+      gateway_base_url:
+        description: 'Gateway base URL'
+        type: string
+        required: true
+        default: 'http://localhost:8000'
       action: 
         description: 'Action to perform'
         type: string
@@ -31,7 +36,7 @@ on:
         default: 'publish' # Options: publish, destroy
       
 jobs:
-  provision-konnect:
+  publish-api-product:
     runs-on: ubuntu-latest
 
     env:
@@ -78,9 +83,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
         working-directory: scripts
 
-      - name: Copy spec to terraform dir
+      - name: Copy spec and docs to terraform dir
         run: |
           cp ${{ github.workspace }}/${{ inputs.openapi_spec }} ${{env.TERRAFORM_DIR}}/openapi_spec.yaml
+          cp -r ${{ github.workspace }}/examples/apiops/docs ${{env.TERRAFORM_DIR}}/docs
+        working-directory: ${{env.TERRAFORM_DIR}}
+
+      - name: Remove internal servers from openapi spec
+        run: |
+          yq e -i 'del(.servers[] | select(.x-internal == true))' openapi_spec.yaml
+          cat openapi_spec.yaml
+
         working-directory: ${{env.TERRAFORM_DIR}}
 
       - name: Terraform Init
@@ -105,8 +118,6 @@ jobs:
         id: tfapply
         run: |
           terraform apply -auto-approve tfplan
-          # echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
-          # echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
 
       - name: Terraform destroy

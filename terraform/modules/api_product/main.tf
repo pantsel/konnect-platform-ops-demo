@@ -45,6 +45,15 @@ resource "konnect_api_product_version" "product_v1" {
   }
 }
 
+resource "konnect_api_product_document" "apiproductdocument" {
+  title          = "Documentation"
+  content        = base64encode(file("./docs/DOCS.md"))
+  slug           = "documentation"
+  status         = "published"
+  api_product_id = konnect_api_product.product.id
+}
+
+
 resource "konnect_api_product_specification" "product_v1_spec" {
   name                   = "spec.yaml"
   content                = base64encode(file("./openapi_spec.yaml"))
