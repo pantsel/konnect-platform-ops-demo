@@ -16,7 +16,7 @@ locals {
 
 # Provision control Plane
 resource "konnect_gateway_control_plane" "cp" {
-  name         = "Demo Control Plane"
+  name         = "demo_cp"
   description  = "This is a demo Control plane"
   cluster_type = "CLUSTER_TYPE_HYBRID"
   auth_type    = "pki_client_certs"
