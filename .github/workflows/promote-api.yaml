@@ -60,9 +60,13 @@ jobs:
 
       - name: Patch Open API Specification
         run: |
+
+          # Merge the OpenAPI Specification with the patches
           yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
+          
+          # Remove servers with x-internal: false
           yq e -i 'del(.servers[] | select(.x-internal == false))' oas-patched.yaml
-          cat oas-patched.yaml
+
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Lint OpenAPI Specification
@@ -141,12 +145,6 @@ jobs:
             --konnect-addr="${{ inputs.konnect_server_url }}" \
             --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_current_${{ env.NOW }}.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Get service id from the Kong Gateway configuration
-        id: service_info
-        run: |
-          echo "KONG_SERVICE_ID"=$( cat kong.yaml |  yq eval '.services[0].id' - ) >> $GITHUB_ENV
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Archive artifacts
