@@ -22,9 +22,11 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
+  - [Simple approach](#simple-approach)
+    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Centralised approach](#centralised-approach)
     - [Flow](#flow-1)
-    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
+    - [Run the Provisioning workflow](#run-the-provisioning-workflow-1)
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
@@ -118,8 +120,50 @@ $ act --input image_repo=myrepo/kong \
 
 In this demo, there are two documented approaches for provisioning resources in Konnect.
 
-1. **Centralised**: A central Platform team manages all Konnect resources
-2. **Federated**: Every team manages their own Konnect resources
+1. **Simple**: Basic resource provisioning with Terraform
+2. **Centralised**: A central Platform team manages all Konnect resources
+3. **Federated**: Every team manages their own Konnect resources
+
+### Simple approach
+
+The provisioning process is based on a static Terraform script that can be found in `terraform/modules/simple/main.tf`
+
+Provisioning will result in the following high level setup:
+
+```mermaid
+graph TD;
+  subgraph Konnect
+      A[Demo team]
+      B[Demo CP]
+      C[Dev Portal]
+    end
+
+    subgraph Managed Cluster
+      direction RL
+        D[Kong DP]
+    end
+
+    A --> B
+    B -.-> D
+
+```
+
+#### Run the Provisioning workflow
+
+To provision the Konnect resources, execute the following command: 
+
+```bash
+$ act -W .github/workflows/provision-konnect-simple.yaml 
+```
+
+***Input Parameters***
+
+| Name           | Description                                            | Required | Default               |
+| -------------- | ------------------------------------------------------ | -------- | --------------------- |
+| vault_addr     | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
+| action         | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
+| environment    | The environment to provision                           | No       | `local`               |
+| konnect_region | Konnect Region to provision resources                  | No       | `eu`                  |
 
 
 ### Centralised approach
