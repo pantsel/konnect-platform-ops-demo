@@ -97,10 +97,13 @@ jobs:
       - name: Terraform Plan
         if: ${{ inputs.action == 'provision' }}
         run: |
+          echo "TFP: ${{ github.workspace }}/${{ inputs.config_file }}"
+
           terraform plan -out=tfplan
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
 
       - name: Terraform Apply
         if: ${{ inputs.action == 'provision' }}
@@ -112,6 +115,7 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
 
       - name: Store System Account tokens in Vault
         if: ${{ inputs.action == 'provision' }}
@@ -145,3 +149,4 @@ jobs:
         working-directory: ${{env.TERRAFORM_DIR}}
         env:
           TF_VAR_konnect_server_url: ${{ steps.tfvars.outputs.konnect_server_url }}
+          TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config_file }}
