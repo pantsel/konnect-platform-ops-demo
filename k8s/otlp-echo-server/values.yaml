@@ -1,0 +1,22 @@
+replicaCount: 1
+
+image:
+  repository: pantsel/otel-echo-server
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 3030
+
+env:
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: http://datadog-agent.kong-observability.svc.cluster.local:4318/v1/traces
+  - name: SERVICE_NAME
+    value: otel-echo-server
+  
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

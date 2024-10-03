@@ -22,16 +22,22 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
+  - [Simple approach](#simple-approach)
+    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Centralised approach](#centralised-approach)
     - [Flow](#flow-1)
-    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
+    - [Run the Provisioning workflow](#run-the-provisioning-workflow-1)
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
     - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
+- [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
+  - [Datadog (default)](#datadog-default)
+  - [Grafana](#grafana)
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-3)
-  - [Run the workflow](#run-the-workflow)
+  - [Deploy the demo API](#deploy-the-demo-api)
+  - [Configure Kong Gateway](#configure-kong-gateway)
 <!-- /TOC -->
 
 ## Useful links
@@ -114,8 +120,50 @@ $ act --input image_repo=myrepo/kong \
 
 In this demo, there are two documented approaches for provisioning resources in Konnect.
 
-1. **Centralised**: A central Platform team manages all Konnect resources
-2. **Federated**: Every team manages their own Konnect resources
+1. **Simple**: Basic resource provisioning with Terraform
+2. **Centralised**: A central Platform team manages all Konnect resources
+3. **Federated**: Every team manages their own Konnect resources
+
+### Simple approach
+
+The provisioning process is based on a static Terraform script that can be found in `terraform/modules/simple/main.tf`
+
+Provisioning will result in the following high level setup:
+
+```mermaid
+graph TD;
+  subgraph Konnect
+      A[Demo team]
+      B[Demo CP]
+      C[Dev Portal]
+    end
+
+    subgraph Managed Cluster
+      direction RL
+        D[Kong DP]
+    end
+
+    A --> B
+    B -.-> D
+
+```
+
+#### Run the Provisioning workflow
+
+To provision the Konnect resources, execute the following command: 
+
+```bash
+$ act -W .github/workflows/provision-konnect-simple.yaml 
+```
+
+***Input Parameters***
+
+| Name           | Description                                            | Required | Default               |
+| -------------- | ------------------------------------------------------ | -------- | --------------------- |
+| vault_addr     | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
+| action         | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
+| environment    | The environment to provision                           | No       | `local`               |
+| konnect_region | Konnect Region to provision resources                  | No       | `eu`                  |
 
 
 ### Centralised approach
@@ -568,6 +616,68 @@ $ act --input config_file=examples/platformops/federated/kronos-team.json \
 | action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
 | environment | The environment to provision                           | No       | `local`               |
 
+
+## Deploy the Observability stack (Optional)
+
+Konnect provides out of the box visualization of Logs and Metrics via **Konnect Analytics**. In some cases, Kong Dataplanes may need to integrate with 3rd party observability tools for more use-case specific and fine grained observability.
+
+This repository provides examples of how can this be accomplished using common approaches, global plugins and patterns.
+
+**Available demo observability stacks**
+
+The different observability stack examples included is this repo are:
+
+1. Datadog Stack (Prometheus, Datadog agent)
+2. Grafana Stack (Prometheus, Fluentbit, Loki, Tempo, Kong Dashboards)
+
+### Datadog (default)
+
+> Make sure you have a Datadog account and a valid Datadog API key (https://www.datadoghq.com/). You can define your datadog API key in `act.secrets` as `DD_API_KEY`.
+
+The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
+
+The workflow will configure `prometheus`, `datadog`, `opentelemetry` and `file-log` global plugins on the requested Control Plane 
+and deploy the `Prometheus Operator` together with a `Datadog agent` on your local kind cluster.
+
+```bash
+$ act --input control_plane_name=<control_plane_name> \
+   --input observability_stack=datadog \
+    -W .github/workflows/deploy-observability-tools.yaml   
+```
+
+View all metrics, traces and logs in your datadog dashboards.
+
+### Grafana
+
+The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
+
+The workflow will configure `prometheus`, `datadog`, `opentelemetry` and `http-log` global plugins on the requested Control Plane 
+and deploy the `Prometheus Operator` together with `Kong Grafana dashboards`, `fluentbit`, `loki` and `tempo` on your local kind cluster.
+
+```bash
+$ act --input control_plane_name=<control_plane_name> \
+   --input observability_stack=grafana \
+    -W .github/workflows/deploy-observability-tools.yaml   
+```
+
+Port forward Grafana to localhost:3000
+
+In your browser navigate to http://localhost:3000
+
+Login with `username: admin` and `password: prom-operator`.
+
+
+**View Kong Metrics**
+![Kong Dashboard](./images/grafana_kong_official.png)
+
+
+**View Logs and Traces**
+![Logs and Traces](./images/grafana_loki_tempo.png)
+
+
+
+
+
 ## Deploy Data Planes
 
 After provisioning, you can deploy the Kong DPs to your local K8s:
@@ -587,7 +697,7 @@ $ act --input control_plane_name=<cp_name> \
 | kong_image_tag     | The tag of the Kong Docker image                          | No       | 3.7.0.0                   |
 | vault_addr         | The address of the HashiCorp Vault server                 | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to deploy the data plane to | Yes      | -                         |
-| system_account    | The system account to use for authentication             | Yes      | -                         |
+| system_account     | The system account to use for authentication              | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
 | action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
 
@@ -637,9 +747,23 @@ graph LR;
   A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
-### Run the workflow
-
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
+
+### Deploy the demo API
+
+Workflow: `.github/workflows/deploy-api.yaml`
+
+```bash
+## Without any observability stack
+$ act --input action=deploy -W .github/workflows/deploy-api.yaml
+
+## If you have deployed an observability stack
+$ act --input action=deploy --input observability_stack=<datadog|grafana> -W .github/workflows/deploy-api.yaml
+```
+
+### Configure Kong Gateway
+
+Workflow: `.github/workflows/promote-api.yaml`
 
 ```bash
 $ act --input openapi_spec=examples/apiops/openapi.yaml \
@@ -655,8 +779,9 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
 | vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
-| system_account    | The Konnect system account to use for authentication    | Yes      | -                         |
+| system_account     | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
+| api_url            | Upstream service URL                                    | No       | OAS server definition     |
 
 ***Make a request to the demo API***
 

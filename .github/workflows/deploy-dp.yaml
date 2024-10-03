@@ -156,6 +156,8 @@ jobs:
             --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
             --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
 
+
+
       - name: Destroy Kong Deployment
         if: ${{ inputs.action == 'destroy' }}
         run: |

@@ -1,0 +1,24 @@
+_format_version: '3.0'
+_info:
+  defaults: {}
+  select_tags:
+  - observability
+  - platform_team
+
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+
+  - name: opentelemetry
+    config:
+      endpoint: ${{ env "DECK_CONFIG_OPENTELEMETRY_ENDPOINT" }}
+      resource_attributes:
+        namespace: kong
+        service.name: kong-dp
+      propagation:
+        default_format: w3c
+      send_timeout: 5000

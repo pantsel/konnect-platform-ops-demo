@@ -1,0 +1,11 @@
+---
+_format_version: '3.0'
+patches:
+- selectors:
+  - "$..services[0]"
+  values:
+    url: ${{ env "DECK_API_URL" }}
+  remove:
+    - host
+    - port
+    - protocol

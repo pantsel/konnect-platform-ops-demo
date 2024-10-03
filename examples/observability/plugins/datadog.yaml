@@ -1,0 +1,12 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+  - name: datadog
+    config:
+      host: datadog-agent.${{ env "DECK_CONFIG_NAMESPACE"}}.svc.cluster.local
+      flush_timeout: 2
+      retry_count: 10
