@@ -713,7 +713,6 @@ graph LR;
   B[Patch OAS]
   C[Lint OAS]
   D["Deck Ops
-    --------------
     - openapi2kong
     - file merge
     - namespace
@@ -721,26 +720,21 @@ graph LR;
     ...
   "]
   E[Validate future state
-  --------------
   deck file validate
   ]
   F["Backup current state
-  --------------
   deck gateway dump"]
   G[Diff current vs future state
-  --------------
   deck gateway diff
   ]
   H[
   Archive artifacts
-  --------------
   - linting results
   - test results
   - diff results
   - current state backup
   ]
   I[Sync future state
-  --------------
   deck gateway sync
   ]
 
