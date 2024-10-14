@@ -32,9 +32,15 @@ on:
         type: string
         required: false
         default: 'petstore'
+      organization:
+        description: 'Organization'
+        type: string
+        required: false
+        default: 'petsorg'
 
 env:
   DECK_API_NAME: ${{ inputs.api_name }} # To be used as a tag
+  DECK_ORGANIZATION: ${{ inputs.organization }} # To be used as a tag
   DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
   DECK_API_URL: ${{ inputs.api_url }}
@@ -100,7 +106,9 @@ jobs:
             plugins/rate-limiting.yaml -o kong.yaml
 
           # Add namespace to the Kong Gateway routes
-          cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
+          # cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
+          cat kong.yaml | deck file namespace --host api.transactions.k8s.orb.local  -o kong.yaml
+
 
           # Patch the Kong Gateway configuration
           cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
