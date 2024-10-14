@@ -47,8 +47,9 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Deck Commands](https://docs.konghq.com/deck/latest/#deck-commands)
 
 ## Prerequisites
+
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- [Kind](https://kind.sigs.k8s.io/) - A tool for running local Kubernetes clusters using Docker container “nodes”.
+- [Kind](https://kind.sigs.k8s.io/) or [Orbstack](https://orbstack.dev) - Tools for managing local Kubernetes clusters.
 - [Act](https://github.com/nektos/act) - Run your GitHub Actions locally!
 
 ## Components
@@ -57,7 +58,35 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - Hashicorp Vault: http://localhost:8300
 - Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
-- kind cluster
+- Local k8s cluster
+
+```mermaid
+graph TD;
+  subgraph S3 Storage
+    A[MinIO]
+  end
+
+  subgraph Vault
+    B[Hashicorp Vault]
+  end
+
+  subgraph IDP
+    C[Keycloak]
+  end
+
+  subgraph Local Docker Registry
+    D[Local Docker Registry]
+  end
+
+  subgraph K8s Cluster
+    E[kind/orbstack]
+  end
+
+  A --> E
+  B --> E
+  C --> E
+  D --> E
+```
 
 ## Prepare the demo environment
 
