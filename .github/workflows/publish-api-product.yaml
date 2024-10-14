@@ -66,10 +66,14 @@ jobs:
           api_description=$(yq eval '.info.description' ${{ github.workspace }}/${{ inputs.openapi_spec }})
           product_name=$(echo $api_name | tr '[:upper:]' '[:lower:]' | tr ' ' '-')product
           
-          echo "TF_VAR_api_name=$api_name" >> $GITHUB_ENV
-          echo "TF_VAR_api_version=$api_version" >> $GITHUB_ENV
-          echo "TF_VAR_api_description=$api_description" >> $GITHUB_ENV
-          echo "TF_VAR_product_name=$product_name" >> $GITHUB_ENV
+          # echo "TF_VAR_api_name=$api_name" >> $GITHUB_ENV
+          # echo "TF_VAR_api_version=$api_version" >> $GITHUB_ENV
+          # echo "TF_VAR_api_description=$api_description" >> $GITHUB_ENV
+          # echo "TF_VAR_product_name=$product_name" >> $GITHUB_ENV
+
+          echo "::set-output name=api_name::$api_name"
+          echo "::set-output name=api_version::$api_version"
+          echo "::set-output name=api_description::$api_description"
           
           # Plan ID will be the product name. 
           # We will use this to create a unique S3 bucket for storing tfstate for the specific product.
@@ -112,6 +116,11 @@ jobs:
         run: |
           terraform plan -out=tfplan
         working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          TF_VAR_api_name: ${{ steps.tfvars.outputs.api_name }}
+          TF_VAR_api_version: ${{ steps.tfvars.outputs.api_version }}
+          TF_VAR_api_description: ${{ steps.tfvars.outputs.api_description }}
+          TF_VAR_product_name: ${{ steps.tfvars.outputs.product_name }}
 
       - name: Terraform Apply
         if: ${{ inputs.action == 'publish' }}
@@ -119,6 +128,11 @@ jobs:
         run: |
           terraform apply -auto-approve tfplan
         working-directory: ${{env.TERRAFORM_DIR}}
+        env:
+          TF_VAR_api_name: ${{ steps.tfvars.outputs.api_name }}
+          TF_VAR_api_version: ${{ steps.tfvars.outputs.api_version }}
+          TF_VAR_api_description: ${{ steps.tfvars.outputs.api_description }}
+          TF_VAR_product_name: ${{ steps.tfvars.outputs.product_name }}
 
       - name: Terraform destroy
         if: ${{ inputs.action == 'destroy' }}

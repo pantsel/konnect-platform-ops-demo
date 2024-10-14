@@ -27,7 +27,7 @@ servers:
   - url: http://transactions.bankong.local
     description: local sandbox environment
     x-internal: true
-  - url: http://k8s.orb.local/bankong
+  - url: http://api.transactions.k8s.orb.local
     description: base url via gateway in k8s
     x-internal: false
   

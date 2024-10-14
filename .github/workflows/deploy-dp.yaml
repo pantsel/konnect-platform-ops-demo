@@ -24,7 +24,7 @@ on:
         type: string
         required: true
       system_account:
-        description: 'The system account to use for authentication'
+        description: 'The system account to use for authenticating with the Konnect API'
         type: string
         required: true
       konnect_server_url:
@@ -100,19 +100,18 @@ jobs:
 
       - name: kubectl use context
         run: |
-          # kubectl config use-context kind-konnect-platform-ops-demo
           kubectl config use-context ${{ secrets.KUBE_CONTEXT }}
-          
-      - name: Create Kong namespace if not exists
-        if: ${{ inputs.action == 'deploy' }}
-        run: |
-          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Add Kong Helm Repository
         if: ${{ inputs.action == 'deploy' }}
         run: |
           helm repo add kong https://charts.konghq.com
           helm repo update
+          
+      - name: Create Kong namespace if not exists
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
       
       - name: Create kong-cluster-cert secret if not exists
         if: ${{ inputs.action == 'deploy' }}
@@ -149,7 +148,7 @@ jobs:
 
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
-            --values  ${{ github.workspace }}/k8s/values.yaml \
+            --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
             --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
             --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
