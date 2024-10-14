@@ -727,12 +727,8 @@ graph LR;
   G[Diff current vs future state
   deck gateway diff
   ]
-  H[
+  H[`
   Archive artifacts
-  - linting results
-  - test results
-  - diff results
-  - current state backup
   ]
   I[Sync future state
   deck gateway sync
