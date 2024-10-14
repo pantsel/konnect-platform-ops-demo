@@ -45,6 +45,12 @@ if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
     exit 1
 fi
 
+read -s -p $'\n'"Enter K8s engine (orbstack/kind, default: orbstack): " kube_context
+while [[ "$kube_context" != "orbstack" && "$kube_context" != "kind" && -n "$kube_context" ]]; do
+    read -s -p $'\n'"Invalid input. Please enter 'orbstack' or 'kind' (default: orbstack): " kube_context
+done
+kube_context=${kube_context:-orbstack}
+
 cat << EOF > "$secret_file"
 KONNECT_PAT=$konnect_token
 S3_ACCESS_KEY=$s3_access_key
@@ -54,4 +60,5 @@ DOCKER_PASSWORD=$docker_password
 VAULT_TOKEN=$vault_token
 OIDC_ISSUER=$oidc_issuer
 DD_API_KEY=$dd_api_key
+KUBE_CONTEXT=$kube_context
 EOF

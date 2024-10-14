@@ -105,6 +105,48 @@ services:
       PROXY_ADDRESS_FORWARDING: "true"
       # KC_LOG_LEVEL: DEBUG
 
+# BanKonG
+  
+  bankong-frontend:
+    networks:
+      - konnect-platform-ops-demo
+    image: svenwal/bankong-frontend:latest
+    container_name: bankong-frontend
+    hostname: frontend.bankong
+    restart: on-failure
+    ports:
+        - 29080:8080
+    labels:
+      - dev.orbstack.domains=web.bankong.local
+  
+  
+  bankong-backend-transactions:
+    networks:
+      - konnect-platform-ops-demo
+    image: svenwal/bankong-backend-transactions:latest
+    container_name: bankong-backend-transactions
+    hostname: backend-transactions.bankong
+    restart: on-failure
+    ports:
+      - 3000:3000
+    environment:
+      BACKEND_REGION: your home
+      BACKEND_DATACENTER: local laptop
+      BACKEND_ARCHITECTURE: docker-compose
+    labels:
+      - dev.orbstack.domains=transactions.bankong.local
+     
+  bankong-backend-orders:
+    networks:
+      - konnect-platform-ops-demo
+    image: svenwal/bankong-backend-orders:latest
+    container_name: bankong-backend-orders
+    hostname: backend-orders.bankong
+    restart: on-failure
+    labels:
+      - dev.orbstack.domains=orders.bankong.local
+
+
 volumes:
   minio_data:
     driver: local

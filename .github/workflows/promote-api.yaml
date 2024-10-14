@@ -27,9 +27,14 @@ on:
         description: 'API URL'
         type: string
         required: false
+      api_name:
+        description: 'API Name'
+        type: string
+        required: false
+        default: 'petstore'
 
 env:
-  DECK_API_NAME: petstore # To be used as a tag
+  DECK_API_NAME: ${{ inputs.api_name }} # To be used as a tag
   DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
   DECK_API_URL: ${{ inputs.api_url }}

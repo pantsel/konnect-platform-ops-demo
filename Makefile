@@ -5,7 +5,7 @@ export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc kind docker prep-secrets vault-secrets ## Prepare the project
+prepare: check-deps gencerts actrc prep-secrets kind docker vault-secrets ## Prepare the project
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
@@ -29,10 +29,16 @@ docker: ## Spin up docker containers
 
 kind: ## Setup kind cluster
 	@echo "Setting up kind cluster.."
-	@if ! kind get clusters | grep -q ${KIND_CLUSTER_NAME}; then \
-		kind create cluster --name  ${KIND_CLUSTER_NAME}; \
+
+	@KUBE_CONTEXT=$$(grep KUBE_CONTEXT act.secrets | cut -d '=' -f2); \
+	if [ "$$KUBE_CONTEXT" != "orbstack" ]; then \
+		if ! kind get clusters | grep -q ${KIND_CLUSTER_NAME}; then \
+			kind create cluster --name  ${KIND_CLUSTER_NAME}; \
+		else \
+			echo "Kind Cluster ${KIND_CLUSTER_NAME} already exists"; \
+		fi; \
 	else \
-		echo "Kind Cluster ${KIND_CLUSTER_NAME} already exists"; \
+		echo "Skipping kind cluster creation. Using orbstack."; \
 	fi
 
 vault-secrets: ## Setup vault secrets
