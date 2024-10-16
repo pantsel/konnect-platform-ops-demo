@@ -82,14 +82,14 @@ jobs:
 
       - name: Lint OpenAPI Specification
         run: |
-          spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
-          # inso lint spec ${{ github.workspace }}/examples/apiops/oas-patched.yaml --workingDir ${{ github.workspace }}/examples/apiops
+          # spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
+          inso lint spec "Transactions API of BanKonG 1.1.0"
         working-directory: ${{ github.workspace }}/examples/apiops
 
-      - name: Show linting results
-        if: always()
-        run: cat oas_lint_results_${{ env.NOW }}.txt
-        working-directory: ${{ github.workspace }}/examples/apiops
+      # - name: Show linting results
+      #   if: always()
+      #   run: cat oas_lint_results_${{ env.NOW }}.txt
+      #   working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: DeckOps
         run: |
