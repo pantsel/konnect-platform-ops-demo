@@ -109,7 +109,6 @@ jobs:
           # cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
           cat kong.yaml | deck file namespace --host api.transactions.k8s.orb.local  -o kong.yaml
 
-
           # Patch the Kong Gateway configuration
           cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
 

@@ -13,16 +13,6 @@ info:
     url: http://www.bankong.com/support
     email: support@bankong.com
 
-# Custom Kong extensions (optional)
-x-kong-name: transactions
-# the above directive gives the entire spec file its name. This will be used for naming
-# the service and upstream objects in Kong. If not given it will use the 'info.title'
-# field above to name them, or a random UUID if the 'info.title' field is misssing.
-# Names are converted into valid identifiers. For example,
-# "Learn Services" becomes "learn-services".
-# This directive can also be used on "path" and "operation" objects to name them.
-# Similar to operationId, each x-kong-name must be unique within the spec file.
-
 servers: 
   - url: http://transactions.bankong.local
     description: local sandbox environment

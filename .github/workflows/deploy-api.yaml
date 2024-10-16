@@ -78,7 +78,7 @@ jobs:
 
       - name: kubectl use context
         run: |
-          kubectl config use-context kind-konnect-platform-ops-demo
+          kubectl config use-context ${{ secrets.KUBE_CONTEXT }}
 
       - name: Create Kong namespace if not exists
         if: ${{ inputs.action == 'deploy' }}
