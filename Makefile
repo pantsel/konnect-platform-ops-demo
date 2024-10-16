@@ -61,7 +61,12 @@ stop: ## Stop all containers
 
 clean: stop ## Clean everything up
 	@echo "Cleaning up.."
-	@kind delete cluster --name  ${KIND_CLUSTER_NAME}
+	@KUBE_CONTEXT=$$(grep KUBE_CONTEXT act.secrets | cut -d '=' -f2); \
+	if [ "$$KUBE_CONTEXT" != "orbstack" ]; then \
+		kind delete cluster --name  ${KIND_CLUSTER_NAME}; \
+	else \
+		orb delete k8s; \
+	fi
 	@rm -rf .tls
 	@rm -rf act.secrets
 	@rm -rf .tmp
