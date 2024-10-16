@@ -1,6 +1,6 @@
 extends: 
   - "spectral:oas" 
-  # - "@stoplight/spectral-owasp-ruleset"
+  - "@stoplight/spectral-owasp-ruleset"
 
 rules:
   operation-id-required:
