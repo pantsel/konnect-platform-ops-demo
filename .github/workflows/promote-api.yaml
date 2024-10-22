@@ -73,7 +73,9 @@ jobs:
         run: |
 
           # Merge the OpenAPI Specification with the patches
-          yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
+          # yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
+
+          cp ${{ github.workspace }}/${{ inputs.openapi_spec }} oas-patched.yaml
           
           # Remove servers with x-internal: false
           # Since we are configuring the Kong Gateway, we only need the internal servers.
@@ -99,12 +101,25 @@ jobs:
         run: deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
+      - name: Read OAS from YAML, convert to JSON, and URL encode
+        id: oas-to-env
+        run: |
+          # Read the YAML file and convert to JSON string
+          oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
+          
+          # Set the oas_json as an environment variable
+          echo "::set-output name=oas_json::${oas_json}"
+
       - name: Add plugins to Kong Gateway configuration
         run: |
+
           cat kong.yaml | deck file add-plugins \
             plugins/openid-connect.yaml \
+            plugins/oas-validation.yaml \
             plugins/rate-limiting.yaml -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
+        env:
+          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Add namespace to Kong Gateway routes
         run: cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
@@ -121,6 +136,8 @@ jobs:
       - name: Validate Generated Kong Gateway configuration
         run: deck file validate kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
+        env:
+          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Get a backup of the previous Kong Gateway configuration
         run: |
@@ -129,6 +146,8 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup_${{ env.NOW }}.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
+        env:
+          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Diff Kong Gateway configuration
         run: |
@@ -137,6 +156,8 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > diff_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
+        env:
+          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Sync Kong Gateway configuration
         run: |
@@ -145,6 +166,8 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
         working-directory: ${{ github.workspace }}/examples/apiops
+        env:
+          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Get a backup of the current Kong Gateway configuration
         run: |
@@ -153,6 +176,8 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_current_${{ env.NOW }}.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
+        env:
+          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
