@@ -72,8 +72,14 @@ jobs:
       - name: Remove external servers from OpenAPI Specification
         run: yq e -i 'del(.servers[] | select(.x-internal == false))' ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
-      - name: Debug
-        run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
+      - name: Read OAS into an environment variable
+        id: oas-to-env
+        run: |
+          # Read the YAML file and convert to JSON string
+          oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
+
+          # Set as env variable
+          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
 
       - name: Lint OpenAPI Specification
         run: spectral lint  ${{ github.workspace }}/${{ inputs.openapi_spec }} --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
@@ -91,15 +97,6 @@ jobs:
       - name: Add consumers to Kong Gateway configuration
         run: deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Read OAS into an environment variable
-        id: oas-to-env
-        run: |
-          # Read the YAML file and convert to JSON string
-          oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
-
-          # Set as env variable
-          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
 
       - name: Add plugins to Kong Gateway configuration
         run: |
