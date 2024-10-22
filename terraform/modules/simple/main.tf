@@ -44,6 +44,15 @@ resource "konnect_team" "demoteam" {
   }
 }
 
+# Make the team an admin of the control plane
+resource "konnect_team_role" "my_team_role" {
+  entity_id        = konnect_gateway_control_plane.cp.id
+  entity_region    = "eu"
+  entity_type_name = "Control Planes"
+  role_name        = "Admin"
+  team_id          = konnect_team.demoteam.id
+}
+
 # Create system account
 resource "konnect_system_account" "sa" {
   name            = "${var.environment}_system_account"
@@ -53,14 +62,6 @@ resource "konnect_system_account" "sa" {
   provider = konnect.global
 }
 
-# Make the team an admin of the control plane
-resource "konnect_team_role" "my_team_role" {
-  entity_id        = konnect_gateway_control_plane.cp.id
-  entity_region    = "eu"
-  entity_type_name = "Control Planes"
-  role_name        = "Admin"
-  team_id          = konnect_team.demoteam.id
-}
 
 # Assign the team to the system account
 resource "konnect_system_account_team" "systemaccountteam" {

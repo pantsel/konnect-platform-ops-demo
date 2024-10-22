@@ -9,3 +9,4 @@ patches:
       select_tags:
       - ${{ env "DECK_API_NAME" }}
       - ${{ env "DECK_CONFIG_OWNER" }}
+      - ${{ env "DECK_ORGANIZATION" }}

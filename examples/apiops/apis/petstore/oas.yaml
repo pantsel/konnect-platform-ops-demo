@@ -5,9 +5,19 @@ info:
   description: This is a sample Petstore API.
   license:
     name: MIT
+
+  # Custom fields to be processed by the CI/CD pipeline
+  x-api-name: petstore-api # name of the API
+  x-team-name: kronos # name of the team responsible for the API
+  x-business-unit: wholesale # business unit the team belongs to
+
+x-kong-namespace: /petstore
+
+x-internal-server:
+  url: http://petstore-api.petstore.svc.cluster.local:3030
+  description: internal hostname for the API gateway
+
 servers:
-  - url: petstore-api.petstore.svc.cluster.local:3030
-    x-internal: true
   - url: http://localhost:8000/petstore
     x-internal: false
 paths:

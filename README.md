@@ -47,8 +47,9 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Deck Commands](https://docs.konghq.com/deck/latest/#deck-commands)
 
 ## Prerequisites
+
 - [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- [Kind](https://kind.sigs.k8s.io/) - A tool for running local Kubernetes clusters using Docker container “nodes”.
+- [Kind](https://kind.sigs.k8s.io/) or [Orbstack](https://orbstack.dev) - Tools for managing local Kubernetes clusters.
 - [Act](https://github.com/nektos/act) - Run your GitHub Actions locally!
 
 ## Components
@@ -57,7 +58,35 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - Hashicorp Vault: http://localhost:8300
 - Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
-- kind cluster
+- Local k8s cluster
+
+```mermaid
+graph TD;
+  subgraph S3 Storage
+    A[MinIO]
+  end
+
+  subgraph Vault
+    B[Hashicorp Vault]
+  end
+
+  subgraph IDP
+    C[Keycloak]
+  end
+
+  subgraph Local Docker Registry
+    D[Local Docker Registry]
+  end
+
+  subgraph K8s Cluster
+    E[kind/orbstack]
+  end
+
+  A --> E
+  B --> E
+  C --> E
+  D --> E
+```
 
 ## Prepare the demo environment
 
@@ -713,7 +742,6 @@ graph LR;
   B[Patch OAS]
   C[Lint OAS]
   D["Deck Ops
-    --------------
     - openapi2kong
     - file merge
     - namespace
@@ -721,26 +749,17 @@ graph LR;
     ...
   "]
   E[Validate future state
-  --------------
   deck file validate
   ]
   F["Backup current state
-  --------------
   deck gateway dump"]
   G[Diff current vs future state
-  --------------
   deck gateway diff
   ]
-  H[
+  H[`
   Archive artifacts
-  --------------
-  - linting results
-  - test results
-  - diff results
-  - current state backup
   ]
   I[Sync future state
-  --------------
   deck gateway sync
   ]
 
@@ -781,7 +800,6 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
 | system_account     | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
-| api_url            | Upstream service URL                                    | No       | OAS server definition     |
 
 ***Make a request to the demo API***
 

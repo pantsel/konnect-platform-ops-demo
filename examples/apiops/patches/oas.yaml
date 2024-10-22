@@ -1,4 +1,4 @@
-x-kong-name: petstore
+x-kong-name: bankong
 # the above directive gives the entire spec file its name. This will be used for naming
 # the service and upstream objects in Kong. If not given it will use the 'info.title'
 # field above to name them, or a random UUID if the 'info.title' field is misssing.

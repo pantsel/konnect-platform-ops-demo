@@ -1,4 +1,6 @@
-extends: ["spectral:oas", "@stoplight/spectral-owasp-ruleset"]
+extends:
+  - "spectral:oas"
+  - "@stoplight/spectral-owasp-ruleset"
 
 rules:
   operation-id-required:
@@ -9,7 +11,82 @@ rules:
     then:
       field: operationId
       function: truthy
-  
+  x-internal-server-required:
+    description: "Every OpenAPI must have an x-internal-server specified."
+    message: "x-internal-server object is missing."
+    severity: error
+    given: "$"
+    then:
+      field: x-internal-server
+      function: truthy
+  x-internal-server-url-required:
+    description: "x-internal-server must have a url."
+    message: "x-internal-server object is missing url."
+    severity: error
+    given: "$"
+    then:
+      field: x-internal-server.url
+      function: truthy
+  x-internal-server-description-required:
+    description: "x-internal-server must have a description."
+    message: "x-internal-server object is missing description."
+    severity: error
+    given: "$"
+    then:
+      field: x-internal-server.description
+      function: truthy
+  x-team-name-required:
+    description: "Every OpenAPI must have an info.x-team-name specified."
+    message: "info.x-team-name is missing."
+    severity: error
+    given: "$"
+    then:
+      field: info.x-team-name
+      function: truthy
+  x-team-name-format:
+    description: "info.x-team-name must be a lowercase alphanumeric string with optional hyphens."
+    message: "info.x-api-name must only contain lowercase letters, and hyphens."
+    severity: error
+    given: "$.info.x-team-name"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
+  x-business-unit-required:
+    description: "Every OpenAPI must have an info.x-business-unit specified."
+    message: "info.x-business-unit is missing."
+    severity: error
+    given: "$"
+    then:
+      field: info.x-business-unit
+      function: truthy
+  x-business-unit-format:
+    description: "info.x-business-unit must be a lowercase alphanumeric string with optional hyphens."
+    message: "info.x-api-name must only contain lowercase letters, and hyphens."
+    severity: error
+    given: "$.info.x-business-unit"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
+  x-api-name-required:
+    description: "Every OpenAPI must have an info.x-api-name specified."
+    message: "info.x-api-name is missing."
+    severity: error
+    given: "$"
+    then:
+      field: info.x-api-name
+      function: truthy
+  x-api-name-format:
+    description: "info.x-api-name must be a lowercase alphanumeric string with optional hyphens."
+    message: "info.x-api-name must only contain lowercase letters, and hyphens."
+    severity: error
+    given: "$.info.x-api-name"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
+
   # OWASP API Security
   # Overwrite default severity to warn just for demo purposes
   owasp:api2:2023-write-restricted: warn
@@ -18,3 +95,7 @@ rules:
   owasp:api4:2023-string-limit: warn
   owasp:api8:2023-no-server-http: warn
   owasp:api4:2023-integer-limit: warn
+  owasp:api1:2023-no-numeric-ids: warn
+  owasp:api4:2023-integer-format: warn
+  owasp:api4:2023-array-limit: warn
+  owasp:api2:2023-jwt-best-practices: warn

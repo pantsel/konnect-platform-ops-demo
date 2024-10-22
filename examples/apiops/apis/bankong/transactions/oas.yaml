@@ -1,0 +1,208 @@
+openapi: 3.0.2
+info:
+  version: 1.1.0
+  title: Transactions API of BanKonG
+  description: | 
+    This API provides you access to the transactions of a logged in user. You can get, create, change and delete transactions (of course always depending on permissions).
+    
+    :closed_lock_with_key: this api is protected by either OpenID Connect or api-key
+  
+    :bulb: this API is rate limited
+  contact:
+    name: BanKong PointOfContact
+    url: http://www.bankong.com/support
+    email: support@bankong.com
+  # Custom fields to be processed by the CI/CD pipeline
+  x-api-name: transactions-api # name of the API
+  x-team-name: kronos # name of the team responsible for the API
+  x-business-unit: banking # business unit the team belongs to
+
+x-internal-server:
+  url: http://bankong-backend-transactions.kong-edu.svc.cluster.local:3001
+  description: internal hostname for the API gateway
+
+servers: 
+  - url: http://localhost:3000
+    description: local sandbox environment
+    x-internal: true
+  - url: http://api.transactions.k8s.orb.local
+    description: production environment
+    x-internal: false
+  
+security:
+  - ApiKeyAuth: [] 
+  - OIDC: []
+  
+tags:
+- name: Transactions
+  description: Everything about transactions
+  externalDocs:
+    url: http://docs.bankong.com/transations
+  
+paths:
+  /transactions:
+    get:
+      description: Lists all transactions
+      summary: List all transactions
+      tags: ["Transactions"]
+      operationId: "listTranactions"
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/TransactionsList"
+    post:
+      description: Initiate a transaction
+      summary: Create new transaction
+      tags: ["Transactions"]
+      operationId: "initiateTransaction"
+      requestBody:
+        content:
+          application/json; charset=utf-8:
+            schema:
+              $ref: "#/components/schemas/Transaction"
+      responses:
+        "200":
+          description: initiated transaction
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /transactions/{id}:
+    get:
+      description: Returns a post by id
+      summary: Get specific transactions
+      tags: ["Transactions"]
+      operationId: "getTransaction"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The transaction id.
+          schema:
+            $ref: "#/components/schemas/TransactionId"
+      responses:
+        "200":
+          description: Transaction received
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "404":
+          description: Transaction not found
+    patch:
+      description: Change a transaction
+      summary: Update a transaction
+      tags: ["Transactions"]
+      operationId: "changeTransaction"
+      requestBody:
+        content:
+          application/json; charset=utf-8:
+            schema:
+              $ref: "#/components/schemas/Transaction"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The transaction id.
+          schema:
+            $ref: "#/components/schemas/TransactionId"
+      responses:
+        "200":
+          description: Transaction changed
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "404":
+          description: Transaction not found
+    delete:
+      description: Cancel a transaction
+      summary: Cancel a transaction
+      tags: ["Transactions"]
+      operationId: "cancelTransaction"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The transaction id.
+          schema:
+            $ref: "#/components/schemas/TransactionId"
+      responses:
+        "200":
+          description: Transaction cancelled
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "404":
+          description: Transaction not found
+
+components:
+  schemas:
+    TransactionId:
+      oneOf:
+        - type: integer
+        - type: string
+          format: uuid
+      description: "Unique identifier for the transaction. This identifier is both unique and immutable."    
+      example: 42
+    TransactionsList:
+      "type": "array"
+      "items":
+        $ref: "#/components/schemas/Transaction"
+    Transaction:
+      "type": "object"
+      "required":
+        - "id"
+        - "source"
+        - "senderName"
+        - "destination"
+        - "amount"
+        - "currency"
+        - "subject"
+      "properties":
+        id:
+          $ref: "#/components/schemas/TransactionId"
+        source:
+          type: "string"
+          description: "The IBAN of the sending account"
+          pattern: "^[a-zA-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}$"
+          example: "GR872659435350353"
+        senderName:
+          type: "string"
+          example: "Max Mustermann"
+        destination:
+          type: "string"
+          description: "The IBAN of the receiving account"
+          pattern: "^[a-zA-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}$"
+          example: "DE8412325587359375895"
+        amount:
+          description: "The amount of the transaction. Cannot be zero or negative"
+          type: number
+          minimum: 0.01
+          example: 42.00
+        currency:
+          description: "A code allocated to a currency by a Maintenance Agency under an international identification scheme, as described in the latest edition of the international standard ISO 4217"
+          type: "string"
+          pattern: "^[A-Z]{3,3}$"
+          example: "EUR"
+        subject:
+          type: "string"
+          description: "Description that may be available for the statement fee."
+          minLength: 0
+          maxLength: 128
+          example: "Invoice #42-08/15"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+    OIDC:            
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

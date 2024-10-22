@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kong-edu
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankong-backend-transactions
+  namespace: kong-edu
+  labels:
+    app: bankong-backend-transactions
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankong-backend-transactions
+  template:
+    metadata:
+      labels:
+        app: bankong-backend-transactions
+    spec:
+      containers:
+        - name: bankong-backend-transactions
+          image: svenwal/bankong-backend-transactions:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BACKEND_REGION
+              value: "your home"
+            - name: BACKEND_DATACENTER
+              value: "local laptop"
+            - name: BACKEND_ARCHITECTURE
+              value: "docker-compose"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankong-backend-transactions
+  namespace: kong-edu
+spec:
+  selector:
+    app: bankong-backend-transactions
+  ports:
+    - protocol: TCP
+      port: 3001
+      targetPort: 3000
+  type: ClusterIP
