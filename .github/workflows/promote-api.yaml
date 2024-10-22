@@ -23,10 +23,6 @@ on:
         description: "The system account to use for authentication"
         type: string
         required: true
-      api_url:
-        description: "API URL"
-        type: string
-        required: false
       api_name:
         description: "API Name"
         type: string
@@ -43,8 +39,7 @@ env:
   DECK_ORGANIZATION: ${{ inputs.organization }} # To be used as a tag
   DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
-  DECK_API_URL: ${{ inputs.api_url }}
-  DECK_NAMESPACE: /
+  DECK_NAMESPACE: / # To be overridden by the OAS x-kong-namespace field if available
 
 jobs:
   publish-api:
@@ -124,11 +119,6 @@ jobs:
 
       - name: Add select_tags patch to Kong Gateway configuration
         run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Overwrite service url if required
-        if: ${{ env.DECK_API_URL }}
-        run: cat kong.yaml | deck file patch patches/service.yaml -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Output Kong Gateway configuration
