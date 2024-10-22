@@ -20,19 +20,9 @@ on:
         default: "http://localhost:8300"
         type: string
       system_account:
-        description: "The system account to use for authentication"
+        description: "The system account to use for authentication with Konnect"
         type: string
         required: true
-      api_name:
-        description: "API Name"
-        type: string
-        required: false
-        default: "petstore"
-      organization:
-        description: "Organization"
-        type: string
-        required: false
-        default: "petsorg"
 
 env:
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
