@@ -14,7 +14,7 @@ info:
     email: support@bankong.com
 
 servers: 
-  - url: http://transactions.bankong.local
+  - url: http://localhost:3000
     description: local sandbox environment
     x-internal: true
   - url: http://api.transactions.k8s.orb.local
