@@ -69,23 +69,14 @@ jobs:
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
 
-      - name: Patch Open API Specification
-        run: |
+      - name: Remove external servers from OpenAPI Specification
+        run: yq e -i 'del(.servers[] | select(.x-internal == false))' ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
-          # Merge the OpenAPI Specification with the patches
-          # yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
-
-          cp ${{ github.workspace }}/${{ inputs.openapi_spec }} oas-patched.yaml
-          
-          # Remove servers with x-internal: false
-          # Since we are configuring the Kong Gateway, we only need the internal servers.
-          # The gateway needs to know where the service is running internally, not the public URL.
-          yq e -i 'del(.servers[] | select(.x-internal == false))' oas-patched.yaml
-
-        working-directory: ${{ github.workspace }}/examples/apiops
+      - name: Debug
+        run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
       - name: Lint OpenAPI Specification
-        run: spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
+        run: spectral lint  ${{ github.workspace }}/${{ inputs.openapi_spec }} --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Show linting results
@@ -94,7 +85,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Convert OpenAPI Specification to Kong Gateway configuration
-        run: cat oas-patched.yaml | deck file openapi2kong > kong.yaml
+        run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Add consumers to Kong Gateway configuration
