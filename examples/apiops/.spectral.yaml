@@ -11,6 +11,30 @@ rules:
     then:
       field: operationId
       function: truthy
+  x-internal-server-required:
+    description: "Every OpenAPI must have an x-internal-server specified."
+    message: "x-internal-server object is missing."
+    severity: error
+    given: "$"
+    then:
+      field: x-internal-server
+      function: truthy
+  x-internal-server-url-required:
+    description: "x-internal-server must have a url."
+    message: "x-internal-server object is missing url."
+    severity: error
+    given: "$"
+    then:
+      field: x-internal-server.url
+      function: truthy
+  x-internal-server-description-required:
+    description: "x-internal-server must have a description."
+    message: "x-internal-server object is missing description."
+    severity: error
+    given: "$"
+    then:
+      field: x-internal-server.description
+      function: truthy
 
   # OWASP API Security
   # Overwrite default severity to warn just for demo purposes

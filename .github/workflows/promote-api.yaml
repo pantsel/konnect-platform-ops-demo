@@ -98,7 +98,6 @@ jobs:
           x_internal_server=$(yq eval '.["x-internal-server"].url' ${{ github.workspace }}/${{ inputs.openapi_spec }})
           yq e -i '.servers = [{"url": "'$x_internal_server'", "description": "internal hostname for the API gateway"}]' ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
-
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
@@ -109,7 +108,6 @@ jobs:
 
       - name: Add plugins to Kong Gateway configuration
         run: |
-
           cat kong.yaml | deck file add-plugins \
             plugins/openid-connect.yaml \
             plugins/oas-validation.yaml \
