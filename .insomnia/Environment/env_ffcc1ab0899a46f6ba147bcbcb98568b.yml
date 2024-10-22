@@ -1,0 +1,16 @@
+_id: env_ffcc1ab0899a46f6ba147bcbcb98568b
+type: Environment
+parentId: env_47804ff0083ce05792559d4581dc556af71c605b
+modified: 1729584558803
+created: 1729584558803
+name: OpenAPI env api.transactions.k8s.orb.local
+data:
+  scheme: http
+  base_path: ""
+  host: api.transactions.k8s.orb.local
+  apikey: apikey
+  bearerToken: bearerToken
+dataPropertyOrder: null
+color: null
+isPrivate: false
+metaSortKey: 1729584558803

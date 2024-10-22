@@ -1,9 +1,9 @@
-_id: spc_a4ebc4cec1084b999d5dad63a97f94c2
+_id: spc_b88e53066e604584b4f0c71bf4869afc
 type: ApiSpec
-parentId: wrk_13d33b93dafc4762acfd1b450aa39e86
-modified: 1729107317318
-created: 1729107317308
-fileName: Transactions API of BanKonG 1.1.0
+parentId: wrk_42460ac95c914bb5bb36d46782286d74
+modified: 1729584522572
+created: 1729584522572
+fileName: New Document
 contents: >-
   openapi: 3.0.2
 
@@ -22,7 +22,7 @@ contents: >-
       email: support@bankong.com
 
   servers: 
-    - url: http://transactions.bankong.local
+    - url: http://localhost:3000
       description: local sandbox environment
       x-internal: true
     - url: http://api.transactions.k8s.orb.local
