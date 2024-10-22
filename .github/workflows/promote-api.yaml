@@ -57,7 +57,7 @@ jobs:
         run: |
           npm install --save -D @stoplight/spectral-owasp-ruleset@^2.0
 
-      - name: Import system account Token
+      - name: Import system account Token from Vault
         id: import-token
         uses: hashicorp/vault-action@v2
         with:
@@ -76,55 +76,50 @@ jobs:
           yq eval-all -P 'select(fileIndex == 0) * select(fileIndex == 1)' ${{ github.workspace }}/${{ inputs.openapi_spec }} patches/oas.yaml > oas-patched.yaml
           
           # Remove servers with x-internal: false
+          # Since we are configuring the Kong Gateway, we only need the internal servers.
+          # The gateway needs to know where the service is running internally, not the public URL.
           yq e -i 'del(.servers[] | select(.x-internal == false))' oas-patched.yaml
 
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Lint OpenAPI Specification
-        run: |
-          # spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
-          inso lint spec "Transactions API of BanKonG 1.1.0"
+        run: spectral lint oas-patched.yaml --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
-      # - name: Show linting results
-      #   if: always()
-      #   run: cat oas_lint_results_${{ env.NOW }}.txt
-      #   working-directory: ${{ github.workspace }}/examples/apiops
+      - name: Show linting results
+        if: always()
+        run: cat oas_lint_results_${{ env.NOW }}.txt
+        working-directory: ${{ github.workspace }}/examples/apiops
 
-      - name: DeckOps
+      - name: Convert OpenAPI Specification to Kong Gateway configuration
+        run: cat oas-patched.yaml | deck file openapi2kong > kong.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
+
+      - name: Add consumers to Kong Gateway configuration
+        run: deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
+
+      - name: Add plugins to Kong Gateway configuration
         run: |
-
-          # Convert OpenAPI Specification to Kong Gateway configuration
-          cat oas-patched.yaml | deck file openapi2kong > kong.yaml
-
-          # Merge Kong Gateway configuration files -  Add consumers
-          deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
-
-          # Add plugins to the Kong Gateway configuration
           cat kong.yaml | deck file add-plugins \
             plugins/openid-connect.yaml \
             plugins/rate-limiting.yaml -o kong.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
 
-          # Add namespace to the Kong Gateway routes
-          # cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
-          cat kong.yaml | deck file namespace --host api.transactions.k8s.orb.local  -o kong.yaml
+      - name: Add namespace to Kong Gateway routes
+        run: cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
 
-          # Patch the Kong Gateway configuration
-          cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
+      - name: Add select_tags patch to Kong Gateway configuration
+        run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
 
-          # Patch the service URL only if DECK_API_URL is set
-          if [ -n "${{ env.DECK_API_URL }}" ]; then
-            cat kong.yaml | deck file patch patches/service.yaml -o kong.yaml
-          fi
-
-          # Print the resulting Kong Gateway configuration
-          cat kong.yaml
-
+      - name: Output Kong Gateway configuration
+        run: cat kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Validate Generated Kong Gateway configuration
-        run: |
-          deck file validate kong.yaml
+        run: deck file validate kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Get a backup of the previous Kong Gateway configuration
