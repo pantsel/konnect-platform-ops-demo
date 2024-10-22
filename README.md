@@ -800,7 +800,6 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 | control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
 | system_account     | The Konnect system account to use for authentication    | Yes      | -                         |
 | konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
-| api_url            | Upstream service URL                                    | No       | OAS server definition     |
 
 ***Make a request to the demo API***
 

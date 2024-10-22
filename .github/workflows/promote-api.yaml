@@ -35,11 +35,7 @@ on:
         default: "petsorg"
 
 env:
-  DECK_API_NAME: ${{ inputs.api_name }} # To be used as a tag
-  DECK_ORGANIZATION: ${{ inputs.organization }} # To be used as a tag
-  DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
-  DECK_NAMESPACE: / # To be overridden by the OAS x-kong-namespace field if available
 
 jobs:
   publish-api:
@@ -64,6 +60,27 @@ jobs:
 
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
+
+      - name: Setup env variables from OAS custom fields
+        run: |
+
+          # Set the API Name
+          api_name=$(yq eval '.info.x-api-name' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
+
+          # Set the Organization/BU
+          organization=$(yq eval '.info.x-business-unit' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          echo "DECK_ORGANIZATION=$organization" >> $GITHUB_ENV
+
+          # Set the team responsible for the API
+          team=$(yq eval '.info.x-team-name' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          echo "DECK_CONFIG_OWNER=$team" >> $GITHUB_ENV
+
+          # Set the namespace if available
+          namespace=$(yq eval '.["x-kong-namespace"]' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          if [ ! -z "$namespace" ]; then
+            echo "DECK_NAMESPACE=$namespace" >> $GITHUB_ENV
+          fi
 
       - name: Read OAS into an environment variable
         id: oas-to-env

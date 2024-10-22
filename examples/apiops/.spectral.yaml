@@ -35,6 +35,57 @@ rules:
     then:
       field: x-internal-server.description
       function: truthy
+  x-team-name-required:
+    description: "Every OpenAPI must have an info.x-team-name specified."
+    message: "info.x-team-name is missing."
+    severity: error
+    given: "$"
+    then:
+      field: info.x-team-name
+      function: truthy
+  x-team-name-format:
+    description: "info.x-team-name must be a lowercase alphanumeric string with optional hyphens."
+    message: "info.x-api-name must only contain lowercase letters, and hyphens."
+    severity: error
+    given: "$.info.x-team-name"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
+  x-business-unit-required:
+    description: "Every OpenAPI must have an info.x-business-unit specified."
+    message: "info.x-business-unit is missing."
+    severity: error
+    given: "$"
+    then:
+      field: info.x-business-unit
+      function: truthy
+  x-business-unit-format:
+    description: "info.x-business-unit must be a lowercase alphanumeric string with optional hyphens."
+    message: "info.x-api-name must only contain lowercase letters, and hyphens."
+    severity: error
+    given: "$.info.x-business-unit"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
+  x-api-name-required:
+    description: "Every OpenAPI must have an info.x-api-name specified."
+    message: "info.x-api-name is missing."
+    severity: error
+    given: "$"
+    then:
+      field: info.x-api-name
+      function: truthy
+  x-api-name-format:
+    description: "info.x-api-name must be a lowercase alphanumeric string with optional hyphens."
+    message: "info.x-api-name must only contain lowercase letters, and hyphens."
+    severity: error
+    given: "$.info.x-api-name"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
 
   # OWASP API Security
   # Overwrite default severity to warn just for demo purposes

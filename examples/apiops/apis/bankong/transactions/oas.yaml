@@ -12,6 +12,10 @@ info:
     name: BanKong PointOfContact
     url: http://www.bankong.com/support
     email: support@bankong.com
+  # Custom fields to be processed by the CI/CD pipeline
+  x-api-name: transactions-api # name of the API
+  x-team-name: kronos # name of the team responsible for the API
+  x-business-unit: banking # business unit the team belongs to
 
 x-internal-server:
   url: http://bankong-backend-transactions.kong-edu.svc.cluster.local:3001

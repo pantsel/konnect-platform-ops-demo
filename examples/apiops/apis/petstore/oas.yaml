@@ -6,6 +6,11 @@ info:
   license:
     name: MIT
 
+  # Custom fields to be processed by the CI/CD pipeline
+  x-api-name: petstore-api # name of the API
+  x-team-name: kronos # name of the team responsible for the API
+  x-business-unit: wholesale # business unit the team belongs to
+
 x-kong-namespace: /petstore
 
 x-internal-server:
