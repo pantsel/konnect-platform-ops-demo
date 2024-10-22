@@ -90,6 +90,15 @@ jobs:
         run: cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
+      - name: Patch OAS servers
+        run: |
+          # Since this pipeline is for configuring the gateway. 
+          # We need to use the custom x-internal-server provided in the OAS
+          # and remove the existing servers.
+          x_internal_server=$(yq eval '.["x-internal-server"].url' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          yq e -i '.servers = [{"url": "'$x_internal_server'", "description": "internal hostname for the API gateway"}]' ${{ github.workspace }}/${{ inputs.openapi_spec }}
+
+
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
@@ -105,10 +114,6 @@ jobs:
             plugins/openid-connect.yaml \
             plugins/oas-validation.yaml \
             plugins/rate-limiting.yaml -o kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Add namespace to Kong Gateway routes
-        run: cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Add select_tags patch to Kong Gateway configuration

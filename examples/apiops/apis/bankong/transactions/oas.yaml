@@ -13,12 +13,16 @@ info:
     url: http://www.bankong.com/support
     email: support@bankong.com
 
+x-internal-server:
+  url: http://bankong-backend-transactions.kong-edu.svc.cluster.local:3001
+  description: internal hostname for the API gateway
+
 servers: 
   - url: http://localhost:3000
     description: local sandbox environment
     x-internal: true
   - url: http://api.transactions.k8s.orb.local
-    description: base url via gateway in k8s
+    description: production environment
     x-internal: false
   
 security:
@@ -136,7 +140,10 @@ paths:
 components:
   schemas:
     TransactionId:
-      type: "integer"
+      oneOf:
+        - type: integer
+        - type: string
+          format: uuid
       description: "Unique identifier for the transaction. This identifier is both unique and immutable."    
       example: 42
     TransactionsList:
@@ -170,10 +177,9 @@ components:
           pattern: "^[a-zA-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}$"
           example: "DE8412325587359375895"
         amount:
-          description: "The amount of the transaction. Cannot be negative"
+          description: "The amount of the transaction. Cannot be zero or negative"
           type: number
           minimum: 0.01
-          multipleOf: 0.01
           example: 42.00
         currency:
           description: "A code allocated to a currency by a Maintenance Agency under an international identification scheme, as described in the latest edition of the international standard ISO 4217"

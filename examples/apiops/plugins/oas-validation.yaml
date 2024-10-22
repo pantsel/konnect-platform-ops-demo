@@ -9,4 +9,6 @@ add-plugins:
       config:
         api_spec: |
           ${{ env "DECK_CONFIG_API_SPEC"}}
+        verbose_response: true
+        validate_response_body: true
       enabled: true
