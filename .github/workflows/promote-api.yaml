@@ -109,8 +109,8 @@ jobs:
             plugins/oas-validation.yaml \
             plugins/rate-limiting.yaml -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
-        env:
-          DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
+        # env:
+        #   DECK_CONFIG_API_SPEC: ${{ steps.oas-to-env.outputs.oas_json }}
 
       - name: Add namespace to Kong Gateway routes
         run: cat kong.yaml | deck file namespace --path-prefix=/${{ env.DECK_API_NAME }} -o kong.yaml
