@@ -10,5 +10,7 @@ add-plugins:
         api_spec: |
           ${{ env "DECK_CONFIG_API_SPEC"}}
         verbose_response: true
-        validate_response_body: true
+        validate_response_body: false
+        include_base_path: true
+        custom_base_path: ${{ env "DECK_NAMESPACE" }}
       enabled: true

@@ -44,6 +44,7 @@ env:
   DECK_CONFIG_OWNER: team1 # To be used as a tag
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }}
   DECK_API_URL: ${{ inputs.api_url }}
+  DECK_NAMESPACE: /
 
 jobs:
   publish-api:
@@ -69,9 +70,6 @@ jobs:
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
 
-      - name: Remove external servers from OpenAPI Specification
-        run: yq e -i 'del(.servers[] | select(.x-internal == false))' ${{ github.workspace }}/${{ inputs.openapi_spec }}
-
       - name: Read OAS into an environment variable
         id: oas-to-env
         run: |
@@ -80,6 +78,16 @@ jobs:
 
           # Set as env variable
           echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
+
+      - name: Patch OAS servers
+        run: |
+          # Since this pipeline is for configuring the gateway, 
+          # we need to use the custom x-internal-server provided in the OAS
+          # and remove the existing servers.
+          x_internal_server=$(yq eval '.["x-internal-server"].url' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          yq e -i '.servers = [{"url": "'$x_internal_server'", "description": "production internal hostname for the API gateway", "x-internal": true}]' ${{ github.workspace }}/${{ inputs.openapi_spec }}
+
+          cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
       - name: Lint OpenAPI Specification
         run: spectral lint  ${{ github.workspace }}/${{ inputs.openapi_spec }} --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
@@ -90,20 +98,15 @@ jobs:
         run: cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
-      - name: Patch OAS servers
+      - name: Extract namespace from OAS if available
         run: |
-          # Since this pipeline is for configuring the gateway. 
-          # We need to use the custom x-internal-server provided in the OAS
-          # and remove the existing servers.
-          x_internal_server=$(yq eval '.["x-internal-server"].url' ${{ github.workspace }}/${{ inputs.openapi_spec }})
-          yq e -i '.servers = [{"url": "'$x_internal_server'", "description": "internal hostname for the API gateway"}]' ${{ github.workspace }}/${{ inputs.openapi_spec }}
+          namespace=$(yq eval '.["x-kong-namespace"]' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          if [ ! -z "$namespace" ]; then
+            echo "DECK_NAMESPACE=$namespace" >> $GITHUB_ENV
+          fi
 
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Add consumers to Kong Gateway configuration
-        run: deck file merge -o kong.yaml kong.yaml additions/consumers.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Add plugins to Kong Gateway configuration
@@ -112,6 +115,11 @@ jobs:
             plugins/openid-connect.yaml \
             plugins/oas-validation.yaml \
             plugins/rate-limiting.yaml -o kong.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
+
+      - name: Add namespace to Kong Gateway configuration if required
+        if: ${{ env.DECK_NAMESPACE && env.DECK_NAMESPACE != '/' && env.DECK_NAMESPACE != 'null' }}
+        run: cat kong.yaml | deck file namespace --path-prefix=${{ env.DECK_NAMESPACE }} -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Add select_tags patch to Kong Gateway configuration
