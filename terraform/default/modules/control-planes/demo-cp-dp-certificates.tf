@@ -1,3 +1,4 @@
+
 # Create a data plane client certificate using the private key from the vault
 resource "tls_self_signed_cert" "demo_cp_cert" {
   private_key_pem = data.vault_kv_secret_v2.tls.data.tls_key
