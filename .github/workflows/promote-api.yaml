@@ -46,7 +46,7 @@ jobs:
           url: ${{ inputs.vault_addr }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/system-accounts/${{ inputs.system_account }} token | system_account_TOKEN ;
+            konnect/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
@@ -84,12 +84,13 @@ jobs:
       - name: Patch OAS servers
         run: |
           # Since this pipeline is for configuring the gateway, 
-          # we need to use the custom x-internal-server provided in the OAS
-          # and remove the existing servers.
-          x_internal_server=$(yq eval '.["x-internal-server"].url' ${{ github.workspace }}/${{ inputs.openapi_spec }})
-          yq e -i '.servers = [{"url": "'$x_internal_server'", "description": "production internal hostname for the API gateway", "x-internal": true}]' ${{ github.workspace }}/${{ inputs.openapi_spec }}
+          # We need to filter out the servers that are not intended for the gateway.
+          # We only want to keep the servers with `x-purpose: gateway`
+
+          yq e -i '.servers = (.servers | map(select(.["x-purpose"] == "gateway")))' ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
           cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
+        
 
       - name: Lint OpenAPI Specification
         run: spectral lint  ${{ github.workspace }}/${{ inputs.openapi_spec }} --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
@@ -140,7 +141,7 @@ jobs:
         run: |
           deck gateway dump \
             --konnect-addr="${{ inputs.konnect_server_url }}" \
-            --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup_${{ env.NOW }}.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
@@ -148,7 +149,7 @@ jobs:
         run: |
           deck gateway diff kong.yaml  \
             --konnect-addr="${{ inputs.konnect_server_url }}" \
-            --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > diff_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
 
@@ -156,7 +157,7 @@ jobs:
         run: |
           deck gateway sync kong.yaml  \
             --konnect-addr="${{ inputs.konnect_server_url }}" \
-            --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
         working-directory: ${{ github.workspace }}/examples/apiops
 
@@ -164,7 +165,7 @@ jobs:
         run: |
           deck gateway dump \
             --konnect-addr="${{ inputs.konnect_server_url }}" \
-            --konnect-token="${{ steps.import-token.outputs.system_account_TOKEN }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_current_${{ env.NOW }}.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 

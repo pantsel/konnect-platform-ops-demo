@@ -17,17 +17,26 @@ info:
   x-team-name: kronos # name of the team responsible for the API
   x-business-unit: banking # business unit the team belongs to
 
-x-internal-server:
-  url: http://bankong-backend-transactions.kong-edu.svc.cluster.local:3001
-  description: internal hostname for the API gateway
-
+# Servers are also tagged with a purpose.
+# This allows to filter servers based on their purpose in the respective CI/CD pipelines.
+# For example, in the kong gateway configuration pipeline, only servers with the purpose `gateway` are considered.
+# In the dev-portal pipeline, only servers with the purpose `developer-portal` are considered.
 servers: 
   - url: http://localhost:3000
     description: local sandbox environment
+    x-environment: local
     x-internal: true
-  - url: http://api.transactions.k8s.orb.local
-    description: production environment
+    x-purpose: local-dev
+  - url: https://transactions.bankong.local
+    description: internal hostname for the API gateway configuration
+    x-environment: dev
+    x-internal: true
+    x-purpose: gateway
+  - url: https://api.transactions.bankong.com
+    x-environment: dev
+    description: consumer facing endpoint
     x-internal: false
+    x-purpose: developer-portal
   
 security:
   - ApiKeyAuth: [] 
