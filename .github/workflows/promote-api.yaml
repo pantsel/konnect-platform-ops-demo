@@ -7,6 +7,10 @@ on:
         description: "Path to the OpenAPI Specification file"
         required: true
         type: string
+      environment:
+        description: "Environment to deploy the API to"
+        type: string
+        default: dev
       konnect_server_url:
         description: "Kong Konnect server url"
         type: string
@@ -51,11 +55,11 @@ jobs:
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
 
-      - name: Setup env variables from OAS custom fields
+      - name: Setup decK variables
         run: |
 
           # Set the API Name
-          api_name=$(yq eval '.info.x-api-name' ${{ github.workspace }}/${{ inputs.openapi_spec }})
+          api_name=$(yq eval '.info.title' ${{ github.workspace }}/${{ inputs.openapi_spec }} | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
           echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
 
           # Set the Organization/BU
@@ -72,20 +76,24 @@ jobs:
             echo "DECK_NAMESPACE=$namespace" >> $GITHUB_ENV
           fi
 
-      - name: Patch OAS servers
+      - name: Filter OAS servers
         run: |
           # Since this pipeline is for configuring the gateway, 
-          # We need to filter out the servers that are not intended for the gateway.
-          # We only want to keep the servers with `x-purpose: gateway`
+          # we only want to keep the internal servers for the environment we are deploying to.
 
-          yq e -i '.servers = (.servers | map(select(.["x-purpose"] == "gateway")))' ${{ github.workspace }}/${{ inputs.openapi_spec }}
+          ENVIRONMENT="${{ inputs.environment }}"
+          yq eval -i ".servers |= map(select(.x-environment == \"$ENVIRONMENT\" and .x-internal == true))"  ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
+          # Debug
           cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
       - name: Read OAS into an environment variable
         id: oas-to-env
         run: |
-          # Read the YAML file and convert to JSON string
+          # Read the YAML file and convert to JSON string to be used with the OAS Validation plugin down the line.
+          # The plugin expects the OAS as a JSON string in an environment variable.
+          # https://docs.konghq.com/hub/kong-inc/oas-validation/configuration/#config-api_spec
+          
           oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
 
           # Set as env variable
@@ -118,9 +126,9 @@ jobs:
         run: cat kong.yaml | deck file namespace --path-prefix=${{ env.DECK_NAMESPACE }} -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
-      - name: Add select_tags patch to Kong Gateway configuration
-        run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+      # - name: Add select_tags patch to Kong Gateway configuration
+      #   run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
+      #   working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Output Kong Gateway configuration
         run: cat kong.yaml

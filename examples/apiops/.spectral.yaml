@@ -45,23 +45,6 @@ rules:
       function: pattern
       functionOptions:
         match: "^[a-z0-9]+(-[a-z0-9]+)*$"
-  x-api-name-required:
-    description: "Every OpenAPI must have an info.x-api-name specified."
-    message: "info.x-api-name is missing."
-    severity: error
-    given: "$"
-    then:
-      field: info.x-api-name
-      function: truthy
-  x-api-name-format:
-    description: "info.x-api-name must be a lowercase alphanumeric string with optional hyphens."
-    message: "info.x-api-name must only contain lowercase letters, and hyphens."
-    severity: error
-    given: "$.info.x-api-name"
-    then:
-      function: pattern
-      functionOptions:
-        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
 
   # OWASP API Security
   # Overwrite default severity to warn just for demo purposes

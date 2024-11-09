@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   version: 1.1.0
-  title: Transactions API of BanKonG
+  title: Transactions API
   description: | 
     This API provides you access to the transactions of a logged in user. You can get, create, change and delete transactions (of course always depending on permissions).
     
@@ -13,27 +13,27 @@ info:
     url: http://www.bankong.com/support
     email: support@bankong.com
   # Custom fields to be processed by the CI/CD pipeline
-  x-api-name: transactions-api # name of the API
   x-team-name: kronos # name of the team responsible for the API
   x-business-unit: banking # business unit the team belongs to
 
-# Servers are also tagged with a purpose.
-# This allows to filter servers based on their purpose in the respective CI/CD pipelines.
-# For example, in the kong gateway configuration pipeline, only servers with the purpose `gateway` are considered.
-# In the dev-portal pipeline, only servers with the purpose `developer-portal` are considered.
+# Servers are also tagged with custom fields that can be used by the CI/CD pipeline.
+# The `x-internal` field is used to determine if the server is internal or custuomer facing.
+# The `x-environment` field is used to determine the environment of the server.
+# For example, if want to use the spec for configuring the gateway, we only want to keep the internal servers for the environment we are deploying to.
+# When we want to publish the API to the developer portal, we want to keep only the external servers.
 servers: 
   - url: http://localhost:3000
     description: local sandbox environment
     x-internal: true
-    x-purpose: local-dev
-  - url: https://transactions.bankong.local
-    description: internal hostname for the API gateway configuration
+    x-environment: local
+  - url: https://bankong-backend-transactions.kong-edu.svc.cluster.local:3001
+    description: internal dev environment
     x-internal: true
-    x-purpose: gateway
+    x-environment: dev
   - url: https://api.transactions.bankong.com
-    description: consumer facing endpoint
+    description: external dev environment
     x-internal: false
-    x-purpose: developer-portal
+    x-environment: dev
   
 security:
   - ApiKeyAuth: [] 
