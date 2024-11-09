@@ -72,15 +72,6 @@ jobs:
             echo "DECK_NAMESPACE=$namespace" >> $GITHUB_ENV
           fi
 
-      - name: Read OAS into an environment variable
-        id: oas-to-env
-        run: |
-          # Read the YAML file and convert to JSON string
-          oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
-
-          # Set as env variable
-          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
-
       - name: Patch OAS servers
         run: |
           # Since this pipeline is for configuring the gateway, 
@@ -90,6 +81,15 @@ jobs:
           yq e -i '.servers = (.servers | map(select(.["x-purpose"] == "gateway")))' ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
           cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
+
+      - name: Read OAS into an environment variable
+        id: oas-to-env
+        run: |
+          # Read the YAML file and convert to JSON string
+          oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
+
+          # Set as env variable
+          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
         
 
       - name: Lint OpenAPI Specification
@@ -100,13 +100,6 @@ jobs:
         if: always()
         run: cat oas_lint_results_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Extract namespace from OAS if available
-        run: |
-          namespace=$(yq eval '.["x-kong-namespace"]' ${{ github.workspace }}/${{ inputs.openapi_spec }})
-          if [ ! -z "$namespace" ]; then
-            echo "DECK_NAMESPACE=$namespace" >> $GITHUB_ENV
-          fi
 
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
