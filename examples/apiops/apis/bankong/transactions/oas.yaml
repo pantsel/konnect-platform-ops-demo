@@ -24,16 +24,13 @@ info:
 servers: 
   - url: http://localhost:3000
     description: local sandbox environment
-    x-environment: local
     x-internal: true
     x-purpose: local-dev
   - url: https://transactions.bankong.local
     description: internal hostname for the API gateway configuration
-    x-environment: dev
     x-internal: true
     x-purpose: gateway
   - url: https://api.transactions.bankong.com
-    x-environment: dev
     description: consumer facing endpoint
     x-internal: false
     x-purpose: developer-portal
