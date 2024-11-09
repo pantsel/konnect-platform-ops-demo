@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This script checks if Vault is available by sending a request to the /v1/sys/health endpoint.
+# If the response status code is 200, it means that Vault is available.
+# If the response status code is not 200, it means that Vault is not available.
+# The script will retry checking the availability of Vault until it becomes available or the maximum number of retries is reached.
+
 if [[ -z "$VAULT_ADDR" ]]; then
     VAULT_ADDR="http://localhost:8300"
 fi

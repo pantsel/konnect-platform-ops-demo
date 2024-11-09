@@ -22,7 +22,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
-  - [Simple approach](#simple-approach)
+  - [Default approach](#default-approach)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Centralised approach](#centralised-approach)
     - [Flow](#flow-1)
@@ -147,15 +147,15 @@ $ act --input image_repo=myrepo/kong \
 
 ## Provision Konnect resources
 
-In this demo, there are two documented approaches for provisioning resources in Konnect.
+In this demo, there are three documented approaches for provisioning resources in Konnect.
 
-1. **Simple**: Basic resource provisioning with Terraform
+1. **Default**: Default resource provisioning with Terraform
 2. **Centralised**: A central Platform team manages all Konnect resources
 3. **Federated**: Every team manages their own Konnect resources
 
-### Simple approach
+### Default approach
 
-The provisioning process is based on a static Terraform script that can be found in `terraform/modules/simple/main.tf`
+Terraform project: `./terraform/default`
 
 Provisioning will result in the following high level setup:
 
@@ -182,7 +182,7 @@ graph TD;
 To provision the Konnect resources, execute the following command: 
 
 ```bash
-$ act -W .github/workflows/provision-konnect-simple.yaml 
+$ act -W .github/workflows/provision-konnect-default.yaml 
 ```
 
 ***Input Parameters***
