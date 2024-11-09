@@ -4,26 +4,20 @@ resource "tls_self_signed_cert" "demo_cp_cert" {
 
   subject {
     common_name  = "konnect-demo-cp"
-    organization = "ACME Inc"
-    country      = "EU"
+    organization = local.cert.subject.organization
+    country      = local.cert.subject.country
   }
 
   validity_period_hours = 8760 // 1 year
   # early_renewal_hours = 8760 // Always renew the cert for demo purposes 1 year
   is_ca_certificate = true
 
-  allowed_uses = [
-    "cert_signing",
-    "crl_signing",
-    "encipher_only",
-    "server_auth",
-    "client_auth"
-  ]
+  allowed_uses = local.cert.allowed_uses
 }
 
 # Store the certificate in Vault
 resource "vault_kv_secret_v2" "demo_cp_cert_kv_secret" {
-  mount               = "konnect"
+  mount               = local.kv_mount
   name                = "tls/demo_cp"
   cas                 = 1
   delete_all_versions = true
