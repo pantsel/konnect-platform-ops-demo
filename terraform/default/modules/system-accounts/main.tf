@@ -23,6 +23,15 @@ resource "konnect_system_account" "sa_demo_cp_admin" {
   
 }
 
+# Assign the system account to the demo team
+resource "konnect_system_account_team" "sa_demo_cp_admin_team" {
+  account_id = konnect_system_account.sa_demo_cp_admin.id
+
+  team_id = var.teams.demo_team.id
+}
+
+
+
 # Create an access token for the system account
 resource "konnect_system_account_access_token" "sa_demo_cp_admin_token" {
 
@@ -32,11 +41,23 @@ resource "konnect_system_account_access_token" "sa_demo_cp_admin_token" {
 
 }
 
-# Assign the system account to the demo team
-resource "konnect_system_account_team" "sa_demo_cp_admin_team" {
-  account_id = konnect_system_account.sa_demo_cp_admin.id
+# Store the access token in Vault
+resource "vault_kv_secret_v2" "sa_demo_cp_admin_token_secret" {
+  mount               = local.kv_mount
+  name                = "system_accounts/demo_cp_admin"
+  cas                 = 1
+  delete_all_versions = true
 
-  team_id = var.teams.demo_team.id
+  data_json = jsonencode(
+    {
+      token = konnect_system_account_access_token.sa_demo_cp_admin_token.token,
+    }
+  )
+
+  custom_metadata {
+    max_versions = 5
+  }
 }
+
 
 

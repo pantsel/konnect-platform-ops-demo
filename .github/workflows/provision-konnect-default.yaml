@@ -74,29 +74,7 @@ jobs:
         id: tfapply
         run: |
           terraform apply -auto-approve tfplan
-          # echo "$(terraform-bin output -json kong_gateway_control_plane_info | jq '[.[]]')" > kong_gateway_control_plane_info.json
-          echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
         working-directory: ${{env.TERRAFORM_DIR}}
-
-      - name: Store System Account tokens in Vault
-        if: ${{ inputs.action == 'provision' }}
-        run: |
-          for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
-            _jq() {
-              echo ${row} | base64 --decode | jq -r ${1}
-            }
-
-            secret_name=$(_jq '.name')
-            secret_value=$(_jq '.token')
-
-            vault kv put secret/system-accounts/${secret_name} token=${secret_value}
-
-            echo "Stored secret ${secret_name} in Vault."
-          done
-        working-directory: ${{env.TERRAFORM_DIR}}
-        env:
-          VAULT_ADDR: ${{ inputs.vault_addr }}
-          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
       
       - name: Terraform destroy
         if: ${{ inputs.action == 'destroy' }}
