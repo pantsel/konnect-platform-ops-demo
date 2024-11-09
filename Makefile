@@ -54,8 +54,8 @@ vault-secrets-old: ## Setup vault secrets
 vault-secrets: ## Setup vault secrets
 	@echo "Setting up vault secrets.."
 	@./scripts/check-vault.sh
-	@terraform -chdir=terraform/modules/certificates init
-	@terraform -chdir=terraform/modules/certificates apply -auto-approve
+	@terraform -chdir=terraform/certificates init
+	@terraform -chdir=terraform/certificates apply -auto-approve
 
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."

@@ -32,7 +32,7 @@ resource "tls_self_signed_cert" "cp_cert" {
 resource "vault_kv_secret_v2" "cp_cert_kv_secret" {
   for_each            = tls_self_signed_cert.cp_cert
   mount               = local.kv_mount
-  name                = "tls/${each.key}"
+  name                = "certificates/${each.key}"
   cas                 = 1
   delete_all_versions = true
 

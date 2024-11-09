@@ -1,6 +1,6 @@
 image:
   repository: kong/kong-gateway
-  tag: "3.7.0.0"
+  tag: "3.8.0.0"
 
 secretVolumes:
 - kong-cluster-cert
@@ -11,7 +11,7 @@ admin:
 extraLabels:
   tags.datadoghq.com/env: "demo"
   tags.datadoghq.com/service: "kong-dp"
-  tags.datadoghq.com/version: "3.7.0.0"
+  tags.datadoghq.com/version: "3.8.0.0"
 
 # Annotation to be added to Kong pods
 podAnnotations:

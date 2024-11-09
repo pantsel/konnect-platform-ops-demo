@@ -59,32 +59,24 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Import Certificates
+      - name: Import Secrets
         if: ${{ inputs.action == 'deploy' }}
-        id: import-certs
+        id: import-secrets
         uses: hashicorp/vault-action@v2
         with:
           url: ${{ inputs.vault_addr }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/certificates/demo * | DP_
-
-      - name: Import System Account Token
-        if: ${{ inputs.action == 'deploy' }}
-        id: import-token
-        uses: hashicorp/vault-action@v2
-        with:
-          url: ${{ inputs.vault_addr }}
-          token: ${{ secrets.VAULT_TOKEN }}
-          secrets: |
-            secret/data/system-accounts/${{ inputs.system_account }} token | system_account_TOKEN ;
+            konnect/data/certificates/common tls_key | TLS_KEY;
+            konnect/data/certificates/${{ inputs.control_plane_name }} tls_crt | TLS_CERT;
+            konnect/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
           # Make the request and capture the response code and body
-          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-token.outputs.system_account_TOKEN }}" -H "Content-Type: application/json")
+          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-secrets.outputs.SYSTEM_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
           http_code=${response: -3}
           response_body=${response:0:-3}
 
@@ -127,8 +119,8 @@ jobs:
               | kubectl apply -f -
 
         env:
-          TLS_CERT: ${{ steps.import-certs.outputs.DP_TLS_CRT }}
-          TLS_KEY: ${{ steps.import-certs.outputs.DP_TLS_KEY }}
+          TLS_CERT: ${{ steps.import-secrets.outputs.TLS_CERT }}
+          TLS_KEY: ${{ steps.import-secrets.outputs.TLS_KEY }}
 
       - name: Deploy Kong Data Plane
         if: ${{ inputs.action == 'deploy' }}
@@ -155,8 +147,6 @@ jobs:
             --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
             --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
             --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
-
-
 
       - name: Destroy Kong Deployment
         if: ${{ inputs.action == 'destroy' }}
