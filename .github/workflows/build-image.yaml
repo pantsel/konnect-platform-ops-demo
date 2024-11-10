@@ -43,68 +43,44 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
 
       - name: Login to the Docker registry
         uses: docker/login-action@v3
         with:
-          registry: localhost:5000
+          registry: ${{ inputs.docker_registry }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Import Certificates
-        id: import-certs
-        uses: hashicorp/vault-action@v2
-        with:
-          url: ${{ inputs.vault_addr }}
-          token: ${{ inputs.vault_token }}
-          secrets: |
-            secret/data/certificates/demo ca | CA_CRT
-
-      - name: Save CA Certificate to file
-        run: |
-          mkdir -p .tls
-          touch .tls/ca.crt
-          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
-        working-directory: docker
 
       - name: Fetch Custom Plugin
         run: |
           git clone https://github.com/Kong/kong-plugin.git
         working-directory: docker
 
-      - name: Download docker-entrypoint.sh
-        run: |
-          curl -s -o docker-entrypoint.sh https://raw.githubusercontent.com/Kong/docker-kong/master/docker-entrypoint.sh
-          chmod +x docker-entrypoint.sh
-        working-directory: docker
-
       - name: Download Kong Gateway
         run: |
-          curl -s -o kong.deb https://packages.konghq.com/public/gateway-37/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ inputs.kong_version }}/kong-enterprise-edition_3.7.0.0_amd64.deb
+          curl -s -o kong.deb https://packages.konghq.com/public/gateway-37/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ inputs.kong_version }}/kong-enterprise-edition_${{ inputs.kong_version }}_amd64.deb
         working-directory: docker
 
       - name: Build Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: docker
           platforms: linux/amd64
           push: false
+          load: true
           tags: ${{ inputs.image_repo }}:${{ inputs.image_tag }}
-
-      - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
 
       - name: Scan Docker image with Trivy
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
         run: |
-          ./bin/trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          trivy image --exit-code 1 --no-progress myrepo/kong:latest
 
-      - name: Create docker network for tests
+      - name: Create docker network for smoke tests
         run: |
           docker network create kong-net-${{ github.run_id }}
         continue-on-error: true
-              
 
       - name: Run docker container
         run: |
@@ -115,7 +91,6 @@ jobs:
             --env KONG_PLUGINS=bundled,myplugin \
             --env KONG_STATUS_LISTEN=0.0.0.0:8100 \
             --env KONG_DECLARATIVE_CONFIG=/kong.yaml \
-            --env KONG_LUA_SSL_TRUSTED_CERTIFICATE=/srv/shared/ssl/ca.crt,system \
             --health-cmd "kong health" \
             --health-interval 10s \
             --health-timeout 5s \
@@ -167,3 +142,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag }}
+
+      - name: Inspect
+        run: |
+          docker buildx imagetools inspect ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag }}   

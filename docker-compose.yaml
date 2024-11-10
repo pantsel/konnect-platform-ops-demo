@@ -52,6 +52,8 @@ services:
       - registry_data:/var/lib/registry
     networks:
       - konnect-platform-ops-demo
+    labels:
+      - dev.orbstack.domains=registry.docker.local
 
   postgres-kc:
     networks:
@@ -106,7 +108,6 @@ services:
       # KC_LOG_LEVEL: DEBUG
 
 # BanKonG
-  
   bankong-frontend:
     networks:
       - konnect-platform-ops-demo

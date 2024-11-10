@@ -7,7 +7,13 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update -y && apt upgrade -y && useradd -m docker
 RUN apt install -y --no-install-recommends \
-    curl jq build-essential libssl-dev libffi-dev python3 python3-venv python3-dev python3-pip unzip nodejs gnupg software-properties-common wget lsb-release
+    curl jq build-essential libssl-dev libffi-dev python3 python3-venv python3-dev python3-pip unzip nodejs gnupg software-properties-common apt-transport-https wget lsb-release
+
+# Install Trivy
+RUN wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+RUN echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | tee -a /etc/apt/sources.list.d/trivy.list
+RUN apt-get update
+RUN apt-get install trivy
 
 # Intsall node js 20
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
@@ -47,6 +53,8 @@ RUN setcap -r /usr/bin/vault
 RUN curl -sL https://github.com/kong/deck/releases/download/v1.38.1/deck_1.38.1_linux_amd64.tar.gz -o deck.tar.gz
 RUN tar -xf deck.tar.gz -C /tmp
 RUN cp /tmp/deck /usr/local/bin/
+
+
 
 # Download and extract the GitHub Actions runner
 RUN cd /home/docker && mkdir actions-runner && cd actions-runner \
