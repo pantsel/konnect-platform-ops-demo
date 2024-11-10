@@ -24,14 +24,6 @@ on:
         description: 'Continue on Trivy scan failure'
         default: 'true'
         type: boolean
-      vault_addr:
-        description: 'Vault Address'
-        default: 'http://localhost:8300'
-        type: string
-      vault_token:
-        description: 'Vault Token'
-        default: 'root'
-        type: string
 
 jobs:
   build-image:
@@ -72,10 +64,16 @@ jobs:
           load: true
           tags: ${{ inputs.image_repo }}:${{ inputs.image_tag }}
 
-      - name: Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy (Table Format)
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
         run: |
-          trivy image --exit-code 1 --no-progress myrepo/kong:latest
+          trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+
+      - name: Save Trivy Scan Results (JSON Format)
+        continue-on-error: ${{ inputs.continue_on_scan_failure }}
+        run: |
+          mkdir -p reports
+          trivy image --format json --output reports/trivy-report.json ${{ inputs.image_repo }}:${{ inputs.image_tag }}
 
       - name: Create docker network for smoke tests
         run: |
@@ -146,3 +144,9 @@ jobs:
       - name: Inspect
         run: |
           docker buildx imagetools inspect ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag }}   
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports/*
