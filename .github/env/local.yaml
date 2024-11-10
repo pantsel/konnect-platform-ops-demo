@@ -1,0 +1,9 @@
+env_name: local
+vault_addr: http://localhost:8300
+vault_token: ${{ secrets.VAULT_TOKEN }}
+konnect_region: eu
+konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
+
+# Docker image build and push
+docker_registry: localhost:5000
+kong_version: "3.8.0.0"

@@ -1,0 +1,5 @@
+env_name: staging
+vault_addr: http://localhost:8300
+vault_token: ${{ secrets.VAULT_TOKEN }}
+konnect_region: eu
+konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}

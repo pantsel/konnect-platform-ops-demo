@@ -3,10 +3,6 @@ name: Provision Konnect
 on:
   workflow_call:
     inputs:
-      vault_addr:
-        description: 'Vault Address'
-        type: string
-        default: 'http://localhost:8300'
       action:
         description: 'Action to perform'
         required: true
@@ -16,27 +12,24 @@ on:
         description: 'Environment to provision'
         type: string
         default: 'local'
-      konnect_region:
-        description: 'Konnect Region to provision resources'
-        type: string
-        default: 'eu'
 
 jobs:
   provision-konnect:
     runs-on: ubuntu-latest
 
     env:
-      TF_VAR_konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
-      TF_VAR_environment: ${{ inputs.environment }}
-      TF_VAR_konnect_server_url: https://${{ inputs.konnect_region }}.api.konghq.com
-      TF_VAR_vault_addr: ${{ inputs.vault_addr }} 
-      TF_VAR_vault_token: ${{ secrets.VAULT_TOKEN }}
+      ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       TERRAFORM_DIR: ${{ github.workspace }}/terraform/default
       PLANID: default
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
