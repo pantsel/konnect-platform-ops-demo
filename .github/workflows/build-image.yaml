@@ -3,23 +3,10 @@ name: Build Kong Gateway Image
 on:
   workflow_call:
     inputs:
-      docker_registry:
-        description: 'Docker Registry'
-        required: true
-        default: 'localhost:5000'
+      environment:
+        description: 'Deployment environment (dev, staging, prod)'
         type: string
-      image_repo:
-        description: 'Target Docker image repository'
-        required: true
-        type: string
-      image_tag:
-        description: 'Target Docker image tag'
-        required: true
-        type: string
-      kong_version:
-        description: 'Kong Gateway version'
-        default: '3.7.0.0'
-        type: string
+        default: local
       continue_on_scan_failure:
         description: 'Continue on Trivy scan failure'
         default: 'true'
@@ -29,9 +16,23 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
 
+    env:
+      ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Load environment configuration
+        id: load_config
+        run: |
+          echo "Reading configuration from $ENV_FILE"
+          CONFIG_VARS=$(yq eval 'keys' $ENV_FILE)
+          
+          for VAR in $CONFIG_VARS; do
+            VALUE=$(yq eval ".${VAR}" $ENV_FILE)
+            echo "${VAR^^}=${VALUE}" >> $GITHUB_ENV
+          done
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,7 +42,7 @@ jobs:
       - name: Login to the Docker registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ inputs.docker_registry }}
+          registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -52,7 +53,9 @@ jobs:
 
       - name: Download Kong Gateway
         run: |
-          curl -s -o kong.deb https://packages.konghq.com/public/gateway-37/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ inputs.kong_version }}/kong-enterprise-edition_${{ inputs.kong_version }}_amd64.deb
+          KONG_MAJOR_MINOR_VERSION=$(echo ${{ env.KONG_VERSION }} | cut -d. -f1-2 | tr -d '.')
+          echo "Downloading Kong Gateway ${{ env.KONG_VERSION }}... with major version $KONG_MAJOR_MINOR_VERSION"
+          curl -s -o kong.deb https://packages.konghq.com/public/gateway-$KONG_MAJOR_MINOR_VERSION/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ env.KONG_VERSION }}/kong-enterprise-edition_${{ env.KONG_VERSION }}_amd64.deb
         working-directory: docker
 
       - name: Build Docker image
@@ -62,18 +65,18 @@ jobs:
           platforms: linux/amd64
           push: false
           load: true
-          tags: ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          tags: ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
       - name: Scan Docker image with Trivy (Table Format)
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
         run: |
-          trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
       - name: Save Trivy Scan Results (JSON Format)
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
         run: |
           mkdir -p reports
-          trivy image --format json --output reports/trivy-report.json ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
       - name: Create docker network for smoke tests
         run: |
@@ -94,7 +97,7 @@ jobs:
             --health-timeout 5s \
             --health-retries 3 \
             --volume $(pwd)/kong.yaml:/kong.yaml \
-            ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+            ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
         shell: bash
         working-directory: docker
 
@@ -139,11 +142,11 @@ jobs:
           context: docker
           platforms: linux/amd64
           push: true
-          tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
       - name: Inspect
         run: |
-          docker buildx imagetools inspect ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag }}   
+          docker buildx imagetools inspect ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}   
 
       - name: Upload Reports
         uses: actions/upload-artifact@v4
