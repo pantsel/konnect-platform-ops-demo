@@ -10,7 +10,7 @@ on:
       environment:
         description: "Environment to promote the API to"
         type: string
-        default: local
+        default: dev
       control_plane_name:
         description: "Kong Konnect control plane name"
         type: string
@@ -85,6 +85,7 @@ jobs:
           # Debug
           cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
 
+      # This step is only required if you are using OAS Validation plugin
       - name: Read OAS into an environment variable
         id: oas-to-env
         run: |
@@ -124,9 +125,9 @@ jobs:
         run: cat kong.yaml | deck file namespace --path-prefix=${{ env.DECK_NAMESPACE }} -o kong.yaml
         working-directory: ${{ github.workspace }}/examples/apiops
 
-      # - name: Add select_tags patch to Kong Gateway configuration
-      #   run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
-      #   working-directory: ${{ github.workspace }}/examples/apiops
+      - name: Add select_tags patch to Kong Gateway configuration
+        run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
+        working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Output Kong Gateway configuration
         run: cat kong.yaml
