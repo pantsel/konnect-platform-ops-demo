@@ -743,6 +743,7 @@ graph LR;
   C[Lint OAS]
   D["Deck Ops
     - openapi2kong
+    - add plugins
     - file merge
     - namespace
     - patch
@@ -756,7 +757,7 @@ graph LR;
   G[Diff current vs future state
   deck gateway diff
   ]
-  H[`
+  H[
   Archive artifacts
   ]
   I[Sync future state
