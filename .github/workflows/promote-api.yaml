@@ -152,6 +152,7 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > diff_${{ env.NOW }}.txt
         working-directory: ${{ github.workspace }}/examples/apiops
+    
 
       - name: Sync Kong Gateway configuration
         run: |
