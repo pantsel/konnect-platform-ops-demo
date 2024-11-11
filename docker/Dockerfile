@@ -30,7 +30,7 @@ RUN chmod 755 /docker-entrypoint.sh
 USER kong
 
 # Expose only necessary ports (adjust based on your use case)
-EXPOSE 8000 8443
+EXPOSE 8000 8443 8001 8444 8002 8445 8003 8446 8004 8447
 
 # Use a safe stop signal
 STOPSIGNAL SIGQUIT
