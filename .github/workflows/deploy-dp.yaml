@@ -3,6 +3,10 @@ name: Deploy Kong Data Plane
 on:
   workflow_call:
     inputs:
+      environment:
+        description: 'Environment to deploy to'
+        type: string
+        default: 'local'
       namespace:
         description: 'Kubernetes namespace'
         type: string
@@ -15,10 +19,6 @@ on:
         description: 'Kong image tag'
         default: '3.7.0.0'
         type: string
-      vault_addr:
-        description: 'Vault Address'
-        default: 'http://localhost:8300'
-        type: string
       control_plane_name:
         description: 'The name of the control plane to deploy the data plane to'
         type: string
@@ -27,10 +27,6 @@ on:
         description: 'The system account to use for authenticating with the Konnect API'
         type: string
         required: true
-      konnect_server_url:
-        description: 'Konnect server URL'
-        type: string
-        default: https://eu.api.konghq.com
       action:
         description: 'Action to perform'
         required: true
@@ -42,12 +38,18 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       NAMESPACE: ${{ inputs.namespace }}
       KUBECONFIG: /.kube/config
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -64,8 +66,8 @@ jobs:
         id: import-secrets
         uses: hashicorp/vault-action@v2
         with:
-          url: ${{ inputs.vault_addr }}
-          token: ${{ secrets.VAULT_TOKEN }}
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
           secrets: |
             konnect/data/certificates/common tls_key | TLS_KEY;
             konnect/data/certificates/${{ inputs.control_plane_name }} tls_crt | TLS_CERT;
@@ -76,7 +78,7 @@ jobs:
         run: |
 
           # Make the request and capture the response code and body
-          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-secrets.outputs.SYSTEM_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
+          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ env.KONNECT_SERVER_URL }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-secrets.outputs.SYSTEM_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
           http_code=${response: -3}
           response_body=${response:0:-3}
 

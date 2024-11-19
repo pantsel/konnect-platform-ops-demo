@@ -24,7 +24,7 @@ runs:
         
         for VAR in $CONFIG_VARS; do
           VALUE=$(yq eval ".${VAR}" $ENV_FILE)
-          echo "${VAR}=${VALUE}" >> $GITHUB_ENV
+          echo "${VAR^^}=${VALUE}" >> $GITHUB_ENV
           if [[ $VAR == "vault_addr" || $VAR == "vault_token" || $VAR == "konnect_region" || $VAR == "konnect_personal_access_token" || $VAR == "env_name" ]]; then
             TF_VAR_NAME="TF_VAR_${VAR}"
             echo "${TF_VAR_NAME}=${VALUE}" >> $GITHUB_ENV
