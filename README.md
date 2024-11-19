@@ -168,7 +168,7 @@ graph TD;
         end
 
         subgraph Teams and System Accounts
-            subgraph TeamA
+            subgraph Individual
                 A[Demo CP Viewers]
                 B[System Account<br>demo_cp_admin]
             end
@@ -179,7 +179,7 @@ graph TD;
 
         subgraph Control Planes
             D[Demo_CP]
-            E[Global_CP]
+            E[Global_CP<br>Preconfigured with Terraform]
         end
 
         subgraph Control Plane Groups
@@ -196,7 +196,7 @@ graph TD;
     A -.-> |Read-Only| D
     B --> |Admin| D
 
-    C --> |Admin| E
+    C -.-> |Admin| E
 
     D --> |API Configurations| F 
     E --> |Global Policies| F
