@@ -4,14 +4,14 @@ terraform {
       source = "kong/konnect"
     }
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "4.4.0"
     }
     tls = {
-      source = "hashicorp/tls"
+      source  = "hashicorp/tls"
       version = "4.0.6"
     }
-    
+
   }
 }
 
@@ -33,9 +33,10 @@ module "teams" {
 }
 
 module "system_accounts" {
-  source      = "./modules/system-accounts"
-  environment = var.environment
-  teams       = module.teams.teams
+  source         = "./modules/system-accounts"
+  environment    = var.environment
+  teams          = module.teams.teams
+  control_planes = module.control_planes.control_planes
 }
 
 module "developer_portals" {

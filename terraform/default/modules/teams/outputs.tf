@@ -2,6 +2,6 @@
 
 output "teams" {
     value = {
-        demo_team = konnect_team.demo_team
+        demo_cp_team_readonly = konnect_team.demo_cp_team_readonly
     }
 }

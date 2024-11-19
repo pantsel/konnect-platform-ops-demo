@@ -8,9 +8,9 @@ terraform {
 }
 
 # Demo Team
-resource "konnect_team" "demo_team" {
-  name        = "Demo Team"
-  description = "This is a team that is managed by Terraform"
+resource "konnect_team" "demo_cp_team_readonly" {
+  name        = "Demo CP Team Readonly"
+  description = "Allow read-only access to the demo control plane"
 
   labels = {
     generated_by = "terraform"
@@ -19,10 +19,10 @@ resource "konnect_team" "demo_team" {
 }
 
 # Make the team an admin of the demo control plane
-resource "konnect_team_role" "demo_cp_admin_role" {
+resource "konnect_team_role" "demo_cp_viewer_role" {
   entity_id        = var.control_planes.demo_cp.id
   entity_region    = "eu"
   entity_type_name = "Control Planes"
-  role_name        = "Admin"
-  team_id          = konnect_team.demo_team.id
+  role_name        = "Viewer"
+  team_id          = konnect_team.demo_cp_team_readonly.id
 }
