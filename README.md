@@ -162,20 +162,48 @@ Provisioning will result in the following high level setup:
 ```mermaid
 graph TD;
   subgraph Konnect
-      A[Demo team]
-      B[Demo CP]
-      C[Dev Portal]
+        direction TB; 
+        subgraph Applications
+            J[Developer Portal]
+        end
+
+        subgraph Teams and System Accounts
+            subgraph TeamA
+                A[Demo CP Viewers]
+                B[System Account<br>demo_cp_admin]
+            end
+            subgraph Platform
+                C[System Account<br>global_cp_admin]
+            end
+        end
+
+        subgraph Control Planes
+            D[Demo_CP]
+            E[Global_CP]
+        end
+
+        subgraph Control Plane Groups
+            F[CP_Group]
+        end
     end
 
     subgraph Managed Cluster
       direction RL
-        D[Kong DP]
+        P[Kong DP Nodes]
     end
+    
+  
+    A -.-> |Read-Only| D
+    B --> |Admin| D
 
-    A --> B
-    B -.-> D
+    C --> |Admin| E
 
+    D --> |API Configurations| F 
+    E --> |Global Policies| F
+
+    F --> |API Configurations & Global Policies| P
 ```
+
 
 #### Run the Provisioning workflow
 
