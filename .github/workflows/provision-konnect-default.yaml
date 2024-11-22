@@ -47,7 +47,7 @@ jobs:
 
       - name: Terraform Init
         run: |
-          terraform init \
+          terraform init -upgrade \
             -backend-config=config.s3.tfbackend \
             -backend-config="bucket=konnect" \
             -backend-config="key=$PLANID/${{ inputs.environment }}.tfstate" \
