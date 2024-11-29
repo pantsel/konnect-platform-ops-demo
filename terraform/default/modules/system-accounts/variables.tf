@@ -13,3 +13,9 @@ variable "control_planes" {
   description = "The control planes to associate with the system accounts"
   type        = any
 }
+
+variable "konnect_region" {
+  description = "The region to create the resources in"
+  default     = "eu"
+  type        = string
+}

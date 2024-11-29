@@ -5,6 +5,9 @@ image:
 secretVolumes:
 - kong-cluster-cert
 
+manager:
+  enabled: false
+
 admin:
   enabled: false
 

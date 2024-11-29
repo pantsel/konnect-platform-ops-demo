@@ -20,7 +20,7 @@ resource "konnect_team" "demo_cp_team_readonly" {
 # Make the team an admin of the demo control plane
 resource "konnect_team_role" "demo_cp_viewer_role" {
   entity_id        = var.control_planes.demo_cp.id
-  entity_region    = "eu"
+  entity_region    = var.konnect_region
   entity_type_name = "Control Planes"
   role_name        = "Viewer"
   team_id          = konnect_team.demo_cp_team_readonly.id

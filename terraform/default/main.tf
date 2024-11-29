@@ -30,6 +30,7 @@ module "teams" {
   source         = "./modules/teams"
   environment    = var.environment
   control_planes = module.control_planes.control_planes
+  konnect_region = var.konnect_region
 }
 
 module "system_accounts" {

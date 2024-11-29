@@ -18,6 +18,8 @@ services:
       - ./scripts/create-minio-bucket.sh:/create-minio-bucket.sh
     networks:
       - konnect-platform-ops-demo
+    labels:
+      - dev.orbstack.domains=s3.minio.local
 
   vault:
     container_name: vault
