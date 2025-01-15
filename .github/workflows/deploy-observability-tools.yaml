@@ -103,7 +103,7 @@ jobs:
           helm repo update
 
       - name: Deploy Prometeus operator
-        if: ${{ inputs.action == 'deploy' }}
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana' }}
         run: |
           helm upgrade --install kong-prometheus prometheus-community/kube-prometheus-stack \
             -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml

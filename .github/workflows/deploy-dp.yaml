@@ -163,7 +163,7 @@ jobs:
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
             --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
-            --set replicaCount="2" \
+            --set replicaCount="1" \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
             --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
             --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \

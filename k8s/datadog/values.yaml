@@ -13,6 +13,8 @@ datadog:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
+    - name: DD_ENV
+      value: demo
   apiKeyExistingSecret: datadog-secret
   site: datadoghq.eu
   tags:
