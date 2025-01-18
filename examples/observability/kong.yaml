@@ -15,7 +15,8 @@ plugins:
 
   - name: opentelemetry
     config:
-      traces_endpoint: ${{ env "DECK_CONFIG_OPENTELEMETRY_ENDPOINT" }}
+      traces_endpoint: ${{ env "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT" }}
+      logs_endpoint: ${{ env "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT" }}
       resource_attributes:
         namespace: kong
         service.name: kong-dp

@@ -1,0 +1,12 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+  - name: pre-function
+    enabled: true
+    config:
+      log:
+      - local serialized = kong.log.serialize();local attributes = {service_name = serialized['service']['name'],service_host = serialized['service']['host'],upstream_latency = serialized['latencies']['proxy'],kong_latency = serialized['latencies']['kong'],http_method = serialized['request']['method'],http_status = serialized['response']['status'],upstream_status = serialized['upstream_status'],};kong.telemetry.log("logger", {}, "access_log", "access log", attributes)

@@ -1,0 +1,84 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: dynatrace-otel
+  namespace: opentelemetry-operator-system
+spec:
+  envFrom:
+  - secretRef:
+      name: dynatrace-otelcol-dt-api-credentials
+  env:
+  - name: MY_POD_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP
+  mode: "deployment"
+  image: "otel/opentelemetry-collector-contrib:0.112.0"
+  serviceAccount: collector
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: 5s
+              kubernetes_sd_configs:
+              - role: pod
+              scheme: http
+              tls_config:
+                ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              authorization:
+                credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              metrics_path: /metrics
+              relabel_configs:
+              - source_labels: [__meta_kubernetes_namespace]
+                action: keep
+                regex: "kong"
+              - source_labels: [__meta_kubernetes_pod_name]
+                action: keep
+                regex: "kong-kong-(.+)"
+              - source_labels: [__meta_kubernetes_pod_container_name]
+                action: keep
+                regex: "proxy"
+              - source_labels: [__meta_kubernetes_pod_container_port_number]
+                action: keep
+                regex: "8100"
+      tcplog:
+        listen_address: 0.0.0.0:54525
+        operators:
+          - type: json_parser
+
+    exporters:
+      otlphttp:
+        endpoint: "${env:DT_ENDPOINT}"
+        headers:
+          Authorization: "Api-Token ${env:DT_API_TOKEN}"
+      prometheus:
+        endpoint: 0.0.0.0:8889
+      debug:
+        verbosity: detailed
+
+    processors:
+      cumulativetodelta:
+        include:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        metrics:
+          receivers: [otlp, prometheus]
+          processors: [cumulativetodelta]
+          exporters: [otlphttp, prometheus]
+        logs:
+          receivers: [otlp, tcplog]
+          processors: []
+          exporters: [otlphttp]
