@@ -47,13 +47,13 @@ jobs:
 
           if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
             echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://datadog-agent.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
+            echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=null" >> $GITHUB_ENV
           elif [ "${{ inputs.observability_stack }}" == "dynatrace" ]; then
-            # echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://collector-kong-collector.opentelemetry-operator-system.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
-            # echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=http://collector-kong-collector.opentelemetry-operator-system.svc.cluster.local:4318/v1/logs" >> $GITHUB_ENV
             echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://localhost:4318/v1/traces" >> $GITHUB_ENV
             echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=http://localhost:4318/v1/logs" >> $GITHUB_ENV
           else
             echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://tempo.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
+            echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=null" >> $GITHUB_ENV
           fi
 
       - name: Set up Helm
@@ -70,23 +70,9 @@ jobs:
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
-          # Add Global observability plugins to the Kong Gateway configuration
-          if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
-            cat kong.yaml | deck file add-plugins \
-              plugins/datadog.yaml \
-              plugins/file-log.yaml \
-              -o kong.yaml
-          elif [ "${{ inputs.observability_stack }}" == "dynatrace" ]; then
-            # ToDo: Add Dynatrace plugins
-            cat kong.yaml | deck file add-plugins \
-              plugins/tcp-log.yaml \
-              -o kong.yaml
-          else
-            cat kong.yaml | deck file add-plugins \
-              plugins/http-log.yaml \
-              -o kong.yaml
-          fi
-
+          # Add Global observability plugins to the Kong Gateway configuration depending on the observability stack
+          cat kong.yaml | deck file add-plugins plugins/${{ inputs.observability_stack }}/* -o kong.yaml
+         
           deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ secrets.KONNECT_PAT }} \
