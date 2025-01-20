@@ -1,0 +1,9 @@
+---
+_format_version: '3.0'
+patches:
+- selectors:
+  - "$..plugins[*][?(@.name=='opentelemetry')].config"
+  values:
+    traces_endpoint: http://datadog-agent.${{ env "DECK_CONFIG_NAMESPACE" }}.svc.cluster.local:4318/v1/traces
+  remove:
+    - logs_endpoint
