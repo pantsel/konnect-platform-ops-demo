@@ -40,6 +40,8 @@ oidc_issuer=${oidc_issuer:-http://$HOST_IP:8080/realms/demo/.well-known/openid-c
 
 read -s -p $'\n'"Enter Datadog API key (optional): " dd_api_key
 
+read -s -p $'\n'"Enter Dynatrace API token (optional): " dt_api_token
+
 if [[ -z "$konnect_token" || -z "$s3_access_key" || -z "$s3_secret_key" ]]; then
     echo $'\n'"One or more variables are empty. Exiting..."
     exit 1
@@ -60,5 +62,6 @@ DOCKER_PASSWORD=$docker_password
 VAULT_TOKEN=$vault_token
 OIDC_ISSUER=$oidc_issuer
 DD_API_KEY=$dd_api_key
+DT_API_TOKEN=$dt_api_token
 KUBE_CONTEXT=$kube_context
 EOF
