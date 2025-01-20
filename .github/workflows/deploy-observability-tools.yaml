@@ -140,20 +140,6 @@ jobs:
           
           # Deploy the OpenTelemetry Collector
           kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/otelcollector-dynatrace.yaml
-
-          # kubectl create namespace opentelemetry-operator-system --dry-run=client -o yaml | kubectl apply -f -
-
-          # kubectl create secret generic dynatrace-otelcol-dt-api-credentials \
-          #   --from-literal=DT_ENDPOINT=https://rcr22892.live.dynatrace.com/api/v2/otlp \
-          #   --from-literal=DT_API_TOKEN=${{ secrets.DT_API_TOKEN }} \
-          #   -n opentelemetry-operator-system --dry-run=client -o yaml | kubectl apply -f -
-
-          # # Create collector service account and role bindings
-          # kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/rbac.yaml --dry-run=client -o yaml | kubectl apply -f -
-          
-          # kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.116.0/opentelemetry-operator.yaml --dry-run=client -o yaml | kubectl apply -f -
-
-          # kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/crd-dynatrace-collector.yaml --dry-run=client -o yaml | kubectl apply -f -
       
       
       #####################################################################
