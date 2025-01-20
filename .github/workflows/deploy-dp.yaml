@@ -143,22 +143,22 @@ jobs:
           # Config exporter node
           # This node is responsible for exporting the configuration received from the control plane to an s3 bucket.
           # This configuration is then used by the data plane nodes to configure themselves if they cannot reach the control plane.
-          helm upgrade --install kong-config-exporter-$CONTROL_PLANE_NAME kong/kong \
-            -n $NAMESPACE \
-            --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
-            --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
-            --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
-            --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
-            --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
-            --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
-            --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key \
-            --set proxy.enabled=false \
-            --set customEnv.aws_region="main" \
-            --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
-            --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
-            --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
-            --set env.cluster_fallback_config_storage=s3://konnect/default/fallbackconfig \
-            --set env.cluster_fallback_config_export="on"
+          # helm upgrade --install kong-config-exporter-$CONTROL_PLANE_NAME kong/kong \
+          #   -n $NAMESPACE \
+          #   --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
+          #   --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
+          #   --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
+          #   --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
+          #   --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
+          #   --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
+          #   --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key \
+          #   --set proxy.enabled=false \
+          #   --set customEnv.aws_region="main" \
+          #   --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
+          #   --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
+          #   --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
+          #   --set env.cluster_fallback_config_storage=s3://konnect/default/fallbackconfig \
+          #   --set env.cluster_fallback_config_export="on"
 
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \

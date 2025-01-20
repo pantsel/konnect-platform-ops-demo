@@ -48,8 +48,10 @@ jobs:
           if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
             echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://datadog-agent.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
           elif [ "${{ inputs.observability_stack }}" == "dynatrace" ]; then
-            echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://collector-kong-collector.opentelemetry-operator-system.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
-            echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=http://collector-kong-collector.opentelemetry-operator-system.svc.cluster.local:4318/v1/logs" >> $GITHUB_ENV
+            # echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://collector-kong-collector.opentelemetry-operator-system.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
+            # echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=http://collector-kong-collector.opentelemetry-operator-system.svc.cluster.local:4318/v1/logs" >> $GITHUB_ENV
+            echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://localhost:4318/v1/traces" >> $GITHUB_ENV
+            echo "DECK_CONFIG_OPENTELEMETRY_LOGS_ENDPOINT=http://localhost:4318/v1/logs" >> $GITHUB_ENV
           else
             echo "DECK_CONFIG_OPENTELEMETRY_TRACES_ENDPOINT=http://tempo.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
           fi
@@ -109,8 +111,9 @@ jobs:
           helm repo add fluent https://fluent.github.io/helm-charts
           helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
           helm repo add datadog https://helm.datadoghq.com
+          
+          helm repo add jetstack https://charts.jetstack.io --force-update
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-          helm repo update
 
       #####################################################################
       ## DYNATRACE STACK DEPLOYMENT                                      ##
@@ -125,25 +128,46 @@ jobs:
             echo "DT_API_TOKEN secret is required for Dynatrace OneAgent Operator deployment"
             exit 1
           fi
-
-          #Install cert manager
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
-
-          kubectl create namespace opentelemetry-operator-system --dry-run=client -o yaml | kubectl apply -f -
-
-          kubectl create secret generic dynatrace-otelcol-dt-api-credentials \
-            --from-literal=DT_ENDPOINT=https://rcr22892.live.dynatrace.com/api/v2/otlp \
-            --from-literal=DT_API_TOKEN=${{ secrets.DT_API_TOKEN }} \
-            -n opentelemetry-operator-system --dry-run=client -o yaml | kubectl apply -f -
-
-          # Create collector service account and role bindings
-          kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/rbac.yaml --dry-run=client -o yaml | kubectl apply -f -
           
-          kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.116.0/opentelemetry-operator.yaml --dry-run=client -o yaml | kubectl apply -f -
+          #Install cert manager
+          helm upgrade --install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --version v1.16.2 \
+            --set crds.enabled=true
 
-          kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/crd-dynatrace-collector.yaml --dry-run=client -o yaml | kubectl apply -f -
-          # helm upgrade -i dynatrace-collector open-telemetry/opentelemetry-collector \
-          #   -n $DECK_CONFIG_NAMESPACE -f ${{ github.workspace }}/k8s/dynatrace/values.yaml
+          # Install Opentelemetry Operator
+          helm upgrade --install opentelemetry-operator open-telemetry/opentelemetry-operator \
+            --namespace opentelemetry-operator-system \
+            --create-namespace \
+            --wait \
+            --set "manager.collectorImage.repository=otel/opentelemetry-collector-k8s" \
+            --set admissionWebhooks.certManager.enabled=true
+
+          # Create Dynatrace API credentials secret
+          kubectl create secret generic dynatrace-endpoint -n kong --from-literal=dt-endpoint='https://rcr22892.live.dynatrace.com/api/v2/otlp' --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic dynatrace-access-token -n kong --from-literal=dt-access-token='${{ secrets.DT_API_TOKEN }}' --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create rbac
+          # kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/rbac.yaml
+          
+          # Deploy the OpenTelemetry Collector
+          kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/otelcollector-dynatrace.yaml
+
+          # kubectl create namespace opentelemetry-operator-system --dry-run=client -o yaml | kubectl apply -f -
+
+          # kubectl create secret generic dynatrace-otelcol-dt-api-credentials \
+          #   --from-literal=DT_ENDPOINT=https://rcr22892.live.dynatrace.com/api/v2/otlp \
+          #   --from-literal=DT_API_TOKEN=${{ secrets.DT_API_TOKEN }} \
+          #   -n opentelemetry-operator-system --dry-run=client -o yaml | kubectl apply -f -
+
+          # # Create collector service account and role bindings
+          # kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/rbac.yaml --dry-run=client -o yaml | kubectl apply -f -
+          
+          # kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.116.0/opentelemetry-operator.yaml --dry-run=client -o yaml | kubectl apply -f -
+
+          # kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/crd-dynatrace-collector.yaml --dry-run=client -o yaml | kubectl apply -f -
       
       
       #####################################################################
@@ -213,8 +237,7 @@ jobs:
 
           helm uninstall dynatrace-operator -n $DECK_CONFIG_NAMESPACE || true
           kubectl delete secret dynatrace || true
-
-          kubectl delete -f k8s/dynatrace/crd-dynatrace-collector.yaml || true
+          kubectl delete -f ${{ github.workspace }}/k8s/dynatrace/otelcollector-dynatrace.yaml || true
           kubectl delete -f k8s/dynatrace/rbac.yaml || true
 
       - name: Destroy Grafana Kong dashboard ConfigMap

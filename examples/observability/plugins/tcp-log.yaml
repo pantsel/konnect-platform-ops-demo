@@ -14,6 +14,6 @@ add-plugins:
               return ""
             end
             return h:match("%-([a-f0-9]+)%-[a-f0-9]+%-")
-        host: collector-kong-collector.opentelemetry-operator-system.svc.cluster.local
+        host: localhost
         port: 54525
         

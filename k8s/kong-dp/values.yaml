@@ -24,6 +24,11 @@ podAnnotations:
   ad.datadoghq.com/proxy.init_configs: '[{}]'
   ad.datadoghq.com/proxy.instances: '[{"openmetrics_endpoint": "http://%%host%%:8100/metrics"}]'
   ad.datadoghq.com/proxy.logs: '[{"source": "kong", "service": "kong-dp"}]'
+  metrics.dynatrace.com/scrape: 'true'
+  metrics.dynatrace.com/path: '/metrics'
+  metrics.dynatrace.com/port: '8100'
+  metrics.dynatrace.com/secure: 'false'
+  sidecar.opentelemetry.io/inject: "true"
 
 env:
   role: data_plane

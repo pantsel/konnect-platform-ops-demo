@@ -2,7 +2,7 @@ apiVersion: dynatrace.com/v1beta3
 kind: DynaKube
 metadata:
   name: dynakube
-  namespace: dynatrace
+  namespace: kong-observability
   annotations:
     feature.dynatrace.com/k8s-app-enabled: "true"
     feature.dynatrace.com/injection-readonly-volume: "true"
@@ -28,11 +28,11 @@ spec:
           operator: Exists
 
   activeGate:
-    image: 
     capabilities:
       - routing
       - metrics-ingest
       - dynatrace-api
+      - kubernetes-monitoring
 
 
     resources:
