@@ -1,5 +1,7 @@
 datadog:
   otlp:
+    logs:
+      enabled: true
     receiver:
       protocols:
         http:
