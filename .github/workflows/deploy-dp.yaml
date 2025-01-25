@@ -32,6 +32,14 @@ on:
         required: true
         type: string
         default: "deploy" # 'deploy' or 'destroy'
+      clustering_cn:
+        description: "Common name for the clustering certificate"
+        type: string
+        default: "clustering.kong.edu.local"
+      proxy_cn:
+        description: "Common name for the proxy certificate"
+        type: string
+        default: "proxy.kong.edu.local"
 
 jobs:
   prepare:
@@ -66,14 +74,14 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
           output_dir: ${{ github.workspace }}
-          common_name: "clustering.kong.edu.local"
+          common_name: ${{ inputs.clustering_cn }}
 
       - name: Issue proxy certs
         uses: ./.github/actions/issue-certs
         with:
           environment: ${{ inputs.environment }}
           output_dir: ${{ github.workspace }}
-          common_name: "proxy.kong.edu.local"
+          common_name: ${{ inputs.proxy_cn }}
 
       - name: Import Secrets
         if: ${{ inputs.action == 'deploy' }}
@@ -144,8 +152,8 @@ jobs:
             namespace: $NAMESPACE
           type: kubernetes.io/tls
           data:
-            tls.crt: $(cat clustering.kong.edu.local.crt | base64 | tr -d '\n')
-            tls.key: $(cat clustering.kong.edu.local.key | base64 | tr -d '\n')
+            tls.crt: $(cat ${{ inputs.clustering_cn }}.crt | base64 | tr -d '\n')
+            tls.key: $(cat ${{ inputs.clustering_cn }}.key | base64 | tr -d '\n')
           EOF
 
           kubectl apply -f - <<EOF
@@ -156,8 +164,8 @@ jobs:
             namespace: $NAMESPACE
           type: kubernetes.io/tls
           data:
-            tls.crt: $(cat proxy.kong.edu.local.crt | base64 | tr -d '\n')
-            tls.key: $(cat proxy.kong.edu.local.key | base64 | tr -d '\n')
+            tls.crt: $(cat ${{ inputs.proxy_cn }}.crt | base64 | tr -d '\n')
+            tls.key: $(cat ${{ inputs.proxy_cn }}.key | base64 | tr -d '\n')
           EOF
 
       - name: Deploy Kong Data Plane
