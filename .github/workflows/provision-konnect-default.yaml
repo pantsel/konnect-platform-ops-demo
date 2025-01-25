@@ -35,8 +35,27 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 'latest'
+
+      - name: Import Secrets
+        if: ${{ inputs.action == 'provision' }}
+        id: import-secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
+          secrets: |
+            konnect/data/certificates ca | CA_CRT ;
+
+      - name: Save CA Certificate to file
+        if: ${{ inputs.action == 'provision' }}
+        run: |
+          mkdir -p .tls
+          touch .tls/ca.crt
+          echo "${{ steps.import-secrets.outputs.CA_CRT }}" > .tls/ca.crt
+        working-directory: ${{ env.TERRAFORM_DIR }}
       
       - name: Create S3 bucket if not exists
+        if: ${{ inputs.action == 'provision' }}
         run: |
           ./create-minio-bucket.sh konnect konnect
 

@@ -5,7 +5,7 @@ export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc prep-secrets kind docker vault-secrets ## Prepare the project
+prepare: check-deps gencerts actrc prep-act-secrets kind docker vault-secrets ## Prepare the project
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
@@ -15,7 +15,7 @@ gencerts: ## Generate certificates
 	@echo "Generating certificates..."
 	@./scripts/generate-certs.sh
 
-prep-secrets: ## Prepare secrets
+prep-act-secrets: ## Prepare secrets
 	@echo "Preparing secrets.."
 	@./scripts/prep-act-secrets.sh
 
@@ -54,8 +54,16 @@ vault-secrets-old: ## Setup vault secrets
 vault-secrets: ## Setup vault secrets
 	@echo "Setting up vault secrets.."
 	@./scripts/check-vault.sh
-	@terraform -chdir=terraform/certificates init
-	@terraform -chdir=terraform/certificates apply -auto-approve
+	# @terraform -chdir=terraform/certificates init
+	# @terraform -chdir=terraform/certificates apply -auto-approve
+
+	@docker cp .tls vault:/tmp
+	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) konnect/certificates \
+		cluster_crt=@/tmp/.tls/cluster-tls.crt \
+		cluster_key=@/tmp/.tls/cluster-tls.key \
+		proxy_crt=@/tmp/.tls/proxy-tls.crt \
+		proxy_key=@/tmp/.tls/proxy-tls.key \
+		ca=@/tmp/.tls/ca.crt
 
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."
@@ -86,4 +94,4 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n\n"} \
 	/^[a-zA-Z_-]+:.*##/ { printf "  %-15s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps test runner
+.PHONY: prepare actrc gencerts prep-act-secrets kind docker vault-secrets clean stop check-deps test runner

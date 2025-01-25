@@ -45,7 +45,7 @@ jobs:
           url: ${{ inputs.vault_addr }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/certificates/demo ca | CA_CRT
+            konnect/data/certificates ca | CA_CRT
 
       - name: Save CA Certificate to file
         run: |

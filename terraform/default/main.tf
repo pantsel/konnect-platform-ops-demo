@@ -20,11 +20,11 @@ module "control_planes" {
   environment = var.environment
 }
 
-module "data_plane_certificates" {
-  source         = "./modules/data-plane-certificates"
-  environment    = var.environment
-  control_planes = module.control_planes.control_planes
-}
+# module "data_plane_certificates" {
+#   source         = "./modules/data-plane-certificates"
+#   environment    = var.environment
+#   control_planes = module.control_planes.control_planes
+# }
 
 module "teams" {
   source         = "./modules/teams"

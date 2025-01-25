@@ -4,6 +4,7 @@ image:
 
 secretVolumes:
 - kong-cluster-cert
+- kong-proxy-cert
 
 manager:
   enabled: false
@@ -42,6 +43,9 @@ env:
   status_listen: "0.0.0.0:8100 http2"
   port_maps: "80:8000, 443:8443, 8100:8100"
   event_hooks_enabled: "off"
+  ssl_cert: "/etc/secrets/kong-proxy-cert/tls.crt"
+  ssl_cert_key: "/etc/secrets/kong-proxy-cert/tls.key"
+
 
 ingressController:
   enabled: false
