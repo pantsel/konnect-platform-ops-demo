@@ -41,22 +41,9 @@ kind: ## Setup kind cluster
 		echo "Skipping kind cluster creation. Using orbstack."; \
 	fi
 
-vault-secrets-old: ## Setup vault secrets
-	@echo "Setting up vault secrets.."
-	@./scripts/check-vault.sh
-	@docker cp .tls vault:/tmp
-	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) secret/certificates/demo \
-		tls_crt=@/tmp/.tls/tls.crt \
-		tls_key=@/tmp/.tls/tls.key \
-		ca=@/tmp/.tls/ca.crt
-	@echo "Vault secrets setup completed"
-
 vault-secrets: ## Setup vault secrets
 	@echo "Setting up vault secrets.."
 	@./scripts/check-vault.sh
-	# @terraform -chdir=terraform/certificates init
-	# @terraform -chdir=terraform/certificates apply -auto-approve
-
 	@docker cp .tls vault:/tmp
 	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) konnect/certificates \
 		cluster_crt=@/tmp/.tls/cluster-tls.crt \
