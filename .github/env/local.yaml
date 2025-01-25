@@ -7,4 +7,4 @@ konnect_personal_access_token: ${{ secrets.KONNECT_PAT }}
 # Docker image build and push
 docker_registry: localhost:5000
 docker_image_repo: myrepo/kong
-kong_version: "3.8.0.0"
+kong_version: "3.8.1.0"
