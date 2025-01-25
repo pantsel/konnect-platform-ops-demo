@@ -36,7 +36,7 @@ jobs:
         with:
           terraform_version: 'latest'
 
-      - name: Import Secrets
+      - name: Import CA Certificate
         if: ${{ inputs.action == 'provision' }}
         id: import-secrets
         uses: hashicorp/vault-action@v2
@@ -54,11 +54,10 @@ jobs:
           echo "${{ steps.import-secrets.outputs.CA_CRT }}" > .tls/ca.crt
         working-directory: ${{ env.TERRAFORM_DIR }}
       
-      - name: Create S3 bucket if not exists
+      - name: Create S3 bucket if required
         if: ${{ inputs.action == 'provision' }}
         run: |
           ./create-minio-bucket.sh konnect konnect
-
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}

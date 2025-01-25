@@ -1,3 +1,3 @@
 locals {
-  kv_mount = "konnect"
+  kv_mount = "secret"
 }

@@ -83,7 +83,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            konnect/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
+            secret/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
         if: ${{ inputs.action == 'deploy' }}
