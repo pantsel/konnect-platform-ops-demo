@@ -1,0 +1,44 @@
+{
+    "metadata": {
+        "format_version": "1.0.0",
+        "type": "konnect::platform",
+        "plan": "federated",
+        "region": "eu",
+        "name": "platform",
+        "description": "Platform team is managing the APIM platform in the EU region"
+    },
+    "resources": [
+        {
+            "type": "konnect::control_plane",
+            "name": "global_cp_dev",
+            "description": "Global development control plane",
+            "labels": {
+                "env": "dev"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "global_cp_tst",
+            "description": "Global test control plane",
+            "labels": {
+                "env": "tst"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "global_cp_acc",
+            "description": "Global acceptance control plane",
+            "labels": {
+                "env": "acc"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "global_cp_prd",
+            "description": "Global production control plane",
+            "labels": {
+                "env": "prd"
+            }
+        }
+    ]
+}
