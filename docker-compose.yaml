@@ -108,6 +108,8 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       PROXY_ADDRESS_FORWARDING: "true"
       # KC_LOG_LEVEL: DEBUG
+    labels:
+      - dev.orbstack.domains=idp.local
 
 # BanKonG
   bankong-frontend:

@@ -1,0 +1,37 @@
+name: Issue Certificates
+description: A composite action to issue certificates from Vault PKI.
+
+inputs:
+  environment:
+    description: 'Deployment environment (dev, staging, prod)'
+    required: true
+    default: 'dev'
+  output_dir:
+    description: 'Directory to save certificates'
+    required: true
+    default: '.'
+  common_name:
+    description: 'Common name for the certificate'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Issue certificates
+      id: issue-certs
+      shell: bash
+      run: |
+        CERTS_OUTPUT=$(vault write pki/issue/kong \
+          common_name="${{ inputs.common_name }}" \
+          alt_names="www.${{ inputs.common_name }}" \
+          ttl="4380h" -format=json)
+
+        # Extract certificate values
+        TLS_CERT=$(echo "$CERTS_OUTPUT" | jq -r '.data.certificate')
+        TLS_KEY=$(echo "$CERTS_OUTPUT" | jq -r '.data.private_key')
+
+        echo "$TLS_CERT" > ${{ inputs.output_dir }}/${{ inputs.common_name }}.crt
+        echo "$TLS_KEY" > ${{ inputs.output_dir }}/${{ inputs.common_name }}.key

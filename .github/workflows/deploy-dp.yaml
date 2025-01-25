@@ -61,6 +61,20 @@ jobs:
         with:
           version: "latest"
 
+      - name: Issue clustering certs
+        uses: ./.github/actions/issue-certs
+        with:
+          environment: ${{ inputs.environment }}
+          output_dir: ${{ github.workspace }}
+          common_name: "clustering.kong.edu.local"
+
+      - name: Issue proxy certs
+        uses: ./.github/actions/issue-certs
+        with:
+          environment: ${{ inputs.environment }}
+          output_dir: ${{ github.workspace }}
+          common_name: "proxy.kong.edu.local"
+
       - name: Import Secrets
         if: ${{ inputs.action == 'deploy' }}
         id: import-secrets
@@ -69,10 +83,6 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            konnect/data/certificates cluster_key | CLUSTER_TLS_KEY;
-            konnect/data/certificates cluster_crt | CLUSTER_TLS_CERT;
-            konnect/data/certificates proxy_crt | PROXY_TLS_CERT;
-            konnect/data/certificates proxy_key | PROXY_TLS_KEY;
             konnect/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
@@ -126,9 +136,6 @@ jobs:
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
-          echo "$CLUSTER_TLS_CERT" > tls.crt
-          echo "$CLUSTER_TLS_KEY" > tls.key
-
           kubectl apply -f - <<EOF
           apiVersion: v1
           kind: Secret
@@ -137,12 +144,9 @@ jobs:
             namespace: $NAMESPACE
           type: kubernetes.io/tls
           data:
-            tls.crt: $(cat tls.crt | base64 | tr -d '\n')
-            tls.key: $(cat tls.key | base64 | tr -d '\n')
+            tls.crt: $(cat clustering.kong.edu.local.crt | base64 | tr -d '\n')
+            tls.key: $(cat clustering.kong.edu.local.key | base64 | tr -d '\n')
           EOF
-
-          echo "$PROXY_TLS_CERT" > proxy_tls.crt
-          echo "$PROXY_TLS_KEY" > proxy_tls.key
 
           kubectl apply -f - <<EOF
           apiVersion: v1
@@ -152,15 +156,9 @@ jobs:
             namespace: $NAMESPACE
           type: kubernetes.io/tls
           data:
-            tls.crt: $(cat proxy_tls.crt | base64 | tr -d '\n')
-            tls.key: $(cat proxy_tls.key | base64 | tr -d '\n')
+            tls.crt: $(cat proxy.kong.edu.local.crt | base64 | tr -d '\n')
+            tls.key: $(cat proxy.kong.edu.local.key | base64 | tr -d '\n')
           EOF
-
-        env:
-          CLUSTER_TLS_CERT: ${{ steps.import-secrets.outputs.CLUSTER_TLS_CERT }}
-          CLUSTER_TLS_KEY: ${{ steps.import-secrets.outputs.CLUSTER_TLS_KEY }}
-          PROXY_TLS_CERT: ${{ steps.import-secrets.outputs.PROXY_TLS_CERT }}
-          PROXY_TLS_KEY: ${{ steps.import-secrets.outputs.PROXY_TLS_KEY }}
 
       - name: Deploy Kong Data Plane
         if: ${{ inputs.action == 'deploy' }}

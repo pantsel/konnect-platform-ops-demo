@@ -45,12 +45,18 @@ vault-secrets: ## Setup vault secrets
 	@echo "Setting up vault secrets.."
 	@./scripts/check-vault.sh
 	@docker cp .tls vault:/tmp
+	@if ! vault secrets list | grep -q 'konnect'; then \
+		vault secrets enable -path=konnect kv-v2; \
+	else \
+		echo "Vault secrets path 'konnect' already exists"; \
+	fi
 	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) konnect/certificates \
 		cluster_crt=@/tmp/.tls/cluster-tls.crt \
 		cluster_key=@/tmp/.tls/cluster-tls.key \
 		proxy_crt=@/tmp/.tls/proxy-tls.crt \
 		proxy_key=@/tmp/.tls/proxy-tls.key \
 		ca=@/tmp/.tls/ca.crt
+
 
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."

@@ -44,7 +44,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            konnect/data/certificates ca | CA_CRT ;
+            pki/cert/ca certificate | CA_CRT ;
 
       - name: Save CA Certificate to file
         if: ${{ inputs.action == 'provision' }}
