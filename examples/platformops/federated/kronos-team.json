@@ -11,15 +11,23 @@
         {
             "type": "konnect::control_plane",
             "name": "kronos_cp_dev",
-            "description": "Control plane 1",
+            "description": "Kronos development control plane",
             "labels": {
                 "env": "dev"
             }
         },
         {
             "type": "konnect::control_plane",
+            "name": "kronos_cp_tst",
+            "description": "Kronos test control plane",
+            "labels": {
+                "env": "tst"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
             "name": "kronos_cp_acc",
-            "description": "Control plane 1",
+            "description": "Kronos acceptance control plane",
             "labels": {
                 "env": "acc"
             }
@@ -27,7 +35,7 @@
         {
             "type": "konnect::control_plane",
             "name": "kronos_cp_prd",
-            "description": "Control plane 1",
+            "description": "Kronos production control plane",
             "labels": {
                 "env": "prd"
             }

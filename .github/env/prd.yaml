@@ -1,4 +1,4 @@
-env_name: staging
+env_name: prod
 vault_addr: http://localhost:8300
 vault_token: ${{ secrets.VAULT_TOKEN }}
 konnect_region: eu

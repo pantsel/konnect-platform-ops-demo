@@ -5,7 +5,7 @@
         "plan": "federated",
         "region": "eu",
         "name": "tiger",
-        "description": "Tiget team is building the Container Hosting Platform in the EU region"
+        "description": "Tiger team is building the Container Hosting Platform in the EU region"
     },
     "resources": [
         {
@@ -14,6 +14,14 @@
             "description": "Control plane 1",
             "labels": {
                 "env": "dev"
+            }
+        },
+        {
+            "type": "konnect::control_plane",
+            "name": "tiger_cp_tst",
+            "description": "Control plane 1",
+            "labels": {
+                "env": "tst"
             }
         },
         {
