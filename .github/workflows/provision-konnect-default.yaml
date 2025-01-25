@@ -37,7 +37,6 @@ jobs:
           terraform_version: 'latest'
 
       - name: Import CA Certificate
-        if: ${{ inputs.action == 'provision' }}
         id: import-secrets
         uses: hashicorp/vault-action@v2
         with:
@@ -47,7 +46,6 @@ jobs:
             pki/cert/ca certificate | CA_CRT ;
 
       - name: Save CA Certificate to file
-        if: ${{ inputs.action == 'provision' }}
         run: |
           mkdir -p .tls
           touch .tls/ca.crt
