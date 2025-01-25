@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # Define variables
-VAULT_ADDR="http://127.0.0.1:8300" 
-VAULT_TOKEN="root"    
+VAULT_ADDR="${1:-http://127.0.0.1:8300}"
+VAULT_TOKEN="${2:-root}"
 PKI_MOUNT_PATH="pki"           
 CERT_TTL="43800h" # 5 years               
 COMMON_NAME_ROOT="ca.kong.edu.local"         

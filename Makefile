@@ -5,7 +5,7 @@ export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc prep-act-secrets kind docker vault-secrets ## Prepare the project
+prepare: check-deps gencerts actrc prep-act-secrets kind docker vault-pki ## Prepare the project
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
@@ -57,7 +57,12 @@ vault-secrets: ## Setup vault secrets
 		proxy_key=@/tmp/.tls/proxy-tls.key \
 		ca=@/tmp/.tls/ca.crt
 
-
+vault-pki: ## Setup vault pki
+	@echo "Setting up vault pki."
+	@./scripts/check-vault.sh
+	@docker exec vault chmod +x /vault-pki-setup.sh
+	@docker exec -it vault /vault-pki-setup.sh $(VAULT_ADDR) $(VAULT_TOKEN)
+	
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."
 	@./scripts/check-deps.sh
@@ -87,4 +92,4 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n\n"} \
 	/^[a-zA-Z_-]+:.*##/ { printf "  %-15s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-.PHONY: prepare actrc gencerts prep-act-secrets kind docker vault-secrets clean stop check-deps test runner
+.PHONY: prepare actrc gencerts prep-act-secrets kind docker vault-secrets vault-pki clean stop check-deps test runner

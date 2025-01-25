@@ -39,6 +39,7 @@ services:
         - IPC_LOCK
     volumes:
       - vault_data:/data
+      - ./scripts/vault-pki-setup.sh:/vault-pki-setup.sh:rw
     networks:
       - konnect-platform-ops-demo
 
