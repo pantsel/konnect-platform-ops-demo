@@ -6,7 +6,7 @@ on:
       environment:
         description: 'Deployment environment (dev, staging, prod)'
         type: string
-        default: local
+        default: dev
       continue_on_scan_failure:
         description: 'Continue on Trivy scan failure'
         default: 'true'
