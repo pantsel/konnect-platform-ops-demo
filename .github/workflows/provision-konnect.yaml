@@ -38,6 +38,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 'latest'
+
       - name: Load environment configuration
         uses: ./.github/actions/load-config
         with:
@@ -48,11 +53,6 @@ jobs:
           echo "RESOURCE_TYPE=$(jq -r '.metadata.type' ${{ github.workspace }}/${{ inputs.config }})" >> $GITHUB_ENV
           echo "RESOURCE_NAME=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config }})" >> $GITHUB_ENV
         shell: bash
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 'latest'
       
       - name: Import CA Certificate
         id: import-secrets
