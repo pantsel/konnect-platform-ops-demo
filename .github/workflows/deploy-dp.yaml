@@ -235,4 +235,7 @@ jobs:
           if helm status kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE >/dev/null 2>&1; then
             helm uninstall kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE
             helm uninstall kong-config-exporter-$CONTROL_PLANE_NAME -n $NAMESPACE
+            kubect delete secret kong-cluster-cert -n $NAMESPACE
+            kubect delete secret kong-proxy-cert -n $NAMESPACE
+            kubeclt delete namespace $NAMESPACE
           fi
