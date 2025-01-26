@@ -19,8 +19,7 @@ resource "konnect_gateway_control_plane" "cps" {
   cluster_type = lookup(each.value, "cluster_type", "CLUSTER_TYPE_HYBRID")
   auth_type    = lookup(each.value, "auth_type", "pki_client_certs")
   labels = merge(lookup(each.value, "labels", {}), {
-    generated_by = "terraform",
-    env          = var.environment
+    generated_by = "terraform"
   })
 }
 
