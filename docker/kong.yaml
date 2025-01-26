@@ -9,7 +9,6 @@ services:
   - name: service
     url: http://test.local
     plugins:
-      - name: myplugin
       - name: request-termination
         config:
           status_code: 200
@@ -18,7 +17,12 @@ services:
     routes:
       - name: service-route
         paths:
-          - /echo
+          - /test
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 10
+              policy: local
       - name: auth-route
         paths:
           - /auth

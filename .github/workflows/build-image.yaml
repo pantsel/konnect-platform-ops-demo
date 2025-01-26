@@ -87,11 +87,12 @@ jobs:
         run: |
             docker run -d --name kong-gateway \
             --network kong-net-${{ github.run_id }} \
-            -p 8000:8000 -p 8100:8100 \
+            -p 8000:8000 -p 8100:8100 -p 8443:8443 \
             --env KONG_DATABASE=off \
             --env KONG_PLUGINS=bundled,myplugin \
             --env KONG_STATUS_LISTEN=0.0.0.0:8100 \
             --env KONG_DECLARATIVE_CONFIG=/kong.yaml \
+            --env KONG_NGINX_WORKER_PROCESSES=1 \
             --health-cmd "kong health" \
             --health-interval 10s \
             --health-timeout 5s \
@@ -106,19 +107,26 @@ jobs:
           timeout 60s sh -c 'until docker ps | grep kong-gateway | grep -q healthy; do echo "Waiting for Kong Gateway to be available..."; sleep 2; done'
         shell: bash
 
-      - name: Test Kong Gateway Status
+      - name: Run smoke tests
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8100/status)
-          echo "Response code: $response"
+          ./kong-smoke-tests.sh localhost ${{ github.workspace }}/smoke_test_report.md
+          cat ${{ github.workspace }}/smoke_test_report.md
         shell: bash
-        working-directory: docker
+        working-directory: ${{ github.workspace }}/scripts
 
-      - name: Test Kong Gateway Proxy
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/echo)
-          echo "Response code: $response"
-        shell: bash
-        working-directory: docker
+      # - name: Test Kong Gateway Status
+      #   run: |
+      #     response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8100/status)
+      #     echo "Response code: $response"
+      #   shell: bash
+      #   working-directory: docker
+
+      # - name: Test Kong Gateway Proxy
+      #   run: |
+      #     response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/echo)
+      #     echo "Response code: $response"
+      #   shell: bash
+      #   working-directory: docker
 
       - name: Run Load tests
         run: |
