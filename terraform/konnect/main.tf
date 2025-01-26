@@ -23,6 +23,7 @@ module "control_planes" {
   environment = var.environment
   metadata    = local.metadata
   control_planes = local.control_planes
+  cacert = var.cacert
 }
 
 module "teams" {

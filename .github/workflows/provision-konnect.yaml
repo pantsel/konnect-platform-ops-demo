@@ -61,14 +61,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            pki/cert/ca certificate | CA_CRT ;
-
-      - name: Save CA Certificate to file
-        run: |
-          mkdir -p .tls
-          touch .tls/ca.crt
-          echo "${{ steps.import-secrets.outputs.CA_CRT }}" > .tls/ca.crt
-        working-directory: ${{ env.TERRAFORM_DIR }}
+            pki/cert/ca certificate | TF_VAR_cacert ;
 
       - name: Create S3 bucket if required
         if: ${{ inputs.action == 'provision' }}

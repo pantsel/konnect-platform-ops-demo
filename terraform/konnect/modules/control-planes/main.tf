@@ -27,7 +27,7 @@ resource "konnect_gateway_control_plane" "cps" {
 resource "konnect_gateway_data_plane_client_certificate" "cacertcp" {
   for_each = { for cp in konnect_gateway_control_plane.cps : cp.name => cp }
 
-  cert             = file(local.cert_path)
+  cert             = var.cacert
   control_plane_id = each.value.id
 }
 

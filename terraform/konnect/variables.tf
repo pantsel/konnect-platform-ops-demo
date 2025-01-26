@@ -25,3 +25,9 @@ variable "resources_file" {
   description = "The path to the resources file"
   type        = string
 }
+
+variable "cacert" {
+  description = "The content of the PEM certificate"
+  type        = string
+  sensitive   = true
+}
