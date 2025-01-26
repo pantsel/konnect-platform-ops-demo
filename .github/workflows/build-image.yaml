@@ -109,8 +109,7 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          ./kong-smoke-tests.sh localhost ${{ github.workspace }}/smoke_test_report.md
-          cat ${{ github.workspace }}/smoke_test_report.md
+          ./kong-smoke-tests.sh localhost ${{ github.workspace }}/reports/smoke_test_report.md
         shell: bash
         working-directory: ${{ github.workspace }}/scripts
 
