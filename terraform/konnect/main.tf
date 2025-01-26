@@ -12,11 +12,11 @@ data "local_file" "resources" {
 }
 
 locals {
-  cert_path      = ".tls/ca.crt"
-  metadata       = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
-  resources      = lookup(jsondecode(data.local_file.resources.content), "resources", [])
-  control_planes = [for resource in local.resources : resource if resource.type == "konnect.control_plane"]
-  api_products   = [for resource in local.resources : resource if resource.type == "konnect.api_product"]
+  cert_path       = ".tls/ca.crt"
+  metadata        = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
+  resources       = lookup(jsondecode(data.local_file.resources.content), "resources", [])
+  control_planes  = [for resource in local.resources : resource if resource.type == "konnect.control_plane"]
+  api_products    = [for resource in local.resources : resource if resource.type == "konnect.api_product"]
   days_to_hours   = 365 * 24 // 1 year
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
   short_names = {
@@ -40,12 +40,14 @@ module "api_products" {
   api_products = local.api_products
 }
 
-module "teams" {
-  source         = "./modules/teams"
-  environment    = var.environment
+module "team" {
+  source = "./modules/team"
+
+  name           = title(local.metadata.name)
+  description    = lookup(local.metadata, "description", "")
+  region         = lookup(local.metadata, "region", "")
   control_planes = module.control_planes.control_planes
   api_products   = module.api_products.api_products
-  metadata       = local.metadata
 }
 
 module "system_accounts" {
@@ -56,7 +58,7 @@ module "system_accounts" {
     { for product in module.api_products.api_products : product.name => { name = product.name, id = product.id, type = "API Products" } }
   )
 
-  name      = lower(replace("sa_${each.value.name}_${local.short_names[each.value.type]}_admin", " ", "_"))
+  name             = lower(replace("sa_${each.value.name}_${local.short_names[each.value.type]}_admin", " ", "_"))
   description      = "Admin System account for ${each.value.type} ${each.value.name}"
   entity_id        = each.value.id
   entity_type_name = each.value.type
