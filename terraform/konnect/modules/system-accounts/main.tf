@@ -13,7 +13,7 @@ locals {
 
 
 # Create admin system accounts for every control plane
-resource "konnect_system_account" "systemaccounts" {
+resource "konnect_system_account" "sas" {
   for_each = { for cp in var.control_planes : cp.name => cp }
 
   name            = lower(replace("sa_${each.value.name}_cp_admin", " ", "_"))
@@ -22,7 +22,7 @@ resource "konnect_system_account" "systemaccounts" {
 }
 
 # Admin System Account Role Assignments
-resource "konnect_system_account_role" "systemaccountroles" {
+resource "konnect_system_account_role" "sa_roles" {
   for_each = { for cp in var.control_planes : cp.name => cp }
 
   entity_id = each.value.id
@@ -31,14 +31,14 @@ resource "konnect_system_account_role" "systemaccountroles" {
   entity_type_name = "Control Planes"
   role_name        = "Admin"
   account_id = {
-    for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
+    for account in konnect_system_account.sas : lower(account.name) => account.id
   }[lower(replace("sa_${each.value.name}_cp_admin", " ", "_"))]
 
 }
 
 # Create an access tokens for the system accounts
-resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
-  for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
+resource "konnect_system_account_access_token" "sa_tkns" {
+  for_each = { for account in konnect_system_account.sas : account.name => account }
 
   name       = each.value.name
   expires_at = local.expiration_date
@@ -47,7 +47,7 @@ resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
 
 
 # API Product System Accounts
-resource "konnect_system_account" "product_systemaccounts" {
+resource "konnect_system_account" "product_sas" {
   for_each = { for product in var.api_products : product.name => product }
 
   name            = lower(replace("sa_${each.value.name}_ap_admin", " ", "_"))
@@ -56,7 +56,7 @@ resource "konnect_system_account" "product_systemaccounts" {
 }
 
 # API Product Admin Role Assignments
-resource "konnect_system_account_role" "product_systemaccountroles" {
+resource "konnect_system_account_role" "product_sa_roles" {
   for_each = { for product in var.api_products : product.name => product }
 
   entity_id = each.value.id
@@ -65,14 +65,14 @@ resource "konnect_system_account_role" "product_systemaccountroles" {
   entity_type_name = "API Products"
   role_name        = "Admin"
   account_id = {
-    for account in konnect_system_account.product_systemaccounts : lower(account.name) => account.id
+    for account in konnect_system_account.product_sas : lower(account.name) => account.id
   }[lower(replace("sa_${each.value.name}_ap_admin", " ", "_"))]
 
 }
 
 # API Product System Account Access Tokens
-resource "konnect_system_account_access_token" "product_systemaccountaccesstokens" {
-  for_each = { for account in konnect_system_account.product_systemaccounts : account.name => account }
+resource "konnect_system_account_access_token" "product_sa_tkns" {
+  for_each = { for account in konnect_system_account.product_sas : account.name => account }
 
   name       = each.value.name
   expires_at = local.expiration_date
@@ -80,6 +80,6 @@ resource "konnect_system_account_access_token" "product_systemaccountaccesstoken
 }
 
 output "system_account_access_tokens" {
-  value     = merge(konnect_system_account_access_token.systemaccountaccesstokens, konnect_system_account_access_token.product_systemaccountaccesstokens)
+  value     = merge(konnect_system_account_access_token.sa_tkns, konnect_system_account_access_token.product_sa_tkns)
   sensitive = true
 }
