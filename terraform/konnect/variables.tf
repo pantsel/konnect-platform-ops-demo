@@ -27,7 +27,7 @@ variable "resources_file" {
 }
 
 variable "cacert" {
-  description = "The content of the PEM certificate"
+  description = "The content of the dataplane PEM certificate"
   type        = string
   sensitive   = true
 }
