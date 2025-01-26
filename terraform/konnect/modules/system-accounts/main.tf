@@ -16,7 +16,7 @@ locals {
 resource "konnect_system_account" "systemaccounts" {
   for_each = { for cp in var.control_planes : cp.name => cp }
 
-  name            = "sa_${each.value.name}_admin"
+  name            = lower(replace("sa_${each.value.name}_cp_admin", " ", "_"))
   description     = "Admin System account for control plane ${each.value.name}"
   konnect_managed = false
 }
@@ -32,7 +32,7 @@ resource "konnect_system_account_role" "systemaccountroles" {
   role_name        = "Admin"
   account_id = {
     for account in konnect_system_account.systemaccounts : lower(account.name) => account.id
-  }["sa_${each.value.name}_admin"]
+  }[lower(replace("sa_${each.value.name}_cp_admin", " ", "_"))]
 
 }
 
@@ -40,12 +40,46 @@ resource "konnect_system_account_role" "systemaccountroles" {
 resource "konnect_system_account_access_token" "systemaccountaccesstokens" {
   for_each = { for account in konnect_system_account.systemaccounts : account.name => account }
 
-  name       = lower(replace(each.value.name, " ", "_"))
+  name       = each.value.name
+  expires_at = local.expiration_date
+  account_id = each.value.id
+}
+
+
+# API Product System Accounts
+resource "konnect_system_account" "product_systemaccounts" {
+  for_each = { for product in var.api_products : product.name => product }
+
+  name            = lower(replace("sa_${each.value.name}_ap_admin", " ", "_"))
+  description     = "Admin System account for API Product ${each.value.name}"
+  konnect_managed = false
+}
+
+# API Product Admin Role Assignments
+resource "konnect_system_account_role" "product_systemaccountroles" {
+  for_each = { for product in var.api_products : product.name => product }
+
+  entity_id = each.value.id
+
+  entity_region    = lookup(var.metadata, "region", "")
+  entity_type_name = "API Products"
+  role_name        = "Admin"
+  account_id = {
+    for account in konnect_system_account.product_systemaccounts : lower(account.name) => account.id
+  }[lower(replace("sa_${each.value.name}_ap_admin", " ", "_"))]
+
+}
+
+# API Product System Account Access Tokens
+resource "konnect_system_account_access_token" "product_systemaccountaccesstokens" {
+  for_each = { for account in konnect_system_account.product_systemaccounts : account.name => account }
+
+  name       = each.value.name
   expires_at = local.expiration_date
   account_id = each.value.id
 }
 
 output "system_account_access_tokens" {
-  value     = konnect_system_account_access_token.systemaccountaccesstokens
+  value     = merge(konnect_system_account_access_token.systemaccountaccesstokens, konnect_system_account_access_token.product_systemaccountaccesstokens)
   sensitive = true
 }

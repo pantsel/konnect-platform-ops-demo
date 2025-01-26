@@ -52,7 +52,7 @@ jobs:
     env:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       NAMESPACE: ${{ inputs.namespace }}
-      SYSTEM_ACCOUNT: sa_${{ inputs.control_plane_name }}_admin
+      SYSTEM_ACCOUNT: sa_${{ inputs.control_plane_name }}_cp_admin
       KUBECONFIG: /.kube/config
       CP_FALLBACK_CONFIGS_BUCKET: konnect.cp.fallback.configs
 

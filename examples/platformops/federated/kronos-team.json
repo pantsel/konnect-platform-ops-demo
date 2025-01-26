@@ -9,7 +9,7 @@
     "resources": [
         {
             "type": "konnect.control_plane",
-            "name": "kronos_cp_dev",
+            "name": "Kronos Dev",
             "description": "Kronos development control plane",
             "labels": {
                 "env": "dev"
@@ -17,7 +17,7 @@
         },
         {
             "type": "konnect.control_plane",
-            "name": "kronos_cp_tst",
+            "name": "Kronos Test",
             "description": "Kronos test control plane",
             "labels": {
                 "env": "tst"
@@ -25,7 +25,7 @@
         },
         {
             "type": "konnect.control_plane",
-            "name": "kronos_cp_acc",
+            "name": "Kronos Acc",
             "description": "Kronos acceptance control plane",
             "labels": {
                 "env": "acc"
@@ -33,10 +33,28 @@
         },
         {
             "type": "konnect.control_plane",
-            "name": "kronos_cp_prd",
+            "name": "Kronos Prd",
             "description": "Kronos production control plane",
             "labels": {
                 "env": "prd"
+            }
+        },
+        {
+            "type": "konnect.api_product",
+            "name": "Flights API",
+            "description": "API for managing flights",
+            "labels": {},
+            "public_labels": {
+                "team": "kronos"
+            }
+        },
+        {
+            "type": "konnect.api_product",
+            "name": "Routes API",
+            "description": "API for managing routes",
+            "labels": {},
+            "public_labels": {
+                "team": "kronos"
             }
         }
     ]

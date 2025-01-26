@@ -9,12 +9,7 @@ variable metadata {
   type        = map
 }
 
-variable control_planes {
-  description = "A list of control planes for which system accounts will be created"
-  type = list(any)
-}
-
 variable api_products {
-  description = "A list of api products for which system accounts will be created"
+  description = "The API products to create"
   type        = list(any)
 }
