@@ -1,12 +1,25 @@
 name: Deploy Kong Data Plane
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       environment:
         description: "Environment to deploy to"
-        type: string
-        default: "local"
+        type: choice
+        default: "dev"
+        options:
+          - "dev"
+          - "tst"
+          - "acc"
+          - "prd"
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        default: "deploy"
+        options:
+          - "deploy"
+          - "destroy"
       namespace:
         description: "Kubernetes namespace"
         type: string
@@ -23,15 +36,6 @@ on:
         description: "The name of the control plane to deploy the data plane to"
         type: string
         required: true
-      system_account:
-        description: "The system account to use for authenticating with the Konnect API"
-        type: string
-        required: true
-      action:
-        description: "Action to perform"
-        required: true
-        type: string
-        default: "deploy" # 'deploy' or 'destroy'
       clustering_cn:
         description: "Common name for the clustering certificate"
         type: string
@@ -48,6 +52,7 @@ jobs:
     env:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       NAMESPACE: ${{ inputs.namespace }}
+      SYSTEM_ACCOUNT: sa_${{ inputs.control_plane_name }}_admin
       KUBECONFIG: /.kube/config
 
     steps:
@@ -83,7 +88,7 @@ jobs:
           output_dir: ${{ github.workspace }}
           common_name: ${{ inputs.proxy_cn }}
 
-      - name: Import Secrets
+      - name: Import System Account Token
         if: ${{ inputs.action == 'deploy' }}
         id: import-secrets
         uses: hashicorp/vault-action@v2
@@ -91,7 +96,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            secret/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
         if: ${{ inputs.action == 'deploy' }}
