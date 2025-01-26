@@ -35,6 +35,12 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
 
+      - name: Set resource variables from configuration file
+        run: |
+          echo "RESOURCE_TYPE=$(jq -r '.metadata.type' ${{ github.workspace }}/${{ inputs.config }})" >> $GITHUB_ENV
+          echo "RESOURCE_NAME=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config }})" >> $GITHUB_ENV
+        shell: bash
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -59,7 +65,7 @@ jobs:
       - name: Create S3 bucket if required
         if: ${{ inputs.action == 'provision' }}
         run: |
-          ./create-minio-bucket.sh konnect konnect
+          ./create-minio-bucket.sh konnect $RESOURCE_TYPE.$RESOURCE_NAME
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
@@ -67,19 +73,13 @@ jobs:
 
       - name: Terraform Init
         run: |
-
-          # Extract required variables from the configuration file
-          PLANID=$(jq -r '.metadata.plan' ${{ github.workspace }}/${{ inputs.config }})
-          RESOURCE_GROUP=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config }})
-
           terraform init -upgrade \
             -backend-config=config.s3.tfbackend \
-            -backend-config="bucket=konnect" \
-            -backend-config="key=$PLANID/${RESOURCE_GROUP}_${{ inputs.environment }}.tfstate" \
+            -backend-config="bucket=$RESOURCE_TYPE.$RESOURCE_NAME" \
+            -backend-config="key=tfstate" \
             -backend-config="region=main" \
             -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
             -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}" 
-
         working-directory: ${{env.TERRAFORM_DIR}}
 
       - name: Terraform Plan

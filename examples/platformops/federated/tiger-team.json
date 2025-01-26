@@ -1,7 +1,7 @@
 {
     "metadata": {
         "format_version": "1.0.0",
-        "type": "konnect::team",
+        "type": "konnect.team",
         "plan": "federated",
         "region": "eu",
         "name": "tiger",
@@ -9,7 +9,7 @@
     },
     "resources": [
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "tiger_cp_dev",
             "description": "Control plane 1",
             "labels": {
@@ -17,7 +17,7 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "tiger_cp_tst",
             "description": "Control plane 1",
             "labels": {
@@ -25,7 +25,7 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "tiger_cp_acc",
             "description": "Control plane 1",
             "labels": {
@@ -33,7 +33,7 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "tiger_cp_prd",
             "description": "Control plane 1",
             "labels": {

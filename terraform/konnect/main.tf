@@ -15,7 +15,7 @@ locals {
   cert_path       = ".tls/ca.crt"
   metadata        = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
   resources       = lookup(jsondecode(data.local_file.resources.content), "resources", [])
-  control_planes  = [for resource in local.resources : resource if resource.type == "konnect::control_plane"]
+  control_planes  = [for resource in local.resources : resource if resource.type == "konnect.control_plane"]
 }
 
 module "control_planes" {

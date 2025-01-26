@@ -1,15 +1,14 @@
 {
     "metadata": {
         "format_version": "1.0.0",
-        "type": "konnect::team",
-        "plan": "federated",
+        "type": "konnect.team",
         "region": "eu",
         "name": "kronos",
         "description": "Kronos team is building IaC services in the EU region"
     },
     "resources": [
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "kronos_cp_dev",
             "description": "Kronos development control plane",
             "labels": {
@@ -17,7 +16,7 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "kronos_cp_tst",
             "description": "Kronos test control plane",
             "labels": {
@@ -25,7 +24,7 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "kronos_cp_acc",
             "description": "Kronos acceptance control plane",
             "labels": {
@@ -33,7 +32,7 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "kronos_cp_prd",
             "description": "Kronos production control plane",
             "labels": {
