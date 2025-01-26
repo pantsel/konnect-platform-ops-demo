@@ -54,6 +54,7 @@ jobs:
       NAMESPACE: ${{ inputs.namespace }}
       SYSTEM_ACCOUNT: sa_${{ inputs.control_plane_name }}_admin
       KUBECONFIG: /.kube/config
+      CP_FALLBACK_CONFIGS_BUCKET: konnect.cp.fallback.configs
 
     steps:
       - name: Checkout repository
@@ -101,7 +102,7 @@ jobs:
       - name: Create S3 bucket if required
         if: ${{ inputs.action == 'deploy' }}
         run: |
-          ./create-minio-bucket.sh konnect konnect.controlplanes
+          ./create-minio-bucket.sh konnect ${{ env.CP_FALLBACK_CONFIGS_BUCKET }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
@@ -217,7 +218,7 @@ jobs:
             --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
             --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
             --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
-            --set env.cluster_fallback_config_storage=s3://konnect.controlplanes/${{ inputs.control_plane_name }}/config \
+            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/${{ inputs.control_plane_name }} \
             --set env.cluster_fallback_config_export="on"
 
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
@@ -234,7 +235,7 @@ jobs:
             --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
             --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
             --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
-            --set env.cluster_fallback_config_storage=s3://konnect.controlplanes/${{ inputs.control_plane_name }}/config \
+            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/${{ inputs.control_plane_name }} \
             --set env.cluster_fallback_config_import="on"
 
       - name: Destroy Kong Deployment
