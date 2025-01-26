@@ -10,6 +10,11 @@ variable metadata {
 }
 
 variable control_planes {
-  description = "The control planes to create"
+  description = "A list of control planes the team will have access to"
   type = list(any)
+}
+
+variable api_products {
+  description = "A list of api products the team will have access to"
+  type        = list(any)
 }

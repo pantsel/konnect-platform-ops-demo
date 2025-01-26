@@ -27,18 +27,19 @@ module "control_planes" {
   cacert         = var.cacert
 }
 
-module "teams" {
-  source         = "./modules/teams"
-  environment    = var.environment
-  control_planes = module.control_planes.control_planes
-  metadata       = local.metadata
-}
-
 module "api_products" {
   source       = "./modules/api-products"
   environment  = var.environment
   metadata     = local.metadata
   api_products = local.api_products
+}
+
+module "teams" {
+  source         = "./modules/teams"
+  environment    = var.environment
+  control_planes = module.control_planes.control_planes
+  api_products   = module.api_products.api_products
+  metadata       = local.metadata
 }
 
 module "system_accounts" {
