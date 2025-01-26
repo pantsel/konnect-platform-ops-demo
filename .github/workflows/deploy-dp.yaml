@@ -44,6 +44,10 @@ on:
         description: "Common name for the proxy certificate"
         type: string
         default: "proxy.kong.edu.local"
+      system_account:
+        description: "System account to use for fetching control plane information"
+        type: string
+        required: true
 
 jobs:
   prepare:
@@ -52,18 +56,12 @@ jobs:
     env:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       NAMESPACE: ${{ inputs.namespace }}
-      SYSTEM_ACCOUNT: sa_${{ inputs.control_plane_name }}_cp_admin
       KUBECONFIG: /.kube/config
       CP_FALLBACK_CONFIGS_BUCKET: konnect.cp.fallback.configs
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -74,6 +72,11 @@ jobs:
         uses: azure/setup-kubectl@v4
         with:
           version: "latest"
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
 
       - name: Issue clustering certs
         uses: ./.github/actions/issue-certs
@@ -97,7 +100,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Create S3 bucket if required
         if: ${{ inputs.action == 'deploy' }}
@@ -117,7 +120,8 @@ jobs:
           # This is a GET request to /v2/control-planes with a filter on the control plane name.
           # We are using the system account token of the system account that was created during the Konnect Platform setup
           # and only has the necessary permissions to access the specific control plane.
-          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ env.KONNECT_SERVER_URL }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-secrets.outputs.SYSTEM_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
+          url_encoded_control_plane_name=$(echo -n "${{ inputs.control_plane_name }}" | jq -s -R -r @uri)
+          response=$(curl -Gs -d "filter[name][eq]=${url_encoded_control_plane_name}" -w "%{http_code}" "${{ env.KONNECT_SERVER_URL }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-secrets.outputs.SYSTEM_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
           http_code=${response: -3}
           response_body=${response:0:-3}
 
@@ -190,7 +194,11 @@ jobs:
           # Extract control plane and telemetry endpoints from the control plane info file (kong_gateway_control_plane_info.json)
           CONTROL_PLANE_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.control_plane_endpoint | sed 's|https://||')
           TELEMETRY_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.telemetry_endpoint | sed 's|https://||')
-          CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
+          CONTROL_PLANE_NAME=$(echo "${{ inputs.control_plane_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[ _]/-/g')
+
+          echo "Control Plane Endpoint: $CONTROL_PLANE_ENDPOINT"
+          echo "Telemetry Endpoint: $TELEMETRY_ENDPOINT"
+          echo "Control Plane Name: $CONTROL_PLANE_NAME"
 
           # Verify all required inputs are set
           if [ "$CONTROL_PLANE_ENDPOINT" = "null" ] || [ "$TELEMETRY_ENDPOINT" = "null" ]; then
@@ -218,7 +226,7 @@ jobs:
             --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
             --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
             --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
-            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/${{ inputs.control_plane_name }} \
+            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/$CONTROL_PLANE_NAME \
             --set env.cluster_fallback_config_export="on"
 
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
@@ -235,7 +243,7 @@ jobs:
             --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
             --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
             --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
-            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/${{ inputs.control_plane_name }} \
+            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/$CONTROL_PLANE_NAME \
             --set env.cluster_fallback_config_import="on"
 
       - name: Destroy Kong Deployment
