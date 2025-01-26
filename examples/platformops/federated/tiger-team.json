@@ -39,6 +39,15 @@
             "labels": {
                 "env": "prd"
             }
+        },
+        {
+            "type": "konnect.api_product",
+            "name": "Tiger API",
+            "description": "API for managing tigers",
+            "labels": {},
+            "public_labels": {
+                "team": "tiger"
+            }
         }
     ]
 }
