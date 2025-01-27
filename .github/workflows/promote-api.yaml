@@ -48,7 +48,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/system_accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
