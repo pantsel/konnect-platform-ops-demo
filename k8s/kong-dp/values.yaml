@@ -1,6 +1,6 @@
 image:
   repository: kong/kong-gateway
-  tag: "3.8.1.0"
+  tag: "3.9.0.0"
 
 secretVolumes:
 - kong-cluster-cert
@@ -30,8 +30,9 @@ podAnnotations:
   metrics.dynatrace.com/port: '8100'
   metrics.dynatrace.com/secure: 'false'
   sidecar.opentelemetry.io/inject: "true"
-
+  
 env:
+  log_level: "info"
   role: data_plane
   database: "off"
   cluster_mtls: pki
@@ -45,7 +46,7 @@ env:
   event_hooks_enabled: "off"
   ssl_cert: "/etc/secrets/kong-proxy-cert/tls.crt"
   ssl_cert_key: "/etc/secrets/kong-proxy-cert/tls.key"
-
+  untrusted_lua_sandbox_requires: resty.jwt
 
 ingressController:
   enabled: false
