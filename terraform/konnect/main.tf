@@ -12,7 +12,6 @@ data "local_file" "resources" {
 }
 
 locals {
-  cert_path       = ".tls/ca.crt"
   metadata        = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
   resources       = lookup(jsondecode(data.local_file.resources.content), "resources", [])
   control_planes  = [for resource in local.resources : resource if resource.type == "konnect.control_plane"]
@@ -24,14 +23,6 @@ locals {
     "API Products"   = "ap"
   }
 }
-
-# module "control_planes" {
-#   source         = "./modules/control-planes"
-#   environment    = var.environment
-#   metadata       = local.metadata
-#   control_planes = local.control_planes
-#   cacert         = var.cacert
-# }
 
 module "control_planes" {
   source = "./modules/control_plane"
