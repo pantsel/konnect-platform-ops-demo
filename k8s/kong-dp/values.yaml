@@ -32,7 +32,6 @@ podAnnotations:
   sidecar.opentelemetry.io/inject: "true"
   
 env:
-  log_level: "info"
   role: data_plane
   database: "off"
   cluster_mtls: pki

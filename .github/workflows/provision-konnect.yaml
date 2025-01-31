@@ -31,7 +31,6 @@ jobs:
 
     env:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
-      TERRAFORM_DIR: ${{ github.workspace }}/terraform/konnect
       TF_VAR_resources_file: ${{ github.workspace }}/${{ inputs.config }}
 
     steps:
@@ -43,6 +42,15 @@ jobs:
         with:
           terraform_version: 'latest'
 
+      - name: Validate config
+        run: |
+          # Check if the config file exists
+          if [ ! -f ${{ inputs.config }} ]; then
+            echo "Config file not found: ${{ inputs.config }}"
+            exit 1
+          fi
+        shell: bash
+
       - name: Load environment configuration
         uses: ./.github/actions/load-config
         with:
@@ -50,8 +58,14 @@ jobs:
 
       - name: Set resource variables from configuration file
         run: |
-          echo "RESOURCE_TYPE=$(jq -r '.metadata.type' ${{ github.workspace }}/${{ inputs.config }})" >> $GITHUB_ENV
-          echo "RESOURCE_NAME=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config }})" >> $GITHUB_ENV
+          RESOURCE_TYPE=$(jq -r '.metadata.type' ${{ github.workspace }}/${{ inputs.config }})
+          RESOURCE_NAME=$(jq -r '.metadata.name' ${{ github.workspace }}/${{ inputs.config }})
+          RESOURCE_PATH=$(echo $RESOURCE_TYPE | tr '.' '/')
+          TERRAFORM_DIR=${{ github.workspace }}/terraform/${RESOURCE_PATH}
+
+          echo "RESOURCE_TYPE=$RESOURCE_TYPE" >> $GITHUB_ENV
+          echo "RESOURCE_NAME=$RESOURCE_NAME" >> $GITHUB_ENV
+          echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
         shell: bash
       
       - name: Import CA Certificate

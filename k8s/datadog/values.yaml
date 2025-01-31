@@ -1,4 +1,8 @@
 datadog:
+  processAgent:
+    enabled: true
+  orchestratorExplorer:
+    enabled: true
   otlp:
     logs:
       enabled: true
