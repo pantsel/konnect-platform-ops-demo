@@ -17,4 +17,4 @@ fi
 docker build --progress=plain --platform linux/amd64 --no-cache -t $RUNNER_IMAGE ./runner
 
 # Squash the image to reduce its size
-docker-squash -t $RUNNER_IMAGE $RUNNER_IMAGE
+# docker-squash -t $RUNNER_IMAGE $RUNNER_IMAGE

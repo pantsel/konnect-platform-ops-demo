@@ -28,7 +28,11 @@ get_response_code() {
 
 # Function to check port status
 check_port() {
-    nc -zv $KONG_HOST $1 && echo "Port $1 is open and listening."
+    if command -v nc &> /dev/null; then
+        nc -zv $KONG_HOST $1 && echo "Port $1 is open and listening."
+    else
+        echo "Warning: nc command not found. Skipping port check for $1."
+    fi
 }
 
 # Initialize report file

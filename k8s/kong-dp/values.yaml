@@ -1,6 +1,6 @@
 image:
   repository: kong/kong-gateway
-  tag: "3.9.0.0"
+  tag: "3.9.0.1"
 
 secretVolumes:
 - kong-cluster-cert
@@ -17,6 +17,11 @@ extraLabels:
   tags.datadoghq.com/service: "kong-dp"
   tags.datadoghq.com/version: "3.8.1.0"
 
+# plugins:
+#   configMaps:
+#     - name: kong-plugin-log-extend
+#       pluginName: log-extend
+
 # Annotation to be added to Kong pods
 podAnnotations:
   kuma.io/gateway: enabled
@@ -32,6 +37,7 @@ podAnnotations:
   sidecar.opentelemetry.io/inject: "true"
   
 env:
+  log_level: "info"
   role: data_plane
   database: "off"
   cluster_mtls: pki
@@ -46,6 +52,7 @@ env:
   ssl_cert: "/etc/secrets/kong-proxy-cert/tls.crt"
   ssl_cert_key: "/etc/secrets/kong-proxy-cert/tls.key"
   untrusted_lua_sandbox_requires: resty.jwt
+  # plugins: bundled,log-extend
 
 ingressController:
   enabled: false

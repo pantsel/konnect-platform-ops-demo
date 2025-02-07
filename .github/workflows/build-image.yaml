@@ -23,16 +23,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load environment configuration
-        id: load_config
-        run: |
-          echo "Reading configuration from $ENV_FILE"
-          CONFIG_VARS=$(yq eval 'keys' $ENV_FILE)
+      # - name: Load environment configuration
+      #   id: load_config
+      #   run: |
+      #     echo "Reading configuration from $ENV_FILE"
+      #     CONFIG_VARS=$(yq eval 'keys' $ENV_FILE)
           
-          for VAR in $CONFIG_VARS; do
-            VALUE=$(yq eval ".${VAR}" $ENV_FILE)
-            echo "${VAR^^}=${VALUE}" >> $GITHUB_ENV
-          done
+      #     for VAR in $CONFIG_VARS; do
+      #       VALUE=$(yq eval ".${VAR}" $ENV_FILE)
+      #       echo "${VAR^^}=${VALUE}" >> $GITHUB_ENV
+      #     done
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -67,16 +72,16 @@ jobs:
           load: true
           tags: ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
-      - name: Scan Docker image with Trivy (Table Format)
-        continue-on-error: ${{ inputs.continue_on_scan_failure }}
-        run: |
-          trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+      # - name: Scan Docker image with Trivy (Table Format)
+      #   continue-on-error: ${{ inputs.continue_on_scan_failure }}
+      #   run: |
+      #     trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
-      - name: Save Trivy Scan Results (JSON Format)
-        continue-on-error: ${{ inputs.continue_on_scan_failure }}
-        run: |
-          mkdir -p reports
-          trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+      # - name: Save Trivy Scan Results (JSON Format)
+      #   continue-on-error: ${{ inputs.continue_on_scan_failure }}
+      #   run: |
+      #     mkdir -p reports
+      #     trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
       - name: Create docker network for smoke tests
         run: |
@@ -109,31 +114,16 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          ./kong-smoke-tests.sh localhost ${{ github.workspace }}/reports/smoke_test_report.md
-        shell: bash
+          export KONG_HOST="localhost"
+          export REPORT_FILE="${{ github.workspace }}/reports/smoke_test_report.md"
+          bats kong-smoke-tests.bats | tee ${{ github.workspace }}/reports/smoke_test_report.log
         working-directory: ${{ github.workspace }}/scripts
-
-      # - name: Test Kong Gateway Status
-      #   run: |
-      #     response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8100/status)
-      #     echo "Response code: $response"
-      #   shell: bash
-      #   working-directory: docker
-
-      # - name: Test Kong Gateway Proxy
-      #   run: |
-      #     response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/echo)
-      #     echo "Response code: $response"
-      #   shell: bash
-      #   working-directory: docker
 
       - name: Run Load tests
         run: |
           set -e
-          docker run --rm -i --network kong-net-${{ github.run_id }} \
-            grafana/k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://kong-gateway:8000 - <tests/k6/load.js
-
-        working-directory: docker
+          k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://localhost:8000 docker/tests/k6/load.js
+        working-directory: ${{ github.workspace }}
 
       - name: Stop and remove Docker container and network
         if: always()
