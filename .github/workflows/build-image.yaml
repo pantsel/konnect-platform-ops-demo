@@ -22,6 +22,7 @@ jobs:
 
     env:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+      DOCKERFILE_DIR: ${{ github.workspace }}/examples/image-build
 
     steps:
       - name: Checkout repository
@@ -57,12 +58,12 @@ jobs:
         run: |
           echo "${{ steps.import-secrets.outputs.CA_CERT }}" > myCA.crt
         shell: bash
-        working-directory: docker
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Fetch Custom Plugin
         run: |
           git clone https://github.com/Kong/kong-plugin.git
-        working-directory: docker
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Download Kong Gateway
         run: |
@@ -75,27 +76,27 @@ jobs:
           echo "Fetching from URL: $KONG_URL"
 
           curl -s -o kong.deb "$KONG_URL"
-        working-directory: docker
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
-          context: docker
+          context: ${{ env.DOCKERFILE_DIR }}
           platforms: linux/amd64
           push: false
           load: true
-          tags: ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+          tags: ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}
 
       - name: Scan Docker image with Trivy (Table Format)
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
         run: |
-          trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+          trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}
 
       - name: Save Trivy Scan Results (JSON Format)
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
         run: |
           mkdir -p reports
-          trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+          trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}
 
       - name: Create docker network for smoke tests
         run: |
@@ -117,9 +118,8 @@ jobs:
             --health-timeout 5s \
             --health-retries 3 \
             --volume $(pwd)/kong.yaml:/kong.yaml \
-            ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
-        shell: bash
-        working-directory: docker
+            ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Wait for Kong Gateway to start
         run: |
@@ -134,7 +134,7 @@ jobs:
       - name: Run Load tests
         run: |
           set -e
-          k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://localhost:8000 docker/tests/k6/load.js
+          k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://localhost:8000 examples/image-build/k6/load.js
         working-directory: ${{ github.workspace }}
 
       - name: Stop and remove Docker container and network
@@ -148,14 +148,14 @@ jobs:
         if: success()
         uses: docker/build-push-action@v5
         with:
-          context: docker
+          context: ${{ env.DOCKERFILE_DIR }}
           platforms: linux/amd64
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}
 
       - name: Inspect
         run: |
-          docker buildx imagetools inspect ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}   
+          docker buildx imagetools inspect ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}
 
       - name: Upload Reports
         uses: actions/upload-artifact@v4
