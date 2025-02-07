@@ -14,6 +14,16 @@ while [[ -z "$konnect_token" ]]; do
     read -s -p $'\n'"konnect personal access token cannot be empty. Please enter again: " konnect_token
 done
 
+GITHUB_TOKEN=$(gh auth token 2>/dev/null)
+if [[ -z "$GITHUB_TOKEN" ]]; then
+    read -s -p $'\n'"Enter GitHub token: " GITHUB_TOKEN
+    while [[ -z "$GITHUB_TOKEN" ]]; do
+        read -s -p $'\n'"GitHub token cannot be empty. Please enter again: " GITHUB_TOKEN
+    done
+else
+    echo $'\n'"Using GitHub token from gh auth."
+fi
+
 read -s -p $'\n'"Enter s3 access key: " s3_access_key
 while [[ -z "$s3_access_key" ]]; do
     read -s -p $'\n'"s3 access key cannot be empty. Please enter again: " s3_access_key
@@ -55,6 +65,7 @@ kube_context=${kube_context:-orbstack}
 
 cat << EOF > "$secret_file"
 KONNECT_PAT=$konnect_token
+GITHUB_TOKEN=$GITHUB_TOKEN
 S3_ACCESS_KEY=$s3_access_key
 S3_SECRET_KEY=$s3_secret_key
 DOCKER_USERNAME=$docker_username

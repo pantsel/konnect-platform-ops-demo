@@ -5,7 +5,7 @@ export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc prep-act-secrets kind docker vault-pki ## Prepare the project
+prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki ## Prepare the project
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
