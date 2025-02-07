@@ -130,21 +130,17 @@ graph LR;
 ### Run the Build workflow
 
 ```bash
-$ act --input image_repo=myrepo/kong \
-  --input image_tag=latest \
-  -P ubuntu-latest=-self-hosted \
-  workflow_call -W .github/workflows/build-image.yaml    
+$ act -W .github/workflows/build-image.yaml    
 ```
 
 ***Input parameters***
-
-| Name                     | Description                                                | Required | Default        |
-| ------------------------ | ---------------------------------------------------------- | -------- | -------------- |
-| docker_registry          | The Docker registry to push the image to                   | No       | localhost:5000 |
-| image_repo               | The repository the docker image will be pushed             | Yes      | -              |
-| image_tag                | The tag of the docker image                                | Yes      | -              |
-| kong_version             | The kong gateway ee version to base the resulting image on | No       | 3.7.0.0        |
-| continue_on_scan_failure | Continue the workflow even if the security scan fails      | No       | true           |
+| Name                     | Description                                                                 | Required | Default        |
+| ------------------------ | --------------------------------------------------------------------------- | -------- | -------------- |
+| docker_registry          | The Docker registry where the image will be pushed                          | No       | localhost:5000 |
+| image_repo               | The repository to which the Docker image will be pushed                     | Yes      | -              |
+| image_tag                | The tag to assign to the Docker image                                       | Yes      | -              |
+| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image     | No       | 3.9.0.1        |
+| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails            | No       | true           |
 
 ## Provision Konnect resources
 
