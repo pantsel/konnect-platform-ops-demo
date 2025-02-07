@@ -23,17 +23,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # - name: Load environment configuration
-      #   id: load_config
-      #   run: |
-      #     echo "Reading configuration from $ENV_FILE"
-      #     CONFIG_VARS=$(yq eval 'keys' $ENV_FILE)
-          
-      #     for VAR in $CONFIG_VARS; do
-      #       VALUE=$(yq eval ".${VAR}" $ENV_FILE)
-      #       echo "${VAR^^}=${VALUE}" >> $GITHUB_ENV
-      #     done
-
       - name: Load environment configuration
         uses: ./.github/actions/load-config
         with:
@@ -72,16 +61,16 @@ jobs:
           load: true
           tags: ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
-      # - name: Scan Docker image with Trivy (Table Format)
-      #   continue-on-error: ${{ inputs.continue_on_scan_failure }}
-      #   run: |
-      #     trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+      - name: Scan Docker image with Trivy (Table Format)
+        continue-on-error: ${{ inputs.continue_on_scan_failure }}
+        run: |
+          trivy image --exit-code 1 --no-progress ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
-      # - name: Save Trivy Scan Results (JSON Format)
-      #   continue-on-error: ${{ inputs.continue_on_scan_failure }}
-      #   run: |
-      #     mkdir -p reports
-      #     trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
+      - name: Save Trivy Scan Results (JSON Format)
+        continue-on-error: ${{ inputs.continue_on_scan_failure }}
+        run: |
+          mkdir -p reports
+          trivy image --format json --output reports/trivy-report.json ${{ env.DOCKER_IMAGE_REPO }}:${{ env.KONG_VERSION }}-${{ inputs.environment }}
 
       - name: Create docker network for smoke tests
         run: |
