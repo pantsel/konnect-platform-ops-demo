@@ -39,6 +39,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: grafana/setup-k6-action@v1
+
+      - name: Setup Bats and bats libs
+        id: setup-bats
+        uses: bats-core/bats-action@3.0.0
+
       - name: Load environment configuration
         uses: ./.github/actions/load-config
         with:
@@ -98,16 +104,15 @@ jobs:
           load: true
           tags: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
 
-      - name: Scan Docker image with Trivy (Table Format)
+      - name: Run Trivy vulnerability scanner
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
-        run: |
-          trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
-
-      - name: Save Trivy Scan Results (JSON Format)
-        continue-on-error: ${{ inputs.continue_on_scan_failure }}
-        run: |
-          mkdir -p reports
-          trivy image --format json --output reports/trivy-report.json ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+          format: 'table'
+          output: 'reports/trivy-report.txt'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
 
       - name: Create docker network for smoke tests
         run: |
@@ -143,10 +148,14 @@ jobs:
         working-directory: ${{ github.workspace }}/scripts
 
       - name: Run Load tests
-        run: |
-          set -e
-          k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://localhost:8000 examples/image-build/k6/load.js
-        working-directory: ${{ github.workspace }}
+        uses: grafana/run-k6-action@v1
+        env:
+          K6_TEST_URL: http://localhost:8000
+        with:
+          path: |
+            examples/image-build/k6/load.js
+          flags: --vus 50 --duration 10s
+          working-directory: ${{ github.workspace }}
 
       - name: Stop and remove Docker container and network
         if: always()
