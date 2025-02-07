@@ -7,6 +7,10 @@ on:
         description: 'Deployment environment (dev, staging, prod)'
         type: string
         default: dev
+      kong_version:
+        description: 'Kong Gateway version'
+        type: string
+        default: "3.9.0.1"
       continue_on_scan_failure:
         description: 'Continue on Trivy scan failure'
         default: 'true'
@@ -47,9 +51,15 @@ jobs:
 
       - name: Download Kong Gateway
         run: |
-          KONG_MAJOR_MINOR_VERSION=$(echo ${{ env.KONG_VERSION }} | cut -d. -f1-2 | tr -d '.')
-          echo "Downloading Kong Gateway ${{ env.KONG_VERSION }}... with major version $KONG_MAJOR_MINOR_VERSION"
-          curl -s -o kong.deb https://packages.konghq.com/public/gateway-$KONG_MAJOR_MINOR_VERSION/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ env.KONG_VERSION }}/kong-enterprise-edition_${{ env.KONG_VERSION }}_amd64.deb
+          KONG_VERSION="${{ inputs.kong_version }}"
+          KONG_MAJOR_MINOR_VERSION=$(echo "$KONG_VERSION" | cut -d. -f1-2 | tr -d '.')
+          KONG_PACKAGE_NAME="kong-enterprise-edition_${KONG_VERSION}_amd64.deb"
+          KONG_URL="https://packages.konghq.com/public/gateway-${KONG_MAJOR_MINOR_VERSION}/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${KONG_VERSION}/${KONG_PACKAGE_NAME}"
+
+          echo "Downloading Kong Gateway version: $KONG_VERSION (major version: $KONG_MAJOR_MINOR_VERSION)..."
+          echo "Fetching from URL: $KONG_URL"
+
+          curl -s -o kong.deb "$KONG_URL"
         working-directory: docker
 
       - name: Build Docker image
