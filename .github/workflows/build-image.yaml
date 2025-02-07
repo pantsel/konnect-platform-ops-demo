@@ -44,6 +44,21 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Import CA Certificate
+        id: import-secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
+          secrets: |
+            pki/cert/ca certificate | CA_CERT ;
+
+      - name: Save CA Certificate to file
+        run: |
+          echo "${{ steps.import-secrets.outputs.CA_CERT }}" > myCA.crt
+        shell: bash
+        working-directory: docker
+
       - name: Fetch Custom Plugin
         run: |
           git clone https://github.com/Kong/kong-plugin.git
@@ -113,8 +128,6 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          export KONG_HOST="localhost"
-          export REPORT_FILE="${{ github.workspace }}/reports/smoke_test_report.md"
           bats kong-smoke-tests.bats | tee ${{ github.workspace }}/reports/smoke_test_report.log
         working-directory: ${{ github.workspace }}/scripts
 

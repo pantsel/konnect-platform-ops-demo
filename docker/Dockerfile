@@ -19,6 +19,9 @@ RUN set -eux; \
     ln -s /usr/local/openresty/nginx/sbin/nginx /usr/local/bin/nginx; \
     kong version
 
+# Include Custom CA certificate
+COPY myCA.crt /etc/ssl/certs/myCA.crt
+
 # Include custom plugins
 COPY kong-plugin/kong/plugins/ /usr/local/share/lua/5.1/kong/plugins/
 

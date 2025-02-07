@@ -118,12 +118,13 @@ To create your `s3 access key` and `s3 access secret`:
 
 ```mermaid
 graph LR;
-    A[Download Kong Package] --> B[Install custom plugins - Optional];
+    A[Download Kong Binaries] --> B[Install custom plugins - Optional];
     B --> C[Add Certificates - Optional];
     C --> D[Build];
     D --> E[Scan];
-    E --> F[Test];
-    F -.-> G[Publish];
+    E --> F[Run smoke tests];
+    F --> G[Run load tests];
+    G --> H[Push to registry];
 ```
 
 ### Run the Build workflow
