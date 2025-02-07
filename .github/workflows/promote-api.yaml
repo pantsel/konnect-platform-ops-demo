@@ -1,16 +1,21 @@
 name: Publish API
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       openapi_spec:
         description: "Path to the OpenAPI Specification file"
         required: true
         type: string
       environment:
-        description: "Environment to promote the API to"
-        type: string
-        default: dev
+        description: "Environment to deploy to"
+        type: choice
+        default: "dev"
+        options:
+          - "dev"
+          - "tst"
+          - "acc"
+          - "prd"
       control_plane_name:
         description: "Kong Konnect control plane name"
         type: string
@@ -31,6 +36,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - uses: kong/setup-deck@v1
 
       - name: Load environment configuration
         uses: ./.github/actions/load-config
@@ -97,16 +104,13 @@ jobs:
 
           # Set as env variable
           echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
-        
 
       - name: Lint OpenAPI Specification
-        run: spectral lint  ${{ github.workspace }}/${{ inputs.openapi_spec }} --ruleset .spectral.yaml -o oas_lint_results_${{ env.NOW }}.txt
-        working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Show linting results
-        if: always()
-        run: cat oas_lint_results_${{ env.NOW }}.txt
-        working-directory: ${{ github.workspace }}/examples/apiops
+        uses: stoplightio/spectral-action@latest
+        with:
+          file_glob: '${{ github.workspace }}/${{ inputs.openapi_spec }}'
+          spectral_ruleset: .spectral.yaml
+          working-directory: ${{ github.workspace }}/examples/apiops
 
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
@@ -178,4 +182,3 @@ jobs:
             ${{ github.workspace }}/examples/apiops/kong_backup_${{ env.NOW }}.yaml
             ${{ github.workspace }}/examples/apiops/kong_current_${{ env.NOW }}.yaml
             ${{ github.workspace }}/examples/apiops/diff_${{ env.NOW }}.txt
-            ${{ github.workspace }}/examples/apiops/oas_lint_results_${{ env.NOW }}.txt

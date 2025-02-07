@@ -85,7 +85,7 @@ clean: stop ## Clean everything up
 
 test: ## Run simple tests
 	@echo "Running tests.."
-	@./scripts/test.sh
+	@./scripts/test-workflows.sh
 
 help: ## Show this help
 	@echo "Available targets:"

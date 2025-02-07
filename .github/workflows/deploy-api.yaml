@@ -116,13 +116,13 @@ jobs:
   # This is an optional job that can be triggered after the API is deployed.
   # Set the `promote_api` input to `true` to enable this job.
   # It requires the control plane name, system account, and OpenAPI Specification file.
-  promote-api:
-    needs: deploy-api
-    if: ${{ inputs.promote_api == 'true' && needs.deploy-api.result == 'success' && inputs.control_plane_name && inputs.system_account && inputs.openapi_spec }}
-    uses: ./.github/workflows/promote-api.yaml
-    with:
-      openapi_spec: ${{ inputs.openapi_spec }}
-      control_plane_name: ${{ inputs.control_plane_name }}
-      system_account: ${{ inputs.system_account }}
-      api_url: 'http://${{ inputs.release_name }}.${{ inputs.namespace }}.svc.cluster.local:3030'
-    secrets: inherit
+  # promote-api:
+  #   needs: deploy-api
+  #   if: ${{ inputs.promote_api == 'true' && needs.deploy-api.result == 'success' && inputs.control_plane_name && inputs.system_account && inputs.openapi_spec }}
+  #   uses: ./.github/workflows/promote-api.yaml
+  #   with:
+  #     openapi_spec: ${{ inputs.openapi_spec }}
+  #     control_plane_name: ${{ inputs.control_plane_name }}
+  #     system_account: ${{ inputs.system_account }}
+  #     api_url: 'http://${{ inputs.release_name }}.${{ inputs.namespace }}.svc.cluster.local:3030'
+  #   secrets: inherit

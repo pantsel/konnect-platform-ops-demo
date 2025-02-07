@@ -37,6 +37,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install MinIO Client
+        uses: ./.github/actions/setup-minio-client
+
+      - uses: eLco/setup-vault@v1
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:

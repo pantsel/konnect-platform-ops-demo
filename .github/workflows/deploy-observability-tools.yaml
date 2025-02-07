@@ -41,6 +41,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: kong/setup-deck@v1
+
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
@@ -65,7 +67,7 @@ jobs:
           deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ secrets.KONNECT_PAT }} \
-            --konnect-control-plane-name=${{ inputs.control_plane_name }}
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}"
 
         working-directory: ${{ github.workspace }}/examples/observability/
 
@@ -216,7 +218,7 @@ jobs:
         run: |
           deck gateway reset --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ secrets.KONNECT_PAT }} \
-            --konnect-control-plane-name=${{ inputs.control_plane_name }} \
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}" \
             --select-tag=observability \
             --select-tag=platform_team \
             --force

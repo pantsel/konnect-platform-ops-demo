@@ -73,6 +73,11 @@ jobs:
         with:
           version: "latest"
 
+      - name: Install MinIO Client
+        uses: ./.github/actions/setup-minio-client
+
+      - uses: eLco/setup-vault@v1
+
       - name: Load environment configuration
         uses: ./.github/actions/load-config
         with:

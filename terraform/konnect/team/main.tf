@@ -73,7 +73,7 @@ module "system_accounts" {
     } }
   )
 
-  name             = lower(replace("sa_${each.value.name}_${local.short_names[each.value.type]}_admin", " ", "_"))
+  name             = lower(replace("sa-${each.value.name}-${local.short_names[each.value.type]}-admin", " ", "-"))
   description      = "Admin System account for ${each.value.type} ${each.value.name}"
   entity_id        = each.value.id
   entity_type_name = each.value.type
