@@ -1,4 +1,4 @@
-name: Deploy Kong Data Plane
+name: Deploy Data Plane
 
 on:
   workflow_dispatch:
@@ -84,6 +84,7 @@ jobs:
           environment: ${{ inputs.environment }}
 
       - name: Issue clustering certificates
+        if: ${{ inputs.action == 'deploy' }}
         id: issue-clustering-certs
         uses: hashicorp/vault-action@v3
         with:
@@ -93,6 +94,7 @@ jobs:
             pki/issue/kong {"common_name": "${{ inputs.clustering_cn }}", "alt_names": "www.${{ inputs.clustering_cn }}", "ttl": "4380h"};
 
       - name: Issue proxy certificates
+        if: ${{ inputs.action == 'deploy' }}
         id: issue-proxy-certs
         uses: hashicorp/vault-action@v3
         with:
@@ -121,6 +123,7 @@ jobs:
         working-directory: scripts
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
+        id: fetch-control-plane-info
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
@@ -150,9 +153,9 @@ jobs:
             exit 1
           fi
 
-          # Save the control plane info to a file
-          echo "$response_body" | jq -c .data[0] > kong_gateway_control_plane_info.json
-
+          # Save the control plane info to an output variable
+          echo "::set-output name=control_plane_info::$( echo $response_body | jq -c .data[0])"
+ 
       - name: kubectl use context
         run: |
           kubectl config use-context ${{ secrets.KUBE_CONTEXT }}
@@ -200,9 +203,10 @@ jobs:
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
-          # Extract control plane and telemetry endpoints from the control plane info file (kong_gateway_control_plane_info.json)
-          CONTROL_PLANE_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.control_plane_endpoint | sed 's|https://||')
-          TELEMETRY_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.telemetry_endpoint | sed 's|https://||')
+          # Extract control plane and telemetry endpoints from the control plane info
+          CONTROL_PLANE_INFO='${{ steps.fetch-control-plane-info.outputs.control_plane_info }}'
+          CONTROL_PLANE_ENDPOINT=$(echo "$CONTROL_PLANE_INFO" | jq -r .config.control_plane_endpoint | sed 's|https://||')
+          TELEMETRY_ENDPOINT=$(echo "$CONTROL_PLANE_INFO" | jq -r .config.telemetry_endpoint | sed 's|https://||')
           CONTROL_PLANE_NAME=$(echo "${{ inputs.control_plane_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[ _]/-/g')
 
           echo "Control Plane Endpoint: $CONTROL_PLANE_ENDPOINT"
@@ -238,6 +242,7 @@ jobs:
             --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/$CONTROL_PLANE_NAME \
             --set env.cluster_fallback_config_export="on"
 
+          # Setup Data Plane node
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
             --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
