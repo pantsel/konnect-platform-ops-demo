@@ -215,10 +215,10 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 
 ***Input Parameters***
 
-| Name           | Description                                            | Required | Default               |
-| -------------- | ------------------------------------------------------ | -------- | --------------------- |
-| action         | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
-| environment    | The environment to provision                           | No       | `dev`                 |
+| Name        | Description                                            | Required | Default     |
+| ----------- | ------------------------------------------------------ | -------- | ----------- |
+| action      | The action to perform. Either `provision` or `destroy` | No       | `provision` |
+| environment | The environment to provision                           | No       | `dev`       |
 
 
 ### Federated approach (Teams onboarding)
@@ -527,13 +527,12 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 
 ***Input Parameters***
 
-| Name               | Description                                             | Required | Default                   |
-| ------------------ | ------------------------------------------------------- | -------- | ------------------------- |
-| openapi_spec       | Path to the OpenAPI Specification file                  | Yes      | -                         |
-| vault_addr         | The address of the HashiCorp Vault server               | No       | http://localhost:8300     |
-| control_plane_name | The name of the control plane to sync the configuration | Yes      | -                         |
-| system_account     | The Konnect system account to use for authentication    | Yes      | -                         |
-| konnect_server_url | Konnect server URL                                      | No       | https://eu.api.konghq.com |
+| Name               | Description                                                        | Required | Default |
+| ------------------ | ------------------------------------------------------------------ | -------- | ------- |
+| openapi_spec       | Path to the OpenAPI Specification file                             | Yes      | -       |
+| environment        | Environment to deploy to                                           | No       | dev     |
+| control_plane_name | Kong Konnect control plane name                                    | Yes      | -       |
+| system_account     | The CP admin system account to use for authentication with Konnect | Yes      | -       |
 
 ***Make a request to the demo API***
 
