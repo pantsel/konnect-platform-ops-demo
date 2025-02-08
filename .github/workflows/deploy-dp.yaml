@@ -83,19 +83,23 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
 
-      - name: Issue clustering certs
-        uses: ./.github/actions/issue-certs
+      - name: Issue clustering certificates
+        id: issue-clustering-certs
+        uses: hashicorp/vault-action@v3
         with:
-          environment: ${{ inputs.environment }}
-          output_dir: ${{ github.workspace }}
-          common_name: ${{ inputs.clustering_cn }}
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
+          pki: |
+            pki/issue/kong {"common_name": "${{ inputs.clustering_cn }}", "alt_names": "www.${{ inputs.clustering_cn }}", "ttl": "4380h"};
 
-      - name: Issue proxy certs
-        uses: ./.github/actions/issue-certs
+      - name: Issue proxy certificates
+        id: issue-proxy-certs
+        uses: hashicorp/vault-action@v3
         with:
-          environment: ${{ inputs.environment }}
-          output_dir: ${{ github.workspace }}
-          common_name: ${{ inputs.proxy_cn }}
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
+          pki: |
+            pki/issue/kong {"common_name": "${{ inputs.proxy_cn }}", "alt_names": "www.${{ inputs.proxy_cn }}", "ttl": "4380h"};
 
       - name: Import System Account Token
         if: ${{ inputs.action == 'deploy' }}
@@ -176,8 +180,8 @@ jobs:
             namespace: $NAMESPACE
           type: kubernetes.io/tls
           data:
-            tls.crt: $(cat ${{ inputs.clustering_cn }}.crt | base64 | tr -d '\n')
-            tls.key: $(cat ${{ inputs.clustering_cn }}.key | base64 | tr -d '\n')
+            tls.crt: $(echo "${{ steps.issue-clustering-certs.outputs.kong_cert }}" | base64 | tr -d '\n')
+            tls.key: $(echo "${{ steps.issue-clustering-certs.outputs.kong_key }}" | base64 | tr -d '\n')
           EOF
 
           kubectl apply -f - <<EOF
@@ -188,8 +192,8 @@ jobs:
             namespace: $NAMESPACE
           type: kubernetes.io/tls
           data:
-            tls.crt: $(cat ${{ inputs.proxy_cn }}.crt | base64 | tr -d '\n')
-            tls.key: $(cat ${{ inputs.proxy_cn }}.key | base64 | tr -d '\n')
+            tls.crt: $( echo "${{ steps.issue-proxy-certs.outputs.kong_cert }}" | base64 | tr -d '\n')
+            tls.key: $( echo "${{ steps.issue-proxy-certs.outputs.kong_key }}" | base64 | tr -d '\n')
           EOF
 
       - name: Deploy Kong Data Plane
