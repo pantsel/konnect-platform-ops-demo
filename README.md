@@ -59,6 +59,10 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
 - Local k8s cluster
+- Observability stacks (Optional)
+  - Grafana: Prometheus + Grafana + Loki + Tempo + Fluentbit
+  - Datadog
+  - Dynatrace
 
 ```mermaid
 graph TD;
