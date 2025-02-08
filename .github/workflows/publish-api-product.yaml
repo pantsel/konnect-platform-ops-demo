@@ -1,4 +1,4 @@
-name: Provision Konnect
+name: Publish API Product
 
 on:
   workflow_call:
