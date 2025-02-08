@@ -511,7 +511,7 @@ Workflow: `.github/workflows/deploy-api.yaml`
 $ act --input action=deploy -W .github/workflows/deploy-api.yaml
 
 ## If you have deployed an observability stack
-$ act --input action=deploy --input observability_stack=<datadog|grafana> -W .github/workflows/deploy-api.yaml
+$ act --input action=deploy --input observability_stack=<datadog|grafana|dynatrace> -W .github/workflows/deploy-api.yaml
 ```
 
 ### Configure Kong Gateway
