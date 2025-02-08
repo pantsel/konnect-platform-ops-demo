@@ -80,12 +80,17 @@ graph TD;
 
   subgraph K8s Cluster
     E[kind/orbstack]
+    F[
+      Observability Stack<br>
+      Prometheus/Grafana/Datadog/Dynatrace
+      ]
   end
 
   A --> E
   B --> E
   C --> E
   D --> E
+  E -.-> F
 ```
 
 ## Prepare the demo environment
