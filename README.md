@@ -22,7 +22,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
-  - [Default approach](#default-approach)
+  - [Static approach](#static-approach)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Centralised approach](#centralised-approach)
     - [Flow](#flow-1)
@@ -154,13 +154,13 @@ $ act -W .github/workflows/build-image.yaml
 
 In this demo, there are three documented approaches for provisioning resources in Konnect.
 
-1. **Default**: Default resource provisioning with Terraform
+1. **Static**: A straightforward approach where all Konnect resources are statically defined
 2. **Centralised**: A central Platform team manages all Konnect resources
 3. **Federated**: Every team manages their own Konnect resources
 
-### Default approach
+### Static approach
 
-Terraform project: `./terraform/default`
+Terraform project: `./terraform/konnect/static`
 
 Provisioning will result in the following high level setup:
 
@@ -197,7 +197,6 @@ graph TD;
         P[Kong DP Nodes]
     end
     
-  
     A -.-> |Read-Only| D
     B --> |Admin| D
 
@@ -215,7 +214,7 @@ graph TD;
 To provision the Konnect resources, execute the following command: 
 
 ```bash
-$ act -W .github/workflows/provision-konnect-default.yaml 
+$ act -W .github/workflows/provision-konnect-static.yaml 
 ```
 
 ***Input Parameters***
@@ -224,7 +223,7 @@ $ act -W .github/workflows/provision-konnect-default.yaml
 | -------------- | ------------------------------------------------------ | -------- | --------------------- |
 | vault_addr     | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
 | action         | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
-| environment    | The environment to provision                           | No       | `local`               |
+| environment    | The environment to provision                           | No       | `dev`               |
 | konnect_region | Konnect Region to provision resources                  | No       | `eu`                  |
 
 
