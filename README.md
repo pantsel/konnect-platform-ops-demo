@@ -58,7 +58,6 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - Hashicorp Vault: http://localhost:8300
 - Keycloak: http://localhost:8080
 - Local Docker registry: http://localhost:5000
-- Local k8s cluster
 - Observability stacks (Optional)
   - Grafana: Prometheus + Loki + Tempo + Fluentbit
   - Datadog
