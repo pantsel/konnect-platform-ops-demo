@@ -216,11 +216,8 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 
 | Name           | Description                                            | Required | Default               |
 | -------------- | ------------------------------------------------------ | -------- | --------------------- |
-| vault_addr     | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
 | action         | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
 | environment    | The environment to provision                           | No       | `dev`                 |
-| konnect_region | Konnect Region to provision resources                  | No       | `eu`                  |
-
 
 
 ### Federated approach (Teams onboarding)
