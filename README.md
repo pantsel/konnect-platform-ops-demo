@@ -430,6 +430,14 @@ Login with `username: admin` and `password: prom-operator`.
 The workflow will configure `prometheus`, `opentelemetry` and `tcp-log` global plugins on the requested Control Plane
 and deploy the `otel Operator` and `Dynatrace otel collector` on your local kind cluster.
 
+```bash
+$ act --input control_plane_name=<control_plane_name> \
+   --input observability_stack=dynatrace \
+    -W .github/workflows/deploy-observability-tools.yaml   
+```
+
+View all metrics, traces and logs in your Dynatrace dashboards.
+
 
 ## Deploy Data Planes
 
