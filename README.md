@@ -142,13 +142,13 @@ $ act -W .github/workflows/build-image.yaml
 ```
 
 ***Input parameters***
-| Name                     | Description                                                                 | Required | Default        |
-| ------------------------ | --------------------------------------------------------------------------- | -------- | -------------- |
-| docker_registry          | The Docker registry where the image will be pushed                          | No       | localhost:5000 |
-| image_repo               | The repository to which the Docker image will be pushed                     | Yes      | -              |
-| image_tag                | The tag to assign to the Docker image                                       | Yes      | -              |
-| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image     | No       | 3.9.0.1        |
-| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails            | No       | true           |
+| Name                     | Description                                                             | Required | Default        |
+| ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |
+| docker_registry          | The Docker registry where the image will be pushed                      | No       | localhost:5000 |
+| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | -              |
+| image_tag                | The tag to assign to the Docker image                                   | Yes      | -              |
+| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.9.0.1        |
+| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           |
 
 ## Provision Konnect resources
 
@@ -223,7 +223,7 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 | -------------- | ------------------------------------------------------ | -------- | --------------------- |
 | vault_addr     | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
 | action         | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
-| environment    | The environment to provision                           | No       | `dev`               |
+| environment    | The environment to provision                           | No       | `dev`                 |
 | konnect_region | Konnect Region to provision resources                  | No       | `eu`                  |
 
 
@@ -736,9 +736,6 @@ Login with `username: admin` and `password: prom-operator`.
 ![Logs and Traces](./images/grafana_loki_tempo.png)
 
 
-
-
-
 ## Deploy Data Planes
 
 After provisioning, you can deploy the Kong DPs to your local K8s:
@@ -751,16 +748,17 @@ $ act --input control_plane_name=<cp_name> \
 
 ***Input Parameters***
 
-| Name               | Description                                               | Required | Default                   |
-| ------------------ | --------------------------------------------------------- | -------- | ------------------------- |
-| namespace          | The Kubernetes namespace where the dps will be deployed   | No       | kong                      |
-| kong_image_repo    | The repository of the Kong Docker image                   | No       | kong/kong-gateway         |
-| kong_image_tag     | The tag of the Kong Docker image                          | No       | 3.7.0.0                   |
-| vault_addr         | The address of the HashiCorp Vault server                 | No       | http://localhost:8300     |
-| control_plane_name | The name of the control plane to deploy the data plane to | Yes      | -                         |
-| system_account     | The system account to use for authentication              | Yes      | -                         |
-| konnect_server_url | Konnect server URL                                        | No       | https://eu.api.konghq.com |
-| action             | Action to perform. Can be `deploy` or `destroy`           | No       | `deploy`                  |
+| Name               | Description                                                  | Required | Default                   |
+| ------------------ | ------------------------------------------------------------ | -------- | ------------------------- |
+| environment        | Environment to deploy to                                     | No       | dev                       |
+| action             | Action to perform                                            | Yes      | deploy                    |
+| namespace          | Kubernetes namespace                                         | No       | kong                      |
+| kong_image_repo    | Kong image repository                                        | No       | kong/kong-gateway         |
+| kong_image_tag     | Kong image tag                                               | No       | 3.9.0.1                   |
+| control_plane_name | The name of the control plane to deploy the data plane to    | Yes      | -                         |
+| clustering_cn      | Common name for the clustering certificate                   | No       | clustering.kong.edu.local |
+| proxy_cn           | Common name for the proxy certificate                        | No       | proxy.kong.edu.local      |
+| system_account     | System account to use for fetching control plane information | Yes      | -                         |
 
 ## Promoting API configuration (State file management)
 

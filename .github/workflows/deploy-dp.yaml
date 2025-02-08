@@ -30,7 +30,7 @@ on:
         type: string
       kong_image_tag:
         description: "Kong image tag"
-        default: "3.8.1.0"
+        default: "3.9.0.1"
         type: string
       control_plane_name:
         description: "The name of the control plane to deploy the data plane to"
@@ -228,6 +228,8 @@ jobs:
           helm upgrade --install kong-config-exporter-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
             --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
+            --set env.image.repository=${{ inputs.kong_image_repo }} \
+            --set env.image.tag=${{ inputs.kong_image_tag }} \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
             --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
             --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
@@ -246,6 +248,8 @@ jobs:
           helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
             --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
+            --set env.image.repository=${{ inputs.kong_image_repo }} \
+            --set env.image.tag=${{ inputs.kong_image_tag }} \
             --set replicaCount="1" \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
             --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
