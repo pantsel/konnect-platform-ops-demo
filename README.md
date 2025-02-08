@@ -27,8 +27,9 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
-  - [Datadog (default)](#datadog-default)
+  - [Datadog](#datadog)
   - [Grafana](#grafana)
+  - [Dynatrace](#dynatrace)
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-1)
@@ -374,17 +375,18 @@ This repository provides examples of how can this be accomplished using common a
 
 The different observability stack examples included is this repo are:
 
-1. Datadog Stack (Prometheus, Datadog agent)
-2. Grafana Stack (Prometheus, Fluentbit, Loki, Tempo, Kong Dashboards)
+1. Grafana Stack (Prometheus, Fluentbit, Loki, Tempo, Kong Dashboards)
+2. Datadog Stack
+3. Dynatrace Stack
 
-### Datadog (default)
+### Datadog
 
 > Make sure you have a Datadog account and a valid Datadog API key (https://www.datadoghq.com/). You can define your datadog API key in `act.secrets` as `DD_API_KEY`.
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
 
-The workflow will configure `prometheus`, `datadog`, `opentelemetry` and `file-log` global plugins on the requested Control Plane 
-and deploy the `Prometheus Operator` together with a `Datadog agent` on your local kind cluster.
+The workflow will configure `prometheus`, `opentelemetry` and `file-log` global plugins on the requested Control Plane 
+and deploy a `Datadog Operator` on your local kind cluster.
 
 ```bash
 $ act --input control_plane_name=<control_plane_name> \
@@ -398,7 +400,7 @@ View all metrics, traces and logs in your datadog dashboards.
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
 
-The workflow will configure `prometheus`, `datadog`, `opentelemetry` and `http-log` global plugins on the requested Control Plane 
+The workflow will configure `prometheus`, `opentelemetry` and `http-log` global plugins on the requested Control Plane 
 and deploy the `Prometheus Operator` together with `Kong Grafana dashboards`, `fluentbit`, `loki` and `tempo` on your local kind cluster.
 
 ```bash
@@ -420,6 +422,13 @@ Login with `username: admin` and `password: prom-operator`.
 
 **View Logs and Traces**
 ![Logs and Traces](./images/grafana_loki_tempo.png)
+
+### Dynatrace
+
+> Make sure you have a Dynatrace account and a valid Dynatrace API key (https://www.dynatrace.com/). You can define your Dynatrace API token in `act.secrets` as `DT_API_TOKEN`.
+
+The workflow will configure `prometheus`, `opentelemetry` and `tcp-log` global plugins on the requested Control Plane
+and deploy the `otel Operator` and `Dynatrace otel collector` on your local kind cluster.
 
 
 ## Deploy Data Planes
