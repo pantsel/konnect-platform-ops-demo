@@ -24,18 +24,14 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Provision Konnect resources](#provision-konnect-resources)
   - [Static approach](#static-approach)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
-  - [Centralised approach](#centralised-approach)
-    - [Flow](#flow-1)
-    - [Run the Provisioning workflow](#run-the-provisioning-workflow-1)
   - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
-    - [Flow](#flow-2)
     - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
 - [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
   - [Datadog (default)](#datadog-default)
   - [Grafana](#grafana)
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
-  - [Flow](#flow-3)
+  - [Flow](#flow-1)
   - [Deploy the demo API](#deploy-the-demo-api)
   - [Configure Kong Gateway](#configure-kong-gateway)
 <!-- /TOC -->
@@ -152,11 +148,10 @@ $ act -W .github/workflows/build-image.yaml
 
 ## Provision Konnect resources
 
-In this demo, there are three documented approaches for provisioning resources in Konnect.
+In this demo, there are two documented approaches for provisioning resources in Konnect.
 
 1. **Static**: A straightforward approach where all Konnect resources are statically defined
-2. **Centralised**: A central Platform team manages all Konnect resources
-3. **Federated**: Every team manages their own Konnect resources
+2. **Federated**: Every team manages their own Konnect resources
 
 ### Static approach
 
@@ -227,320 +222,10 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 | konnect_region | Konnect Region to provision resources                  | No       | `eu`                  |
 
 
-### Centralised approach
-
-The provisioning and deployment process is based on predefined resources. You can find an example in `examples/platformops/centralised/resources.json`.
-
-***Resources Configuration Example***
-
-```json
-{
-  "metadata": {
-    "format_version": "1.0.0",
-    "type": "konnect::resources",
-    "plan": "centralised",
-    "region": "eu",
-    "name": "rsgrpeu",
-    "description": "EU resource group"
-  },
-  "resources": {
-    "teams": [
-      {
-        "name": "platform",
-        "description": "Platform Team is responsible for the development and maintenance of the APIM platform."
-      },
-      {
-        "name": "team1",
-        "description": "Team 1 is responsible for the development and maintenance of their respective APIs."
-      },
-      {
-        "name": "team2",
-        "description": "Team 2 is responsible for the development and maintenance of their respective APIs."
-      }
-    ],
-    "system_accounts": [
-      {
-        "name": "platform_system_account",
-        "description": "System account for Platform Team",
-        "team_memberships": [
-          "platform"
-        ],
-        "roles": [
-          {
-            "entity_type_name": "Control Planes",
-            "role_name": "Admin",
-            "entity_name": "*"
-          }
-        ]
-      },
-      {
-        "name": "team1_system_account",
-        "description": "System account for Team 1",
-        "team_memberships": [
-          "team1"
-        ],
-        "roles": [
-          {
-            "entity_type_name": "Control Planes",
-            "role_name": "Admin",
-            "entity_name": "cp1"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "eu",
-            "role_name": "Admin",
-            "entity_name": "cp2"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "eu",
-            "role_name": "Admin",
-            "entity_name": "cp3"
-          }
-        ]
-      },
-      {
-        "name": "team2_system_account",
-        "description": "System account for Team 2",
-        "team_memberships": [
-          "team2"
-        ],
-        "roles": [
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "eu",
-            "role_name": "Admin",
-            "entity_name": "cp4"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "eu",
-            "role_name": "Admin",
-            "entity_name": "cp5"
-          },
-          {
-            "entity_type_name": "Control Planes",
-            "entity_region": "eu",
-            "role_name": "Admin",
-            "entity_name": "cp6"
-          }
-        ]
-      }
-    ],
-    "control_planes": [
-      {
-        "name": "cp1",
-        "description": "Demo Control Plane 1",
-        "labels": {
-          "apigroup": "apigroup1"
-        }
-      },
-      {
-        "name": "cp2",
-        "description": "Demo Control Plane 2",
-        "labels": {
-          "apigroup": "apigroup2"
-        }
-      },
-      {
-        "name": "cp3",
-        "description": "Demo Control Plane 3",
-        "labels": {
-          "apigroup": "apigroup3"
-        }
-      },
-      {
-        "name": "cp4",
-        "description": "Demo Control Plane 4",
-        "labels": {
-          "apigroup": "apigroup4"
-        }
-      },
-      {
-        "name": "cp5",
-        "description": "Demo Control Plane 5",
-        "labels": {
-          "apigroup": "apigroup5"
-        }
-      },
-      {
-        "name": "cp6",
-        "description": "Demo Control Plane 6",
-        "labels": {
-          "apigroup": "apigroup6"
-        }
-      }
-    ],
-    "control_plane_groups": [
-      {
-        "name": "cp_grp1",
-        "description": "Demo Control Plane Group 1",
-        "labels": {
-          "cloud": "gcp"
-        },
-        "members": [
-          "cp1"
-        ]
-      },
-      {
-        "name": "cp_grp2",
-        "description": "Demo Control Plane Group 2",
-        "labels": {
-          "cloud": "gcp"
-        },
-        "members": [
-          "cp2"
-        ]
-      },
-      {
-        "name": "cp_grp3",
-        "description": "Demo Control Plane Group 3",
-        "labels": {
-          "cloud": "on-prem"
-        },
-        "members": [
-          "cp1",
-          "cp4",
-          "cp5"
-        ]
-      },
-      {
-        "name": "cp_grp4",
-        "description": "Demo Control Plane Group 4",
-        "labels": {
-          "cloud": "aws"
-        },
-        "members": [
-          "cp1"
-        ]
-      },
-      {
-        "name": "cp_grp5",
-        "description": "Demo Control Plane Group 5",
-        "labels": {
-          "cloud": "aws"
-        },
-        "members": [
-          "cp6"
-        ]
-      }
-    ]
-  }
-}
-```
-
-The above configuration will result in the following high level setup
-
-```mermaid
-graph TD;
-  subgraph Konnect
-      A[Team 1]
-      S[Platform Team]
-      B[Team 2]
-      C[CP 1]
-      D[CP 2]
-      E[CP 3]
-      F[CP 4]
-      G[CP 5]
-      H[CP 6]
-    end
-
-    subgraph GCP
-      direction RL
-        I[ Control Plane Group 1]
-        J[ Control Plane Group 2]
-        N[Kong DP]
-        O[Kong DP]
-    end
-
-
-    subgraph On Prem
-      direction RL
-        K[ Control Plane Group 3]
-        P[Kong DP]
-    end
-
-    subgraph AWS
-      direction RL
-        L[ Control Plane Group 4]
-        M[ Control Plane Group 5]
-        Q[Kong DP]
-        R[Kong DP]
-    end
-    S --> C
-    S --> D
-    S --> E
-    S --> F
-    S --> H
-    S --> G
-    A --> C
-    A --> D
-    A --> E
-    B --> F
-    B --> G
-    B --> H
-    C -.-> K
-    E -.-> L
-    F -.-> K
-    G -.-> K
-    H -.-> M
-    D -.-> J
-    C -.-> I
-    I --> N
-    J --> O
-    K --> P
-    L --> Q
-    M --> R
-
-```
-
-#### Flow
-
-```mermaid
-graph TD;
-    A[Create Teams]
-    B[Provision Team CPs]
-    C[Create CP Groups]
-    D[Add DP Certificates]
-    E[Assign CPs to CP Groups]
-    F[Create System Accounts]
-    G[Assign Team memberships] --> H[Configure CP Role Assignments]
-    J[Create System Account Tokens] --> I[Store Tokens in Vault]
-
-    A --> B
-    B --> D
-    B -.-> C
-    C -.-> D
-    C -.-> E
-    B --> F
-    F --> G
-    F --> J
-```
-
-#### Run the Provisioning workflow
-
-To provision centralised Konnect resources, execute the following command: 
-
-```bash
-$ act --input config_file=examples/platformops/centralised/resources.json -W .github/workflows/provision-konnect.yaml 
-```
-
-***Input Parameters***
-
-| Name        | Description                                            | Required | Default               |
-| ----------- | ------------------------------------------------------ | -------- | --------------------- |
-| config_file | The path to the resources config file                  | Yes      | -                     |
-| vault_addr  | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
-| action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
-| environment | The environment to provision                           | No       | `local`               |
-
-To destroy the resources in Konnect:
-
-```bash
-$ act --input config_file=examples/platformops/centralised/resources.json --input action=destroy -W .github/workflows/provision-konnect.yaml         
-```
 
 ### Federated approach (Teams onboarding)
+
+In a federated scenario, each team can request and manage their own Konnect resources.
 
 The provisioning and deployment process is based on predefined resources. You can find examples in `examples/platformops/federated`.
 
@@ -548,40 +233,65 @@ The provisioning and deployment process is based on predefined resources. You ca
 
 ```json
 {
-  "metadata": {
-      "format_version": "1.0.0",
-      "type": "konnect::team",
-      "plan": "federated",
-      "region": "eu",
-      "name": "kronos",
-      "description": "Kronos team is building IaC services in the EU region"
-  },
-  "resources": [
-    {
-      "type": "konnect::control_plane",
-      "name": "kronos_cp_dev",
-      "description": "Control plane 1",
-      "labels": {
-        "env": "dev"
-      }
+    "metadata": {
+        "format_version": "1.0.0",
+        "type": "konnect.team",
+        "region": "eu",
+        "name": "kronos",
+        "description": "Kronos team is building IaC services in the EU region"
     },
-    {
-      "type": "konnect::control_plane",
-      "name": "kronos_cp_acc",
-      "description": "Control plane 1",
-      "labels": {
-        "env": "acc"
-      }
-    },
-    {
-      "type": "konnect::control_plane",
-      "name": "kronos_cp_prd",
-      "description": "Control plane 1",
-      "labels": {
-        "env": "prd"
-      }
-    }
-  ]
+    "resources": [
+        {
+            "type": "konnect.control_plane",
+            "name": "Kronos Dev",
+            "description": "Kronos development control plane",
+            "labels": {
+                "env": "dev"
+            }
+        },
+        {
+            "type": "konnect.control_plane",
+            "name": "Kronos Test",
+            "description": "Kronos test control plane",
+            "labels": {
+                "env": "tst"
+            }
+        },
+        {
+            "type": "konnect.control_plane",
+            "name": "Kronos Acc",
+            "description": "Kronos acceptance control plane",
+            "labels": {
+                "env": "acc"
+            }
+        },
+        {
+            "type": "konnect.control_plane",
+            "name": "Kronos Prd",
+            "description": "Kronos production control plane",
+            "labels": {
+                "env": "prd"
+            }
+        },
+        {
+            "type": "konnect.api_product",
+            "name": "Flights API",
+            "description": "API for managing flights",
+            "labels": {},
+            "public_labels": {
+                "team": "kronos"
+            }
+        },
+        {
+            "type": "konnect.api_product",
+            "name": "Routes API",
+            "description": "API for managing routes",
+            "labels": {},
+            "public_labels": {
+                "team": "kronos"
+            }
+        }
+    ]
 }
 ```
 
@@ -590,58 +300,42 @@ The above configuration will result in the following high level setup
 ```mermaid
 graph TD;
   subgraph Konnect
-    A[Team Kronos]
-    B["
-    Control Plane
-    kronos_cp_dev
-    "]
-    C["
-    Control Plane
-    kronos_cp_acc
-    "]
-    D["
-    Control Plane
-    kronos_cp_prd
-    "]
+    subgraph Teams
+      A[Team Kronos]
+    end
 
-    E["
-    System Account
-    npa_kronos_kronos_cp_dev
-    "]
+    subgraph System Accounts
+      E[sa-kronos-dev-cp-admin]
+      F[sa-kronos-acc-cp-admin]
+      G[sa-kronos-prd-cp-admin]
+      J[sa-flights-api-ap-admin]
+      K[sa-routes-api-ap-admin]
+    end
 
-    F["
-    System Account
-    npa_kronos_kronos_cp_acc
-    "]
+    subgraph API Products
+      H[Flights API]
+      I[Routes API]
+    end
 
-    G["
-    System Account
-    npa_kronos_kronos_cp_prd
-    "]
+    subgraph Control Planes
+      B[Kronos Dev]
+      C[Kronos Acc]
+      D[Kronos Prd]
+    end
   end
 
-  A --> E -.-> |CP Admin|B
-  A --> F -.-> |CP Admin|C
-  A --> G -.-> |CP Admin|D
+  A --> |Viewer|B
+  A --> |Viewer|C
+  A --> |Viewer|D
+  A --> |Viewer|H
+  A --> |Viewer|I
 
-```
+  E --> |Admin|B
+  F --> |Admin|C
+  G --> |Admin|D
+  J --> |Admin|H
+  K --> |Admin|I
 
-#### Flow
-
-```mermaid
-graph LR;
-  A[Create Team]
-  B[Create CPs]
-  C[Add Certificates to CPs]
-  D["
-  Create System Accounts
-  Access Tokens
-  Team membership
-  CP Admin role
-  "]
-  E[Store Credentials in Vault]
-
-  A --> B --> C --> D --> E
 ```
 
 #### Run the Team Onboarding workflow
@@ -650,32 +344,27 @@ To onboard the example teams in Konnect, execute the following command:
 
 ```bash
 ## Onboard team Kronos
-$ act --input config_file=examples/platformops/federated/kronos-team.json \
-  -W .github/workflows/provision-konnect-federated.yaml 
-
-# Onboard team Tiger
-$ act --input config_file=examples/platformops/federated/tiger-team.json \
-  -W .github/workflows/provision-konnect-federated.yaml 
+$ act --input config=examples/platformops/federated/kronos-team.json \
+  -W .github/workflows/provision-konnect.yaml 
 ```
 
 To offboard the teams, you can execute the same commands with `--input action=destroy`.
 
 ```bash
 ## Offboard team Kronos
-$ act --input config_file=examples/platformops/federated/kronos-team.json \
+$ act --input config=examples/platformops/federated/kronos-team.json \
   --input action=destroy
-  -W .github/workflows/provision-konnect-federated.yaml 
+  -W .github/workflows/provision-konnect.yaml 
 
 ```
 
 ***Input Parameters***
 
-| Name        | Description                                            | Required | Default               |
-| ----------- | ------------------------------------------------------ | -------- | --------------------- |
-| config_file | The path to the resources config file                  | Yes      | -                     |
-| vault_addr  | The address of the HashiCorp Vault server              | No       | http://localhost:8300 |
-| action      | The action to perform. Either `provision` or `destroy` | No       | `provision`           |
-| environment | The environment to provision                           | No       | `local`               |
+| Name        | Description                                            | Required | Default     |
+| ----------- | ------------------------------------------------------ | -------- | ----------- |
+| config      | The path to the resources config file                  | Yes      | -           |
+| action      | The action to perform. Either `provision` or `destroy` | No       | `provision` |
+| environment | The environment to provision                           | No       | `dev`       |
 
 
 ## Deploy the Observability stack (Optional)
