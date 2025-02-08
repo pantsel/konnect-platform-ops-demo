@@ -18,6 +18,8 @@ services:
       - ./scripts/create-minio-bucket.sh:/create-minio-bucket.sh
     networks:
       - konnect-platform-ops-demo
+    labels:
+      - dev.orbstack.domains=s3.minio.local
 
   vault:
     container_name: vault
@@ -37,6 +39,7 @@ services:
         - IPC_LOCK
     volumes:
       - vault_data:/data
+      - ./scripts/vault-pki-setup.sh:/vault-pki-setup.sh:rw
     networks:
       - konnect-platform-ops-demo
 
@@ -52,6 +55,8 @@ services:
       - registry_data:/var/lib/registry
     networks:
       - konnect-platform-ops-demo
+    labels:
+      - dev.orbstack.domains=registry.docker.local
 
   postgres-kc:
     networks:
@@ -104,9 +109,10 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       PROXY_ADDRESS_FORWARDING: "true"
       # KC_LOG_LEVEL: DEBUG
+    labels:
+      - dev.orbstack.domains=idp.local
 
 # BanKonG
-  
   bankong-frontend:
     networks:
       - konnect-platform-ops-demo

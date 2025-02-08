@@ -1,9 +1,13 @@
 image:
   repository: kong/kong-gateway
-  tag: "3.7.0.0"
+  tag: "3.9.0.1"
 
 secretVolumes:
 - kong-cluster-cert
+- kong-proxy-cert
+
+manager:
+  enabled: false
 
 admin:
   enabled: false
@@ -11,7 +15,12 @@ admin:
 extraLabels:
   tags.datadoghq.com/env: "demo"
   tags.datadoghq.com/service: "kong-dp"
-  tags.datadoghq.com/version: "3.7.0.0"
+  tags.datadoghq.com/version: "3.8.1.0"
+
+# plugins:
+#   configMaps:
+#     - name: kong-plugin-log-extend
+#       pluginName: log-extend
 
 # Annotation to be added to Kong pods
 podAnnotations:
@@ -20,9 +29,15 @@ podAnnotations:
   ad.datadoghq.com/proxy.check_names: '["kong"]'
   ad.datadoghq.com/proxy.init_configs: '[{}]'
   ad.datadoghq.com/proxy.instances: '[{"openmetrics_endpoint": "http://%%host%%:8100/metrics"}]'
-  ad.datadoghq.com/proxy.logs: '[{"source": "kong", "service": "kong-proxy"}]'
-
+  ad.datadoghq.com/proxy.logs: '[{"source": "kong", "service": "kong-dp"}]'
+  metrics.dynatrace.com/scrape: 'true'
+  metrics.dynatrace.com/path: '/metrics'
+  metrics.dynatrace.com/port: '8100'
+  metrics.dynatrace.com/secure: 'false'
+  sidecar.opentelemetry.io/inject: "true"
+  
 env:
+  log_level: "info"
   role: data_plane
   database: "off"
   cluster_mtls: pki
@@ -33,6 +48,11 @@ env:
   tracing_sampling_rate: "1.0"
   status_listen: "0.0.0.0:8100 http2"
   port_maps: "80:8000, 443:8443, 8100:8100"
+  event_hooks_enabled: "off"
+  ssl_cert: "/etc/secrets/kong-proxy-cert/tls.crt"
+  ssl_cert_key: "/etc/secrets/kong-proxy-cert/tls.key"
+  untrusted_lua_sandbox_requires: resty.jwt
+  # plugins: bundled,log-extend
 
 ingressController:
   enabled: false

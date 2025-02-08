@@ -22,7 +22,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
-  - [Simple approach](#simple-approach)
+  - [Default approach](#default-approach)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Centralised approach](#centralised-approach)
     - [Flow](#flow-1)
@@ -118,71 +118,96 @@ To create your `s3 access key` and `s3 access secret`:
 
 ```mermaid
 graph LR;
-    A[Download Kong Package] --> B[Install custom plugins];
-    B --> C[Add Certificates];
+    A[Download Kong Binaries] --> B[Install custom plugins - Optional];
+    B --> C[Add Certificates - Optional];
     C --> D[Build];
     D --> E[Scan];
-    E --> F[Test];
-    F -.-> G[Publish];
+    E --> F[Run smoke tests];
+    F --> G[Run load tests];
+    G --> H[Push to registry];
 ```
 
 ### Run the Build workflow
 
 ```bash
-$ act --input image_repo=myrepo/kong \
-  --input image_tag=latest \
-  -P ubuntu-latest=-self-hosted \
-  workflow_call -W .github/workflows/build-image.yaml    
+$ act -W .github/workflows/build-image.yaml    
 ```
 
 ***Input parameters***
-
-| Name                     | Description                                                | Required | Default        |
-| ------------------------ | ---------------------------------------------------------- | -------- | -------------- |
-| docker_registry          | The Docker registry to push the image to                   | No       | localhost:5000 |
-| image_repo               | The repository the docker image will be pushed             | Yes      | -              |
-| image_tag                | The tag of the docker image                                | Yes      | -              |
-| kong_version             | The kong gateway ee version to base the resulting image on | No       | 3.7.0.0        |
-| continue_on_scan_failure | Continue the workflow even if the security scan fails      | No       | true           |
+| Name                     | Description                                                                 | Required | Default        |
+| ------------------------ | --------------------------------------------------------------------------- | -------- | -------------- |
+| docker_registry          | The Docker registry where the image will be pushed                          | No       | localhost:5000 |
+| image_repo               | The repository to which the Docker image will be pushed                     | Yes      | -              |
+| image_tag                | The tag to assign to the Docker image                                       | Yes      | -              |
+| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image     | No       | 3.9.0.1        |
+| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails            | No       | true           |
 
 ## Provision Konnect resources
 
-In this demo, there are two documented approaches for provisioning resources in Konnect.
+In this demo, there are three documented approaches for provisioning resources in Konnect.
 
-1. **Simple**: Basic resource provisioning with Terraform
+1. **Default**: Default resource provisioning with Terraform
 2. **Centralised**: A central Platform team manages all Konnect resources
 3. **Federated**: Every team manages their own Konnect resources
 
-### Simple approach
+### Default approach
 
-The provisioning process is based on a static Terraform script that can be found in `terraform/modules/simple/main.tf`
+Terraform project: `./terraform/default`
 
 Provisioning will result in the following high level setup:
 
 ```mermaid
 graph TD;
   subgraph Konnect
-      A[Demo team]
-      B[Demo CP]
-      C[Dev Portal]
+        direction TB; 
+        subgraph Applications
+            J[Developer Portal]
+        end
+
+        subgraph Teams and System Accounts
+            subgraph Individual
+                A[Demo CP Viewers]
+                B[System Account<br>demo_cp_admin]
+            end
+            subgraph Platform
+                C[System Account<br>global_cp_admin]
+            end
+        end
+
+        subgraph Control Planes
+            D[Demo_CP]
+            E[Global_CP<br>Preconfigured with Terraform]
+        end
+
+        subgraph Control Plane Groups
+            F[CP_Group]
+        end
     end
 
     subgraph Managed Cluster
       direction RL
-        D[Kong DP]
+        P[Kong DP Nodes]
     end
+    
+  
+    A -.-> |Read-Only| D
+    B --> |Admin| D
 
-    A --> B
-    B -.-> D
+    C -.-> |Admin| E
 
+    D --> |API Configurations| F 
+    E --> |Global Policies| F
+
+    F --> |API Configurations & Global Policies| P
 ```
+
 
 #### Run the Provisioning workflow
 
 To provision the Konnect resources, execute the following command: 
 
 ```bash
-$ act -W .github/workflows/provision-konnect-simple.yaml 
+$ act -W .github/workflows/provision-konnect-default.yaml 
 ```
 
 ***Input Parameters***
@@ -743,6 +768,7 @@ graph LR;
   C[Lint OAS]
   D["Deck Ops
     - openapi2kong
+    - add plugins
     - file merge
     - namespace
     - patch
@@ -756,7 +782,7 @@ graph LR;
   G[Diff current vs future state
   deck gateway diff
   ]
-  H[`
+  H[
   Archive artifacts
   ]
   I[Sync future state

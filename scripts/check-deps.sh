@@ -1,5 +1,5 @@
 # Check if dependencies are installed
-# Dependencies: docker, kind
+# Dependencies: docker, kind, terraform
 
 # Define colors, red, blue and green
 RED='\033[0;31m'
@@ -46,5 +46,14 @@ if [ "$kind_installed" = false ] && [ "$orbstack_installed" = false ]; then
     exit 1
 fi
 
+# Check if terraform is installed
+echo -e "${BLUE}Checking if terraform is installed...${NC}"
+if ! command -v terraform &> /dev/null; then
+    echo -e "${RED}Terraform is not installed. Please install terraform.${NC}"
+    echo "You can install Terraform by following the instructions at: https://learn.hashicorp.com/terraform/getting-started/install.html"
+    exit 1
+else
+    echo -e "${GREEN}Terraform is installed.${NC}"
+fi
 
 echo -e "${GREEN}All dependencies are installed.${NC}"

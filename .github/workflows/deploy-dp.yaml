@@ -1,49 +1,63 @@
 name: Deploy Kong Data Plane
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
+      environment:
+        description: "Environment to deploy to"
+        type: choice
+        default: "dev"
+        options:
+          - "dev"
+          - "tst"
+          - "acc"
+          - "prd"
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        default: "deploy"
+        options:
+          - "deploy"
+          - "destroy"
       namespace:
-        description: 'Kubernetes namespace'
+        description: "Kubernetes namespace"
         type: string
-        default: 'kong'
+        default: "kong"
       kong_image_repo:
-        description: 'Kong image repository'
-        default: 'kong/kong-gateway'
+        description: "Kong image repository"
+        default: "kong/kong-gateway"
         type: string
       kong_image_tag:
-        description: 'Kong image tag'
-        default: '3.7.0.0'
-        type: string
-      vault_addr:
-        description: 'Vault Address'
-        default: 'http://localhost:8300'
+        description: "Kong image tag"
+        default: "3.8.1.0"
         type: string
       control_plane_name:
-        description: 'The name of the control plane to deploy the data plane to'
+        description: "The name of the control plane to deploy the data plane to"
         type: string
         required: true
+      clustering_cn:
+        description: "Common name for the clustering certificate"
+        type: string
+        default: "clustering.kong.edu.local"
+      proxy_cn:
+        description: "Common name for the proxy certificate"
+        type: string
+        default: "proxy.kong.edu.local"
       system_account:
-        description: 'The system account to use for authenticating with the Konnect API'
+        description: "System account to use for fetching control plane information"
         type: string
         required: true
-      konnect_server_url:
-        description: 'Konnect server URL'
-        type: string
-        default: https://eu.api.konghq.com
-      action:
-        description: 'Action to perform'
-        required: true
-        type: string
-        default: 'deploy' # 'deploy' or 'destroy'
 
-jobs: 
+jobs:
   prepare:
     runs-on: ubuntu-latest
 
     env:
+      ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       NAMESPACE: ${{ inputs.namespace }}
       KUBECONFIG: /.kube/config
+      CP_FALLBACK_CONFIGS_BUCKET: konnect.cp.fallback.configs
 
     steps:
       - name: Checkout repository
@@ -52,39 +66,67 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: 'latest'
+          version: "latest"
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: 'latest'
+          version: "latest"
 
-      - name: Import Certificates
-        if: ${{ inputs.action == 'deploy' }}
-        id: import-certs
-        uses: hashicorp/vault-action@v2
+      - name: Install MinIO Client
+        uses: ./.github/actions/setup-minio-client
+
+      - uses: eLco/setup-vault@v1
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
         with:
-          url: ${{ inputs.vault_addr }}
-          token: ${{ secrets.VAULT_TOKEN }}
-          secrets: |
-            secret/data/certificates/demo * | DP_
+          environment: ${{ inputs.environment }}
+
+      - name: Issue clustering certs
+        uses: ./.github/actions/issue-certs
+        with:
+          environment: ${{ inputs.environment }}
+          output_dir: ${{ github.workspace }}
+          common_name: ${{ inputs.clustering_cn }}
+
+      - name: Issue proxy certs
+        uses: ./.github/actions/issue-certs
+        with:
+          environment: ${{ inputs.environment }}
+          output_dir: ${{ github.workspace }}
+          common_name: ${{ inputs.proxy_cn }}
 
       - name: Import System Account Token
         if: ${{ inputs.action == 'deploy' }}
-        id: import-token
+        id: import-secrets
         uses: hashicorp/vault-action@v2
         with:
-          url: ${{ inputs.vault_addr }}
-          token: ${{ secrets.VAULT_TOKEN }}
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            secret/data/system-accounts/${{ inputs.system_account }} token | system_account_TOKEN ;
+            secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+      - name: Create S3 bucket if required
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          ./create-minio-bucket.sh konnect ${{ env.CP_FALLBACK_CONFIGS_BUCKET }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+        working-directory: scripts
 
       - name: Fetch control plane ${{ inputs.control_plane_name }} information
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
-          # Make the request and capture the response code and body
-          response=$(curl -Gs -d "filter[name][eq]=${{ inputs.control_plane_name }}" -w "%{http_code}" "${{ inputs.konnect_server_url }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-token.outputs.system_account_TOKEN }}" -H "Content-Type: application/json")
+          # Make a request to the Konnect API to fetch required control plane information
+          # like the control plane and telemetry endpoints.
+          # This is a GET request to /v2/control-planes with a filter on the control plane name.
+          # We are using the system account token of the system account that was created during the Konnect Platform setup
+          # and only has the necessary permissions to access the specific control plane.
+          url_encoded_control_plane_name=$(echo -n "${{ inputs.control_plane_name }}" | jq -s -R -r @uri)
+          response=$(curl -Gs -d "filter[name][eq]=${url_encoded_control_plane_name}" -w "%{http_code}" "${{ env.KONNECT_SERVER_URL }}/v2/control-planes" -H "Authorization: Bearer ${{ steps.import-secrets.outputs.SYSTEM_ACCOUNT_TOKEN }}" -H "Content-Type: application/json")
           http_code=${response: -3}
           response_body=${response:0:-3}
 
@@ -96,6 +138,15 @@ jobs:
           fi
 
           echo "Request succeeded with status code $http_code"
+
+          # Ensure only one control plane is returned in the response.
+          if [ $(echo "$response_body" | jq -r '.data | length') -ne 1 ]; then
+            echo "Expected one control plane to be returned, got $(echo "$response_body" | jq -r '.data | length')"
+            echo "Response body: $response_body"
+            exit 1
+          fi
+
+          # Save the control plane info to a file
           echo "$response_body" | jq -c .data[0] > kong_gateway_control_plane_info.json
 
       - name: kubectl use context
@@ -107,38 +158,54 @@ jobs:
         run: |
           helm repo add kong https://charts.konghq.com
           helm repo update
-          
+
       - name: Create Kong namespace if not exists
         if: ${{ inputs.action == 'deploy' }}
         run: |
           kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-      
-      - name: Create kong-cluster-cert secret if not exists
+
+      - name: Create kong-cluster-cert and kong-proxy-cert secrets if required
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
-          echo "$TLS_CERT" > tls.crt
-          echo "$TLS_KEY" > tls.key
+          kubectl apply -f - <<EOF
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: kong-cluster-cert
+            namespace: $NAMESPACE
+          type: kubernetes.io/tls
+          data:
+            tls.crt: $(cat ${{ inputs.clustering_cn }}.crt | base64 | tr -d '\n')
+            tls.key: $(cat ${{ inputs.clustering_cn }}.key | base64 | tr -d '\n')
+          EOF
 
-          kubectl create secret tls kong-cluster-cert \
-              -n $NAMESPACE \
-              --dry-run=client \
-              --cert=tls.crt --key=tls.key -o yaml \
-              | kubectl apply -f -
-
-        env:
-          TLS_CERT: ${{ steps.import-certs.outputs.DP_TLS_CRT }}
-          TLS_KEY: ${{ steps.import-certs.outputs.DP_TLS_KEY }}
+          kubectl apply -f - <<EOF
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: kong-proxy-cert
+            namespace: $NAMESPACE
+          type: kubernetes.io/tls
+          data:
+            tls.crt: $(cat ${{ inputs.proxy_cn }}.crt | base64 | tr -d '\n')
+            tls.key: $(cat ${{ inputs.proxy_cn }}.key | base64 | tr -d '\n')
+          EOF
 
       - name: Deploy Kong Data Plane
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
+          # Extract control plane and telemetry endpoints from the control plane info file (kong_gateway_control_plane_info.json)
           CONTROL_PLANE_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.control_plane_endpoint | sed 's|https://||')
           TELEMETRY_ENDPOINT=$(cat ./kong_gateway_control_plane_info.json | jq -r .config.telemetry_endpoint | sed 's|https://||')
-          CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
+          CONTROL_PLANE_NAME=$(echo "${{ inputs.control_plane_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[ _]/-/g')
 
-          # Validate all required inputs are set
+          echo "Control Plane Endpoint: $CONTROL_PLANE_ENDPOINT"
+          echo "Telemetry Endpoint: $TELEMETRY_ENDPOINT"
+          echo "Control Plane Name: $CONTROL_PLANE_NAME"
+
+          # Verify all required inputs are set
           if [ "$CONTROL_PLANE_ENDPOINT" = "null" ] || [ "$TELEMETRY_ENDPOINT" = "null" ]; then
             echo "Missing required input(s)"
             echo "Control Plane Endpoint: $CONTROL_PLANE_ENDPOINT"
@@ -146,7 +213,11 @@ jobs:
             exit 1
           fi
 
-          helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
+          # Setup Config exporter node
+          # This node is responsible for exporting the configuration received from the control plane to an s3 bucket.
+          # This configuration is then used by the data plane nodes to configure themselves if they cannot reach the control plane.
+          # Ref: https://docs.konghq.com/gateway/latest/kong-enterprise/cp-outage-handling/
+          helm upgrade --install kong-config-exporter-$CONTROL_PLANE_NAME kong/kong \
             -n $NAMESPACE \
             --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
             --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
@@ -154,14 +225,40 @@ jobs:
             --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
             --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
             --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
-            --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key
+            --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key \
+            --set proxy.enabled=false \
+            --set customEnv.aws_region="main" \
+            --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
+            --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
+            --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
+            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/$CONTROL_PLANE_NAME \
+            --set env.cluster_fallback_config_export="on"
 
-
+          helm upgrade --install kong-dp-$CONTROL_PLANE_NAME kong/kong \
+            -n $NAMESPACE \
+            --values  ${{ github.workspace }}/k8s/kong-dp/values.yaml \
+            --set replicaCount="1" \
+            --set env.cluster_control_plane=$CONTROL_PLANE_ENDPOINT:443 \
+            --set env.cluster_server_name=$CONTROL_PLANE_ENDPOINT \
+            --set env.cluster_telemetry_endpoint=$TELEMETRY_ENDPOINT:443 \
+            --set env.cluster_telemetry_server_name=$TELEMETRY_ENDPOINT \
+            --set env.cluster_cert=/etc/secrets/kong-cluster-cert/tls.crt \
+            --set env.cluster_cert_key=/etc/secrets/kong-cluster-cert/tls.key \
+            --set customEnv.aws_region="main" \
+            --set customEnv.aws_access_key_id=${{ secrets.S3_ACCESS_KEY }} \
+            --set customEnv.aws_secret_access_key=${{ secrets.S3_SECRET_KEY }} \
+            --set customEnv.aws_config_storage_endpoint="http://s3.minio.local:9000" \
+            --set env.cluster_fallback_config_storage=s3://${{ env.CP_FALLBACK_CONFIGS_BUCKET }}/$CONTROL_PLANE_NAME \
+            --set env.cluster_fallback_config_import="on"
 
       - name: Destroy Kong Deployment
         if: ${{ inputs.action == 'destroy' }}
         run: |
-            CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
-            if helm status kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE >/dev/null 2>&1; then
-              helm uninstall kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE
-            fi
+          CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
+          if helm status kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE >/dev/null 2>&1; then
+            helm uninstall kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE
+            helm uninstall kong-config-exporter-$CONTROL_PLANE_NAME -n $NAMESPACE
+            kubect delete secret kong-cluster-cert -n $NAMESPACE
+            kubect delete secret kong-proxy-cert -n $NAMESPACE
+            kubeclt delete namespace $NAMESPACE
+          fi

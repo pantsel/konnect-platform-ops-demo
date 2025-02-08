@@ -1,5 +1,11 @@
 datadog:
+  processAgent:
+    enabled: true
+  orchestratorExplorer:
+    enabled: true
   otlp:
+    logs:
+      enabled: true
     receiver:
       protocols:
         http:
@@ -13,6 +19,8 @@ datadog:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
+    - name: DD_ENV
+      value: demo
   apiKeyExistingSecret: datadog-secret
   site: datadoghq.eu
   tags:

@@ -1,0 +1,38 @@
+name: Load Environment Configuration
+description: A composite action to load environment-specific configuration from YAML files.
+
+inputs:
+  environment:
+    description: 'Deployment environment (dev, staging, prod)'
+    required: true
+    default: 'dev'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Load environment configuration
+      id: load_config
+      shell: bash
+      env:
+        ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+      run: |
+        echo "Reading configuration from $ENV_FILE"
+        CONFIG_VARS=$(yq eval 'keys' $ENV_FILE)
+        
+        for VAR in $CONFIG_VARS; do
+          VALUE=$(yq eval ".${VAR}" $ENV_FILE)
+          echo "${VAR^^}=${VALUE}" >> $GITHUB_ENV
+          if [[ $VAR == "vault_addr" || $VAR == "vault_token" || $VAR == "konnect_region" || $VAR == "konnect_personal_access_token" || $VAR == "env_name" ]]; then
+            TF_VAR_NAME="TF_VAR_${VAR}"
+            echo "${TF_VAR_NAME}=${VALUE}" >> $GITHUB_ENV
+          fi
+        done
+
+        # Extra configuration for Konnect and Terraform
+        KONNECT_REGION=$(yq eval '.konnect_region' $ENV_FILE)
+        echo "KONNECT_SERVER_URL=https://$KONNECT_REGION.api.konghq.com" >> $GITHUB_ENV
+        echo "TF_VAR_konnect_server_url=https://$KONNECT_REGION.api.konghq.com" >> $GITHUB_ENV
+        echo "TF_VAR_environment=${{ inputs.environment }}" >> $GITHUB_ENV

@@ -1,0 +1,82 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector-kong
+  namespace: kong
+spec:
+  image: otel/opentelemetry-collector-contrib:0.112.0
+  mode: sidecar
+  env:
+  - name: DT_ENDPOINT
+    valueFrom:
+      secretKeyRef:
+        key: dt-endpoint
+        name: dynatrace-endpoint
+  - name: DT_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        key: dt-access-token
+        name: dynatrace-access-token
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+
+      tcplog:
+        listen_address: 0.0.0.0:54525
+        operators:
+          - type: json_parser
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'kong'
+              scrape_interval: 5s
+              static_configs:
+                - targets: ['localhost:8100']
+                  labels:
+                    service: 'kong'
+                    env: 'demo'
+    exporters:
+      otlphttp:
+        endpoint: "${env:DT_ENDPOINT}"
+        headers:
+          Authorization: "Api-Token ${env:DT_API_TOKEN}"
+      prometheus:
+        endpoint: 0.0.0.0:8889
+      debug:
+        verbosity: detailed
+
+    connectors:
+      spanmetrics:
+        dimensions:
+          - name: http.method
+          - name: http.status_code
+          - name: http.route
+        histogram:
+          disable: false
+          explicit:
+            buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms]
+
+    processors:
+      cumulativetodelta:
+        include:
+      batch: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp, spanmetrics]
+
+        logs:
+          receivers: [otlp, tcplog]
+          processors: []
+          exporters: [otlphttp]
+
+        metrics:
+          receivers: [otlp, prometheus, spanmetrics]
+          processors: [cumulativetodelta]
+          exporters: [otlphttp, prometheus]

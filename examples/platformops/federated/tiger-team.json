@@ -1,15 +1,15 @@
 {
     "metadata": {
         "format_version": "1.0.0",
-        "type": "konnect::team",
+        "type": "konnect.team",
         "plan": "federated",
         "region": "eu",
         "name": "tiger",
-        "description": "Tiget team is building the Container Hosting Platform in the EU region"
+        "description": "Tiger team is building the Container Hosting Platform in the EU region"
     },
     "resources": [
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "tiger_cp_dev",
             "description": "Control plane 1",
             "labels": {
@@ -17,7 +17,15 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
+            "name": "tiger_cp_tst",
+            "description": "Control plane 1",
+            "labels": {
+                "env": "tst"
+            }
+        },
+        {
+            "type": "konnect.control_plane",
             "name": "tiger_cp_acc",
             "description": "Control plane 1",
             "labels": {
@@ -25,11 +33,20 @@
             }
         },
         {
-            "type": "konnect::control_plane",
+            "type": "konnect.control_plane",
             "name": "tiger_cp_prd",
             "description": "Control plane 1",
             "labels": {
                 "env": "prd"
+            }
+        },
+        {
+            "type": "konnect.api_product",
+            "name": "Tiger API",
+            "description": "API for managing tigers",
+            "labels": {},
+            "public_labels": {
+                "team": "tiger"
             }
         }
     ]

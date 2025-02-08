@@ -5,7 +5,7 @@ export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc prep-secrets kind docker vault-secrets ## Prepare the project
+prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki ## Prepare the project
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
@@ -15,7 +15,7 @@ gencerts: ## Generate certificates
 	@echo "Generating certificates..."
 	@./scripts/generate-certs.sh
 
-prep-secrets: ## Prepare secrets
+prep-act-secrets: ## Prepare secrets
 	@echo "Preparing secrets.."
 	@./scripts/prep-act-secrets.sh
 
@@ -45,12 +45,24 @@ vault-secrets: ## Setup vault secrets
 	@echo "Setting up vault secrets.."
 	@./scripts/check-vault.sh
 	@docker cp .tls vault:/tmp
-	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) secret/certificates/demo \
-		tls_crt=@/tmp/.tls/tls.crt \
-		tls_key=@/tmp/.tls/tls.key \
+	@if ! vault secrets list | grep -q 'konnect'; then \
+		vault secrets enable -path=konnect kv-v2; \
+	else \
+		echo "Vault secrets path 'konnect' already exists"; \
+	fi
+	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) konnect/certificates \
+		cluster_crt=@/tmp/.tls/cluster-tls.crt \
+		cluster_key=@/tmp/.tls/cluster-tls.key \
+		proxy_crt=@/tmp/.tls/proxy-tls.crt \
+		proxy_key=@/tmp/.tls/proxy-tls.key \
 		ca=@/tmp/.tls/ca.crt
-	@echo "Vault secrets setup completed"
 
+vault-pki: ## Setup vault pki
+	@echo "Setting up vault pki."
+	@./scripts/check-vault.sh
+	@docker exec vault chmod +x /vault-pki-setup.sh
+	@docker exec -it vault /vault-pki-setup.sh $(VAULT_ADDR) $(VAULT_TOKEN)
+	
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."
 	@./scripts/check-deps.sh
@@ -73,11 +85,11 @@ clean: stop ## Clean everything up
 
 test: ## Run simple tests
 	@echo "Running tests.."
-	@./scripts/test.sh
+	@./scripts/test-workflows.sh
 
 help: ## Show this help
 	@echo "Available targets:"
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n\n"} \
 	/^[a-zA-Z_-]+:.*##/ { printf "  %-15s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-.PHONY: prepare actrc gencerts prep-secrets kind docker vault-secrets clean stop check-deps test runner
+.PHONY: prepare actrc gencerts prep-act-secrets kind docker vault-secrets vault-pki clean stop check-deps test runner

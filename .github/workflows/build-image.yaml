@@ -3,154 +3,159 @@ name: Build Kong Gateway Image
 on:
   workflow_call:
     inputs:
+      environment:
+        description: 'Deployment environment (dev, staging, prod)'
+        type: string
+        default: dev
       docker_registry:
-        description: 'Docker Registry'
-        required: true
-        default: 'localhost:5000'
+        description: 'Docker registry'
         type: string
+        default: localhost:5000
       image_repo:
-        description: 'Target Docker image repository'
-        required: true
+        description: 'Docker image repository'
         type: string
+        default: myrepo/kong
       image_tag:
-        description: 'Target Docker image tag'
-        required: true
+        description: 'Docker image tag'
         type: string
       kong_version:
         description: 'Kong Gateway version'
-        default: '3.7.0.0'
         type: string
+        default: "3.9.0.1"
       continue_on_scan_failure:
         description: 'Continue on Trivy scan failure'
         default: 'true'
         type: boolean
-      vault_addr:
-        description: 'Vault Address'
-        default: 'http://localhost:8300'
-        type: string
-      vault_token:
-        description: 'Vault Token'
-        default: 'root'
-        type: string
 
 jobs:
   build-image:
     runs-on: ubuntu-latest
 
+    env:
+      ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+      DOCKERFILE_DIR: ${{ github.workspace }}/examples/image-build
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: grafana/setup-k6-action@v1
+
+      - name: Setup Bats and bats libs
+        id: setup-bats
+        uses: bats-core/bats-action@3.0.0
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
 
       - name: Login to the Docker registry
         uses: docker/login-action@v3
         with:
-          registry: localhost:5000
+          registry: ${{ inputs.docker_registry }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Import Certificates
-        id: import-certs
+      - name: Import CA Certificate
+        id: import-secrets
         uses: hashicorp/vault-action@v2
         with:
-          url: ${{ inputs.vault_addr }}
-          token: ${{ inputs.vault_token }}
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ env.VAULT_TOKEN }}
           secrets: |
-            secret/data/certificates/demo ca | CA_CRT
+            pki/cert/ca certificate | CA_CERT ;
 
       - name: Save CA Certificate to file
         run: |
-          mkdir -p .tls
-          touch .tls/ca.crt
-          echo '${{ steps.import-certs.outputs.CA_CRT }}' >> .tls/ca.crt
-        working-directory: docker
+          echo "${{ steps.import-secrets.outputs.CA_CERT }}" > myCA.crt
+        shell: bash
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Fetch Custom Plugin
         run: |
           git clone https://github.com/Kong/kong-plugin.git
-        working-directory: docker
-
-      - name: Download docker-entrypoint.sh
-        run: |
-          curl -s -o docker-entrypoint.sh https://raw.githubusercontent.com/Kong/docker-kong/master/docker-entrypoint.sh
-          chmod +x docker-entrypoint.sh
-        working-directory: docker
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Download Kong Gateway
         run: |
-          curl -s -o kong.deb https://packages.konghq.com/public/gateway-37/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${{ inputs.kong_version }}/kong-enterprise-edition_3.7.0.0_amd64.deb
-        working-directory: docker
+          KONG_VERSION="${{ inputs.kong_version }}"
+          KONG_MAJOR_MINOR_VERSION=$(echo "$KONG_VERSION" | cut -d. -f1-2 | tr -d '.')
+          KONG_PACKAGE_NAME="kong-enterprise-edition_${KONG_VERSION}_amd64.deb"
+          KONG_URL="https://packages.konghq.com/public/gateway-${KONG_MAJOR_MINOR_VERSION}/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${KONG_VERSION}/${KONG_PACKAGE_NAME}"
+
+          echo "Downloading Kong Gateway version: $KONG_VERSION (major version: $KONG_MAJOR_MINOR_VERSION)..."
+          echo "Fetching from URL: $KONG_URL"
+
+          curl -s -o kong.deb "$KONG_URL"
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Build Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
-          context: docker
+          context: ${{ env.DOCKERFILE_DIR }}
           platforms: linux/amd64
           push: false
-          tags: ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          load: true
+          tags: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
 
-      - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-
-      - name: Scan Docker image with Trivy
+      - name: Run Trivy vulnerability scanner
         continue-on-error: ${{ inputs.continue_on_scan_failure }}
-        run: |
-          ./bin/trivy image --exit-code 1 --no-progress ${{ inputs.image_repo }}:${{ inputs.image_tag }}
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+          format: 'table'
+          output: 'reports/trivy-report.txt'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
 
-      - name: Create docker network for tests
+      - name: Create docker network for smoke tests
         run: |
           docker network create kong-net-${{ github.run_id }}
         continue-on-error: true
-              
 
       - name: Run docker container
         run: |
             docker run -d --name kong-gateway \
             --network kong-net-${{ github.run_id }} \
-            -p 8000:8000 -p 8100:8100 \
+            -p 8000:8000 -p 8100:8100 -p 8443:8443 \
             --env KONG_DATABASE=off \
             --env KONG_PLUGINS=bundled,myplugin \
             --env KONG_STATUS_LISTEN=0.0.0.0:8100 \
             --env KONG_DECLARATIVE_CONFIG=/kong.yaml \
-            --env KONG_LUA_SSL_TRUSTED_CERTIFICATE=/srv/shared/ssl/ca.crt,system \
+            --env KONG_NGINX_WORKER_PROCESSES=1 \
             --health-cmd "kong health" \
             --health-interval 10s \
             --health-timeout 5s \
             --health-retries 3 \
             --volume $(pwd)/kong.yaml:/kong.yaml \
-            ${{ inputs.image_repo }}:${{ inputs.image_tag }}
-        shell: bash
-        working-directory: docker
+            ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+        working-directory: ${{ env.DOCKERFILE_DIR }}
 
       - name: Wait for Kong Gateway to start
         run: |
           timeout 60s sh -c 'until docker ps | grep kong-gateway | grep -q healthy; do echo "Waiting for Kong Gateway to be available..."; sleep 2; done'
         shell: bash
 
-      - name: Test Kong Gateway Status
+      - name: Run smoke tests
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8100/status)
-          echo "Response code: $response"
-        shell: bash
-        working-directory: docker
-
-      - name: Test Kong Gateway Proxy
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/echo)
-          echo "Response code: $response"
-        shell: bash
-        working-directory: docker
+          bats kong-smoke-tests.bats | tee ${{ github.workspace }}/reports/smoke_test_report.log
+        working-directory: ${{ github.workspace }}/scripts
 
       - name: Run Load tests
-        run: |
-          set -e
-          docker run --rm -i --network kong-net-${{ github.run_id }} \
-            grafana/k6 run --vus 50 --duration 10s -e K6_TEST_URL=http://kong-gateway:8000 - <tests/k6/load.js
-
-        working-directory: docker
+        uses: grafana/run-k6-action@v1
+        env:
+          K6_TEST_URL: http://localhost:8000
+        with:
+          path: |
+            examples/image-build/k6/load.js
+          flags: --vus 50 --duration 10s
+          working-directory: ${{ github.workspace }}
 
       - name: Stop and remove Docker container and network
         if: always()
@@ -163,7 +168,17 @@ jobs:
         if: success()
         uses: docker/build-push-action@v5
         with:
-          context: docker
+          context: ${{ env.DOCKERFILE_DIR }}
           platforms: linux/amd64
           push: true
-          tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag }}
+          tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+      - name: Inspect
+        run: |
+          docker buildx imagetools inspect ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports/*

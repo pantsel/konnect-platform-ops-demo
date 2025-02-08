@@ -58,3 +58,4 @@ docker/*.deb
 .actrc
 *.log
 .deck.yaml
+.tests/

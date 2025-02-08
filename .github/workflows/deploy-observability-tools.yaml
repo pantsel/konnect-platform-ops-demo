@@ -20,9 +20,10 @@ on:
         type: string
         default: 'deploy' # 'deploy' or 'destroy'
       # Observability stack to deploy
-      # Supported values: datadog, grafana
+      # Supported values: datadog, grafana, dynatrace
       # Grafana stack includes Loki, Tempo, Prometheus, Fluent Bit
       # Datadog stack needs DD_API_KEY secret
+      # Dynatrace stack needs DT_API_TOKEN and optional DT_DATA_INJEST_TOKEN secrets
       observability_stack:
         description: 'Observability stack to deploy'
         required: true
@@ -40,15 +41,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: set-env
-        id: set-env
-        run: |
-
-          if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
-            echo "DECK_CONFIG_OPENTELEMETRY_ENDPOINT=http://datadog-agent.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
-          else
-            echo "DECK_CONFIG_OPENTELEMETRY_ENDPOINT=http://tempo.${{ inputs.namespace }}.svc.cluster.local:4318/v1/traces" >> $GITHUB_ENV
-          fi
+      - uses: kong/setup-deck@v1
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -64,28 +57,23 @@ jobs:
         if: ${{ inputs.action == 'deploy' }}
         run: |
 
-          # Add Global observability plugins to the Kong Gateway configuration
-          if [ "${{ inputs.observability_stack }}" == "datadog" ]; then
-            cat kong.yaml | deck file add-plugins \
-              plugins/datadog.yaml \
-              plugins/file-log.yaml \
-              -o kong.yaml
-          else
-            cat kong.yaml | deck file add-plugins \
-              plugins/http-log.yaml \
-              -o kong.yaml
-          fi
-
+          # Add Global observability plugins to the Kong Gateway configuration depending on the observability stack
+          cat kong.yaml | deck file add-plugins plugins/${{ inputs.observability_stack }}/* -o kong.yaml
+          
+          # Apply patches to the Kong Gateway configuration depending on the observability stack
+          cat kong.yaml | deck file patch patches/${{ inputs.observability_stack }}/* -o kong.yaml
+          
+          # Apply the Kong Gateway configuration
           deck gateway sync kong.yaml  \
             --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ secrets.KONNECT_PAT }} \
-            --konnect-control-plane-name=${{ inputs.control_plane_name }}
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}"
 
         working-directory: ${{ github.workspace }}/examples/observability/
 
       - name: kubectl use context
         run: |
-          kubectl config use-context kind-konnect-platform-ops-demo
+          kubectl config use-context ${{ secrets.KUBE_CONTEXT }}
           
       - name: Create Kong observability namespace if not exists
         if: ${{ inputs.action == 'deploy' }}
@@ -100,14 +88,51 @@ jobs:
           helm repo add fluent https://fluent.github.io/helm-charts
           helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
           helm repo add datadog https://helm.datadoghq.com
-          helm repo update
+          
+          helm repo add jetstack https://charts.jetstack.io --force-update
+          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
-      - name: Deploy Prometeus operator
-        if: ${{ inputs.action == 'deploy' }}
+      #####################################################################
+      ## DYNATRACE STACK DEPLOYMENT                                      ##
+      #####################################################################   
+
+      - name: Deploy Dynatrace OneAgent Operator
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'dynatrace'}}
         run: |
-          helm upgrade --install kong-prometheus prometheus-community/kube-prometheus-stack \
-            -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml
 
+          # Check if the DT_API_TOKEN secret is set
+          if [ -z "${{ secrets.DT_API_TOKEN }}" ]; then
+            echo "DT_API_TOKEN secret is required for Dynatrace OneAgent Operator deployment"
+            exit 1
+          fi
+          
+          #Install cert manager
+          helm upgrade --install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --version v1.16.2 \
+            --set crds.enabled=true
+
+          # Install Opentelemetry Operator
+          helm upgrade --install opentelemetry-operator open-telemetry/opentelemetry-operator \
+            --namespace opentelemetry-operator-system \
+            --create-namespace \
+            --wait \
+            --set "manager.collectorImage.repository=otel/opentelemetry-collector-k8s" \
+            --set admissionWebhooks.certManager.enabled=true
+
+          # Create Dynatrace API credentials secret
+          kubectl create secret generic dynatrace-endpoint -n kong --from-literal=dt-endpoint='https://rcr22892.live.dynatrace.com/api/v2/otlp' --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic dynatrace-access-token -n kong --from-literal=dt-access-token='${{ secrets.DT_API_TOKEN }}' --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create rbac
+          # kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/rbac.yaml
+          
+          # Deploy the OpenTelemetry Collector
+          kubectl apply -f ${{ github.workspace }}/k8s/dynatrace/otelcollector-dynatrace.yaml
+      
+      
       #####################################################################
       ## DATADOG STACK DEPLOYMENT                                        ##
       #####################################################################      
@@ -128,6 +153,12 @@ jobs:
       #####################################################################
       ## GRAFANA STACK DEPLOYMENT                                        ##
       #####################################################################
+
+      - name: Deploy Prometeus operator
+        if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana' }}
+        run: |
+          helm upgrade --install kong-prometheus prometheus-community/kube-prometheus-stack \
+            -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/prom/values.yaml
 
       - name: Create Grafana Kong dashboard ConfigMap
         if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
@@ -152,12 +183,6 @@ jobs:
           helm upgrade --install fluent-bit fluent/fluent-bit \
             -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/fluent-bit/values.yaml
 
-      # - name: Deploy Jaeger
-      #   if: ${{ inputs.action == 'deploy' && inputs.observability_stack == 'grafana'}}
-      #   run: |
-      #     helm upgrade --install jaeger jaegertracing/jaeger \
-      #       -n $DECK_CONFIG_NAMESPACE --values ${{ github.workspace }}/k8s/jaeger/values.yaml
-
       ##############################################################################
       ## DESTROY OBSERVABILITY STACK                                              ##
       ##############################################################################
@@ -166,12 +191,17 @@ jobs:
         if: ${{ inputs.action == 'destroy' }}
         run: |
           helm uninstall kong-prometheus -n $DECK_CONFIG_NAMESPACE || true
-          helm uninstall datadog-agent -n $DECK_CONFIG_NAMESPACE || true
           helm uninstall tempo -n $DECK_CONFIG_NAMESPACE || true
           helm uninstall loki -n $DECK_CONFIG_NAMESPACE || true
           helm uninstall fluent-bit -n $DECK_CONFIG_NAMESPACE || true
-          # helm uninstall jaeger -n $DECK_CONFIG_NAMESPACE || true
+          
+          helm uninstall datadog-agent -n $DECK_CONFIG_NAMESPACE || true
           kubectl delete secret datadog-secret || true
+
+          helm uninstall dynatrace-operator -n $DECK_CONFIG_NAMESPACE || true
+          kubectl delete secret dynatrace || true
+          kubectl delete -f ${{ github.workspace }}/k8s/dynatrace/otelcollector-dynatrace.yaml || true
+          kubectl delete -f k8s/dynatrace/rbac.yaml || true
 
       - name: Destroy Grafana Kong dashboard ConfigMap
         if: ${{ inputs.action == 'destroy' }}
@@ -188,7 +218,7 @@ jobs:
         run: |
           deck gateway reset --konnect-addr=${{ inputs.konnect_server_url }} \
             --konnect-token=${{ secrets.KONNECT_PAT }} \
-            --konnect-control-plane-name=${{ inputs.control_plane_name }} \
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}" \
             --select-tag=observability \
             --select-tag=platform_team \
             --force

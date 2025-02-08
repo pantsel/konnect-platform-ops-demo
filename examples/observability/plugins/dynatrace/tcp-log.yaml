@@ -1,0 +1,19 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+    - name: tcp-log
+      config:
+        custom_fields_by_lua:
+          trace_id: |
+            local h = kong.request.get_header('traceparent')
+            if not h then
+              return ""
+            end
+            return h:match("%-([a-f0-9]+)%-[a-f0-9]+%-")
+        host: localhost
+        port: 54525
+        

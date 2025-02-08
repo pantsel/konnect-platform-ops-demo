@@ -11,30 +11,6 @@ rules:
     then:
       field: operationId
       function: truthy
-  x-internal-server-required:
-    description: "Every OpenAPI must have an x-internal-server specified."
-    message: "x-internal-server object is missing."
-    severity: error
-    given: "$"
-    then:
-      field: x-internal-server
-      function: truthy
-  x-internal-server-url-required:
-    description: "x-internal-server must have a url."
-    message: "x-internal-server object is missing url."
-    severity: error
-    given: "$"
-    then:
-      field: x-internal-server.url
-      function: truthy
-  x-internal-server-description-required:
-    description: "x-internal-server must have a description."
-    message: "x-internal-server object is missing description."
-    severity: error
-    given: "$"
-    then:
-      field: x-internal-server.description
-      function: truthy
   x-team-name-required:
     description: "Every OpenAPI must have an info.x-team-name specified."
     message: "info.x-team-name is missing."
@@ -69,23 +45,6 @@ rules:
       function: pattern
       functionOptions:
         match: "^[a-z0-9]+(-[a-z0-9]+)*$"
-  x-api-name-required:
-    description: "Every OpenAPI must have an info.x-api-name specified."
-    message: "info.x-api-name is missing."
-    severity: error
-    given: "$"
-    then:
-      field: info.x-api-name
-      function: truthy
-  x-api-name-format:
-    description: "info.x-api-name must be a lowercase alphanumeric string with optional hyphens."
-    message: "info.x-api-name must only contain lowercase letters, and hyphens."
-    severity: error
-    given: "$.info.x-api-name"
-    then:
-      function: pattern
-      functionOptions:
-        match: "^[a-z0-9]+(-[a-z0-9]+)*$"
 
   # OWASP API Security
   # Overwrite default severity to warn just for demo purposes
@@ -99,3 +58,4 @@ rules:
   owasp:api4:2023-integer-format: warn
   owasp:api4:2023-array-limit: warn
   owasp:api2:2023-jwt-best-practices: warn
+  owasp:api9:2023-inventory-environment: warn

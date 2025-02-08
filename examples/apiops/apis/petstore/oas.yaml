@@ -20,6 +20,10 @@ x-internal-server:
 servers:
   - url: http://localhost:8000/petstore
     x-internal: false
+  - url: http://petstore-api.petstore.svc.cluster.local:3030
+    description: internal hostname for the API gateway
+    x-internal: true
+    x-environment: dev
 paths:
   /pets:
     get:
