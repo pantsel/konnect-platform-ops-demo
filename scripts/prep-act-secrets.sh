@@ -9,20 +9,35 @@ if [[ -f "$secret_file" ]]; then
     exit 0
 fi
 
-read -s -p $'\n'"Enter konnect personal access token: " konnect_token
-while [[ -z "$konnect_token" ]]; do
-    read -s -p $'\n'"konnect personal access token cannot be empty. Please enter again: " konnect_token
-done
-
-GITHUB_TOKEN=$(gh auth token 2>/dev/null)
-if [[ -z "$GITHUB_TOKEN" ]]; then
+if ! command -v gh &> /dev/null; then
+    echo $'\n'"GitHub CLI not found. Please enter your GitHub token."
     read -s -p $'\n'"Enter GitHub token: " GITHUB_TOKEN
     while [[ -z "$GITHUB_TOKEN" ]]; do
         read -s -p $'\n'"GitHub token cannot be empty. Please enter again: " GITHUB_TOKEN
     done
 else
-    echo $'\n'"Using GitHub token from gh auth."
+    GITHUB_TOKEN=$(gh auth token 2>/dev/null || true)
+    if [[ $? -ne 0 || -z "$GITHUB_TOKEN" ]]; then
+        echo $'\n'"GitHub token not found or user not logged in. Attempting to log in..."
+        gh auth login
+        GITHUB_TOKEN=$(gh auth token 2>/dev/null)
+        if [[ -z "$GITHUB_TOKEN" ]]; then
+            read -s -p $'\n'"Enter GitHub token: " GITHUB_TOKEN
+            while [[ -z "$GITHUB_TOKEN" ]]; do
+                read -s -p $'\n'"GitHub token cannot be empty. Please enter again: " GITHUB_TOKEN
+            done
+        else
+            echo $'\n'"Using GitHub token from gh auth."
+        fi
+    else
+        echo $'\n'"Using GitHub token from gh auth."
+    fi
 fi
+
+read -s -p $'\n'"Enter konnect personal access token: " konnect_token
+while [[ -z "$konnect_token" ]]; do
+    read -s -p $'\n'"konnect personal access token cannot be empty. Please enter again: " konnect_token
+done
 
 read -s -p $'\n'"Enter s3 access key: " s3_access_key
 while [[ -z "$s3_access_key" ]]; do

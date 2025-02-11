@@ -56,4 +56,14 @@ else
     echo -e "${GREEN}Terraform is installed.${NC}"
 fi
 
+# Check if gh cli is installed
+echo -e "${BLUE}Checking if GitHub CLI is installed...${NC}"
+if ! command -v gh &> /dev/null; then
+    echo -e "${RED}GitHub CLI is not installed. Please install GitHub CLI.${NC}"
+    echo "You can install GitHub CLI by following the instructions at: https://cli.github.com/"
+    exit 1
+else
+    echo -e "${GREEN}GitHub CLI is installed.${NC}"
+fi
+
 echo -e "${GREEN}All dependencies are installed.${NC}"
