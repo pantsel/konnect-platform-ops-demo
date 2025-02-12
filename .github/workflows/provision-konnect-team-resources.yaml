@@ -1,4 +1,4 @@
-name: Provision Konnect
+name: Provision Konnect Team resources
 
 on:
   workflow_dispatch:
@@ -39,10 +39,11 @@ jobs:
           environment: ${{ inputs.environment }}
 
       - name: Provision Konnect Resources
-        uses: ./.github/actions/konnect-resources
+        uses: ./.github/actions/konnect-team-resources
         with:
           action: ${{ inputs.action }}
-          config: ${{ github.workspace }}/${{ inputs.config }}
+          config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
           vault_token: ${{ env.VAULT_TOKEN }}
+          system_account_token: ${{ secrets.KONNECT_PAT }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}

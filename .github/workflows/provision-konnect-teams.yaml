@@ -42,7 +42,6 @@ jobs:
         uses: ./.github/actions/konnect-teams
         with:
           action: ${{ inputs.action }}
-          config: $( cat ${{ inputs.config }} | jq -r . )
-          vault_token: ${{ env.VAULT_TOKEN }}
+          config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}

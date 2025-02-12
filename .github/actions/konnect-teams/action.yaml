@@ -8,13 +8,6 @@ inputs:
     description: "Action to perform"
     required: true
     default: "provision"
-  vault_addr:
-    description: "Vault address"
-    required: false
-    default: "http://localhost:8300"
-  vault_token:
-    description: "Vault token"
-    required: true
   s3_access_key:
     description: "S3 access key"
     required: true

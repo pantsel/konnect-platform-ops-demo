@@ -1,0 +1,205 @@
+name: 'Konnect Resources'
+description: 'Provision or destroy Konnect resources'
+inputs:
+  config:
+    description: 'Path to the provisioning config file'
+    required: true
+  system_account_token:
+    description: 'System account token'
+  action:
+    description: 'Action to perform'
+    required: true
+    default: 'provision'
+  vault_addr:
+    description: 'Vault address'
+    required: false
+    default: 'http://localhost:8300'
+  vault_token:
+    description: 'Vault token'
+    required: true
+  s3_access_key:
+    description: 'S3 access key'
+    required: true
+  s3_secret_key:
+    description: 'S3 secret key'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install MinIO Client
+      shell: bash
+      run: |
+        wget https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+        chmod +x /usr/local/bin/mc
+        echo "MinIO Client installed successfully"
+
+    - name: Install vault cli
+      uses: eLco/setup-vault@v1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 'latest'
+
+    - name: Validate config
+      run: |
+        config_content=${{ inputs.config }}
+
+        # Validate metadata.type
+        metadata_type=$(echo "$config_content" | jq -r '.metadata.type')
+        if [ "$metadata_type" != "konnect.team.resources" ]; then
+          echo "Invalid metadata.type: $metadata_type. Expected 'konnect.team.resources'"
+          exit 1
+        fi
+
+        # Validate metadata.team is required
+        metadata_team=$(echo "$config_content" | jq -r '.metadata.team')
+        if [ -z "$metadata_team" ]; then
+          echo "metadata.team is required"
+          exit 1
+        fi
+
+        # Validate resources is an array
+        resources_type=$(echo "$config_content" | jq -r '.resources | type')
+        if [ "$resources_type" != "array" ]; then
+          echo "Invalid resources type: $resources_type. Expected 'array'"
+          exit 1
+        fi
+
+        # Validate each resource type to be one of:
+        # - konnect.control_plane
+        # - konnect.api_product
+        invalid_resources=$(echo "$config_content" | jq '[.resources[] | select(.type != "konnect.control_plane" and .type != "konnect.api_product")]')
+        if [ "$invalid_resources" != "[]" ]; then
+          echo "Invalid resource types: $invalid_resources. Expected 'konnect.control_plane' or 'konnect.api_product'"
+          exit 1
+        fi
+
+        echo "Config validation passed"
+      shell: bash
+
+    - name: Set resource variables from config file
+      run: |
+        config_content=${{ inputs.config }}
+        RESOURCE_TYPE=$(echo "$config_content" | jq -r '.metadata.type')
+        TEAM_NAME=$(echo "$config_content" | jq -r '.metadata.team')
+        TEAM_NAME_NORMALIZED=$(echo "$TEAM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+        TERRAFORM_DIR=${{ github.action_path }}/terraform
+        
+        echo "RESOURCE_TYPE=$RESOURCE_TYPE" >> $GITHUB_ENV
+        echo "TEAM_NAME=$TEAM_NAME" >> $GITHUB_ENV
+        echo "TEAM_NAME_NORMALIZED=$TEAM_NAME_NORMALIZED" >> $GITHUB_ENV
+        echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
+        echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Fetch team information
+      id: fetch-team
+      run: |
+        # Make a request to the Konnect API to fetch required team information
+        # This is a GET request to https://global.api.konghq.com/v3/teams with a filter on the team name.
+        url_encoded_control_team_name=$(echo -n "$TEAM_NAME" | jq -s -R -r @uri)
+        response=$(curl -Gs -d "filter[name][eq]=${url_encoded_control_team_name}" -w "%{http_code}" "https://global.api.konghq.com/v3/teams" -H "Authorization: Bearer ${{ inputs.system_account_token }}" -H "Content-Type: application/json")
+        http_code=${response: -3}
+        response_body=${response:0:-3}
+
+        # Check the response code
+        if [ "$http_code" -ne 200 ]; then
+          echo "Request failed with status code $http_code"
+          echo "Response body: $response_body"
+          exit 1
+        fi
+
+        echo "Request succeeded with status code $http_code"
+
+        # Ensure only one team is returned in the response.
+        if [ $(echo "$response_body" | jq -r '.data | length') -ne 1 ]; then
+          echo "Expected one team to be returned, got $(echo "$response_body" | jq -r '.data | length')"
+          echo "Response body: $response_body"
+          exit 1
+        fi
+
+        # Save the control plane info to an output variable
+        echo "::set-output name=team::$( echo $response_body | jq -c .data[0])"
+      shell: bash
+
+    - name: Import CA Certificate
+      id: import-secrets
+      uses: hashicorp/vault-action@v2
+      with:
+        url: ${{ inputs.vault_addr }}
+        token: ${{ inputs.vault_token }}
+        secrets: |
+          pki/cert/ca certificate | TF_VAR_cacert ;
+
+    - name: Create S3 bucket if required
+      if: ${{ inputs.action == 'provision' }}
+      shell: bash
+      run: |
+        ./create-minio-bucket.sh konnect $RESOURCE_TYPE.$TEAM_NAME_NORMALIZED
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
+      working-directory: ${{ github.action_path }}/scripts
+
+    - name: Terraform Init
+      shell: bash
+      run: |
+        terraform init -upgrade \
+          -backend-config=config.s3.tfbackend \
+          -backend-config="bucket=$RESOURCE_TYPE.$TEAM_NAME_NORMALIZED" \
+          -backend-config="key=tfstate" \
+          -backend-config="region=main" \
+          -backend-config="access_key=${{ inputs.s3_access_key }}" \
+          -backend-config="secret_key=${{ inputs.s3_secret_key }}"
+      env:
+        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Terraform Plan
+      shell: bash
+      if: ${{ inputs.action == 'provision' }}
+      run: |
+        terraform plan -out=tfplan
+      env:
+        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Terraform Apply
+      shell: bash
+      if: ${{ inputs.action == 'provision' }}
+      id: tfapply
+      run: |
+        terraform apply -auto-approve tfplan
+        echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
+      env:
+        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Store System Account tokens in Vault
+      shell: bash
+      if: ${{ inputs.action == 'provision' }}
+      run: |
+        for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
+          _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+          }
+
+          secret_name=$(_jq '.name')
+          secret_value=$(_jq '.token')
+
+          vault kv put secret/system-accounts/${secret_name} token=${secret_value}
+
+          echo "Stored secret ${secret_name} in Vault."
+        done
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Terraform destroy
+      shell: bash
+      if: ${{ inputs.action == 'destroy' }}
+      run: |
+        terraform destroy -auto-approve
+      env:
+        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+      working-directory: ${{env.TERRAFORM_DIR}}

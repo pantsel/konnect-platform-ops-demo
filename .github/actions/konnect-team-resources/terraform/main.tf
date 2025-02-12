@@ -7,13 +7,10 @@ terraform {
   }
 }
 
-data "local_file" "resources" {
-  filename = var.resources_file
-}
-
 locals {
-  metadata        = lookup(jsondecode(data.local_file.resources.content), "metadata", {})
-  resources       = lookup(jsondecode(data.local_file.resources.content), "resources", [])
+  metadata        = lookup(jsondecode(var.config), "metadata", {})
+  resources       = lookup(jsondecode(var.config), "resources", [])
+  team            = jsondecode(var.team)
   control_planes  = [for resource in local.resources : resource if resource.type == "konnect.control_plane"]
   api_products    = [for resource in local.resources : resource if resource.type == "konnect.api_product"]
   days_to_hours   = 365 * 24 // 1 year
@@ -41,9 +38,9 @@ module "vaults" {
   source = "./modules/vault"
 
   for_each = { for k, v in module.control_planes : v.control_plane.name => {
-      name = v.control_plane.name, id = v.control_plane.id
-      type = "Control Planes"
-    } }
+    name = v.control_plane.name, id = v.control_plane.id
+    type = "Control Planes"
+  } }
 
   control_plane_name = lower(replace(each.value.name, " ", "-"))
   control_plane_id   = each.value.id
@@ -61,11 +58,13 @@ module "api_products" {
   public_labels = lookup(each.value, "public_labels", {})
 }
 
-module "team" {
-  source = "./modules/team"
+module "team_role" {
+  source = "./modules/team_role"
 
-  name           = title(local.metadata.name)
-  description    = lookup(local.metadata, "description", "")
+  team           = {
+    id   = local.team.id
+    name = local.team.name
+  }
   region         = lookup(local.metadata, "region", "")
   control_planes = [for k, v in module.control_planes : v.control_plane]
   api_products   = [for k, v in module.api_products : v.api_product]
