@@ -1,11 +1,10 @@
 {
     "metadata": {
         "format_version": "1.0.0",
-        "type": "konnect.team",
-        "plan": "federated",
+        "type": "konnect.team.resources",
         "region": "eu",
-        "name": "tiger",
-        "description": "Tiger team is building the Container Hosting Platform in the EU region"
+        "team": "Tiger",
+        "description": "Tiger team is building the EU Observability platform"
     },
     "resources": [
         {

@@ -1,9 +1,9 @@
 {
     "metadata": {
         "format_version": "1.0.0",
-        "type": "konnect.resources",
+        "type": "konnect.team.resources",
         "region": "eu",
-        "team_id": "TID_00001",
+        "team": "Kronos",
         "description": "Kronos team Konnect resources in the EU region"
     },
     "resources": [
