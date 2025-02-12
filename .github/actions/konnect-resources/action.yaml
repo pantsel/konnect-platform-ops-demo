@@ -55,7 +55,7 @@ runs:
         RESOURCE_TYPE=$(jq -r '.metadata.type' ${{ inputs.config }})
         RESOURCE_NAME=$(jq -r '.metadata.name' ${{ inputs.config }})
         RESOURCE_PATH=$(echo $RESOURCE_TYPE | tr '.' '/')
-        TERRAFORM_DIR=./terraform/${RESOURCE_PATH}
+        TERRAFORM_DIR=${{ github.action_path }}/terraform/${RESOURCE_PATH}
 
         echo "RESOURCE_TYPE=$RESOURCE_TYPE" >> $GITHUB_ENV
         echo "RESOURCE_NAME=$RESOURCE_NAME" >> $GITHUB_ENV
@@ -80,7 +80,7 @@ runs:
         AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
         TF_VAR_resources_file: ${{ inputs.config }}
-      working-directory: scripts
+      working-directory: ${{ github.action_path }}/scripts
 
     - name: Terraform Init
       shell: bash

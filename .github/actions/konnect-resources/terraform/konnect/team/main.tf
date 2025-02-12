@@ -37,6 +37,19 @@ module "control_planes" {
   cacert       = var.cacert
 }
 
+module "vaults" {
+  source = "./modules/vault"
+
+  for_each = { for k, v in module.control_planes : v.control_plane.name => {
+      name = v.control_plane.name, id = v.control_plane.id
+      type = "Control Planes"
+    } }
+
+  control_plane_name = each.value.name
+  control_plane_id   = each.value.id
+}
+
+
 module "api_products" {
   source = "./modules/api_product"
 
