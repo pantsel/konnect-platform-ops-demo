@@ -114,6 +114,11 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
+      - name: Output Trivy report
+        run: |
+          cat reports/trivy-report.txt
+        if: always()
+
       - name: Create docker network for smoke tests
         run: |
           docker network create kong-net-${{ github.run_id }}
