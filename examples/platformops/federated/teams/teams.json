@@ -10,7 +10,7 @@
             "name": "Kronos",
             "description": "Kronos team is building IaC services",
             "labels": {
-                "TID": "TEAM_00001"
+                "TID": "KTEAM_00001"
             }
         },
         {
@@ -18,7 +18,7 @@
             "name": "Tiger",
             "description": "Tiger team is building the Global Observability Platform",
             "labels": {
-                "TID": "TEAM_00002"
+                "TID": "KTEAM_00002"
             }
         }
     ]
