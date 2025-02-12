@@ -1,4 +1,4 @@
-name: Provision Konnect
+name: Provision Konnect (Old)
 
 on:
   workflow_dispatch:
