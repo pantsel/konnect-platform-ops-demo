@@ -1,0 +1,48 @@
+name: Provision Konnect
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: 'Path to the provisioning config file'
+        type: string
+        required: true
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        default: 'provision'
+        options:
+          - 'provision'
+          - 'destroy'
+      environment:
+        description: 'Environment to provision'
+        type: choice
+        default: 'dev'
+        options:
+          - 'dev'
+          - 'tst'
+          - 'acc'
+          - 'prd'
+
+jobs:
+  provision-konnect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Provision Konnect Teams
+        uses: ./.github/actions/konnect-teams
+        with:
+          action: ${{ inputs.action }}
+          config: $( cat ${{ inputs.config }} | jq -r . )
+          vault_token: ${{ env.VAULT_TOKEN }}
+          s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
+          s3_secret_key: ${{ secrets.S3_SECRET_KEY }}

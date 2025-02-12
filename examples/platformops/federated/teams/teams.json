@@ -1,0 +1,25 @@
+{
+    "metadata": {
+        "format_version": "1.0.0",
+        "type": "konnect.teams",
+        "description": "Teams onboarded to the Konnect APIM platform"
+    },
+    "resources": [
+        {
+            "type": "konnect.team",
+            "name": "Kronos",
+            "description": "Kronos team is building IaC services",
+            "labels": {
+                "TID": "TEAM_00001"
+            }
+        },
+        {
+            "type": "konnect.team",
+            "name": "Tiger",
+            "description": "Tiger team is building the Global Observability Platform",
+            "labels": {
+                "TID": "TEAM_00002"
+            }
+        }
+    ]
+}

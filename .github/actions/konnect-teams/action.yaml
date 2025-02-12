@@ -1,0 +1,132 @@
+name: "Konnect Teams"
+description: "Provision or destroy Konnect teams"
+inputs:
+  config:
+    description: "Path to the provisioning config file"
+    required: true
+  action:
+    description: "Action to perform"
+    required: true
+    default: "provision"
+  vault_addr:
+    description: "Vault address"
+    required: false
+    default: "http://localhost:8300"
+  vault_token:
+    description: "Vault token"
+    required: true
+  s3_access_key:
+    description: "S3 access key"
+    required: true
+  s3_secret_key:
+    description: "S3 secret key"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install MinIO Client
+      shell: bash
+      run: |
+        wget https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+        chmod +x /usr/local/bin/mc
+        echo "MinIO Client installed successfully"
+
+    - name: Install vault cli
+      uses: eLco/setup-vault@v1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "latest"
+
+    - name: Validate config
+      run: |
+        config_content=${{ inputs.config }}
+
+        # Validate metadata.type
+        metadata_type=$(echo "$config_content" | jq -r '.metadata.type')
+        if [ "$metadata_type" != "konnect.teams" ]; then
+          echo "Invalid metadata.type: $metadata_type. Expected 'konnect.teams'"
+          exit 1
+        fi
+
+        # Validate resources is an array
+        resources_type=$(echo "$config_content" | jq -r '.resources | type')
+        if [ "$resources_type" != "array" ]; then
+          echo "Invalid resources type: $resources_type. Expected 'array'"
+          exit 1
+        fi
+
+        # Validate each resource type
+        invalid_resources=$(echo "$config_content" | jq '[.resources[] | select(.type != "konnect.team")]')
+        if [ "$(echo "$invalid_resources" | jq 'length')" -ne 0 ]; then
+          echo "Invalid resource types found: $(echo "$invalid_resources" | jq -c '.[]')"
+          exit 1
+        fi
+
+        echo "Config validation passed"
+      shell: bash
+
+    - name: Set resource variables from config file
+      run: |
+        config_content=${{ inputs.config }}
+        RESOURCE_TYPE=$(echo "$config_content" | jq -r '.metadata.type')
+        TERRAFORM_DIR=${{ github.action_path }}/terraform
+        
+        echo "RESOURCE_TYPE=$RESOURCE_TYPE" >> $GITHUB_ENV
+        echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
+        echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Create S3 bucket if required
+      if: ${{ inputs.action == 'provision' }}
+      shell: bash
+      run: |
+        ./create-minio-bucket.sh konnect $RESOURCE_TYPE
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
+      working-directory: ${{ github.action_path }}/scripts
+
+    - name: Terraform Init
+      shell: bash
+      run: |
+        terraform init -upgrade \
+          -backend-config=config.s3.tfbackend \
+          -backend-config="bucket=$RESOURCE_TYPE" \
+          -backend-config="key=tfstate" \
+          -backend-config="region=main" \
+          -backend-config="access_key=${{ inputs.s3_access_key }}" \
+          -backend-config="secret_key=${{ inputs.s3_secret_key }}"
+      env:
+        TF_VAR_resources_file: ${{ inputs.config }}
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Terraform Plan
+      shell: bash
+      if: ${{ inputs.action == 'provision' }}
+      run: |
+        terraform plan -out=tfplan
+      env:
+        TF_VAR_resources_file: ${{ inputs.config }}
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Terraform Apply
+      shell: bash
+      if: ${{ inputs.action == 'provision' }}
+      id: tfapply
+      run: |
+        terraform apply -auto-approve tfplan
+      env:
+        TF_VAR_resources_file: ${{ inputs.config }}
+      working-directory: ${{env.TERRAFORM_DIR}}
+
+    - name: Terraform destroy
+      shell: bash
+      if: ${{ inputs.action == 'destroy' }}
+      run: |
+        terraform destroy -auto-approve
+      env:
+        TF_VAR_resources_file: ${{ inputs.config }}
+      working-directory: ${{env.TERRAFORM_DIR}}
