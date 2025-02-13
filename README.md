@@ -28,6 +28,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
     - [Onboarding process](#onboarding-process)
     - [Run the example Teams Onboarding workflow](#run-the-example-teams-onboarding-workflow)
     - [Resource Governor](#resource-governor)
+    - [Run the example Team Kronos Resources workflow](#run-the-example-team-kronos-resources-workflow)
 - [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
   - [Datadog](#datadog)
   - [Grafana](#grafana)
@@ -391,6 +392,8 @@ Example Kronos team `resources.json` file:
     ]
 }
 ```
+
+#### Run the example Team Kronos Resources workflow
 
 To provision the above resources, run the following command:
 
