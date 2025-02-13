@@ -8,7 +8,7 @@ terraform {
 
 locals {
   metadata = lookup(jsondecode(var.config), "metadata", {})
-  teams    = lookup(jsondecode(var.config), "resources", [])
+  teams = [for team in lookup(jsondecode(var.config), "resources", []) : team if lookup(team, "offboarded", false) != true]
 }
 
 resource "konnect_team" "this" {

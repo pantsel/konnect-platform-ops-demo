@@ -62,8 +62,8 @@ module "team_role" {
   source = "./modules/team_role"
 
   team           = {
-    id   = local.team.id
-    name = local.team.name
+    id   = lookup(local.team, "id", "")
+    name = lookup(local.team, "name", "")
   }
   region         = lookup(local.metadata, "region", "")
   control_planes = [for k, v in module.control_planes : v.control_plane]

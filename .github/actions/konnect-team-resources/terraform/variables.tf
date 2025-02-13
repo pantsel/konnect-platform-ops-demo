@@ -23,16 +23,19 @@ variable "konnect_region" {
 
 variable "config" {
   description = "Configuration for the resources to create"
+  default     = "{}"
   type        = string
 }
 
 variable "cacert" {
   description = "The content of the dataplane PEM certificate"
+  default     = ""
   type        = string
   sensitive   = true
 }
 
 variable "team" {
   description = "The team to assign the resources to"
+  default     = "{}"
   type        = string
 }
