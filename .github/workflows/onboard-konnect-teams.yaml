@@ -6,7 +6,7 @@ on:
       config:
         description: 'Path to the provisioning config file'
         type: string
-        required: true
+        default: examples/platformops/federated/teams/teams.json
       action:
         description: 'Action to perform'
         required: true

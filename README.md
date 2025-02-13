@@ -24,8 +24,10 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Provision Konnect resources](#provision-konnect-resources)
   - [Static approach](#static-approach)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
-  - [Federated approach (Teams onboarding)](#federated-approach-teams-onboarding)
-    - [Run the Team Onboarding workflow](#run-the-team-onboarding-workflow)
+  - [Federated approach (Teams onboarding + Resource Governor)](#federated-approach-teams-onboarding--resource-governor)
+    - [Onboarding process](#onboarding-process)
+    - [Run the example Teams Onboarding workflow](#run-the-example-teams-onboarding-workflow)
+    - [Resource Governor](#resource-governor)
 - [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
   - [Datadog](#datadog)
   - [Grafana](#grafana)
@@ -221,22 +223,119 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 | environment | The environment to provision                           | No       | `dev`       |
 
 
-### Federated approach (Teams onboarding)
+### Federated approach (Teams onboarding + Resource Governor)
 
-In a federated scenario, each team can request and manage their own Konnect resources.
+In a federated scenario, a central Platform team is responsible for managing the Konnect APIM platform and creating technical assets for individual Teams to consume.
 
-The provisioning and deployment process is based on predefined resources. You can find examples in `examples/platformops/federated`.
+Individual Teams can onboard to the Platform and manage their own resources using the tools provided by the Platform team.
 
-***Resources Configuration Example***
+#### Onboarding process
+
+Prerequisite:
+
+The platform team maintains a repository with a list of teams onboarded to the Platform.
+
+e.g. `examples/platformops/federated/teams/teams.json`
 
 ```json
 {
     "metadata": {
         "format_version": "1.0.0",
-        "type": "konnect.team",
+        "type": "konnect.teams",
+        "description": "Teams onboarded to the Konnect APIM platform"
+    },
+    "resources": [
+        {
+            "type": "konnect.team",
+            "name": "Kronos",
+            "description": "Kronos team is building IaC services",
+            "labels": {
+                "TID": "KTEAM_00001"
+            }
+        },
+        {
+            "type": "konnect.team",
+            "name": "Tiger",
+            "description": "Tiger team is building the Global Observability Platform",
+            "labels": {
+                "TID": "KTEAM_00002"
+            }
+        },
+        {
+            "type": "konnect.team",
+            "name": "Gorillaz",
+            "offboarded": true,
+            "description": "Gorillaz team is building the legagy services",
+            "labels": {
+                "TID": "KTEAM_00003"
+            }
+        }
+    ]
+}
+```
+
+Onboarding flow:
+
+1. The team requests onboarding to the Platform team. This can be done either by:
+  - **Filling out a form**: The team provides the required information through a designated form.
+  - **Creating a pull request**: The team submits a pull request to the Platform team's repository with the necessary details.
+
+2. The Platform team reviews the request. Upon approval, the team is added to the repository's teams list.
+3. Once the list is updated, the onboarding workflow is triggered. This workflow will:
+   1. Provision the team in Konnect.
+   2. Provision a **Konnect Resource Governor** Repository (ex: MyTeam_KRG) for the team. This repository will be used by the team to manage their Konnect Resources.
+   3. Any other use-case specific provisioning can be added to this workflow.
+
+```mermaid
+graph LR;
+  A[Team requests onboarding] -->|Filling out a form| B[Platform team reviews request];
+  A -->|Creating a pull request| B;
+  B -->|Approved| C[Add team to repository's teams list];
+  C --> D[Trigger onboarding workflow];
+  D --> E[Provision team in Konnect];
+  D --> F[Provision Konnect Resource Governor Repository];
+  D --> G[Other provisioning];
+```
+
+#### Run the example Teams Onboarding workflow
+
+```bash
+act --input config=examples/platformops/federated/teams/teams.json -W .github/workflows/onboard-konnect-teams.yaml   
+```
+
+***Input Parameters***
+
+| Name        | Description                                            | Required | Default                                      | Options                        |
+| ----------- | ------------------------------------------------------ | -------- | -------------------------------------------- | ------------------------------ |
+| config      | Path to the provisioning config file                   | No       | examples/platformops/federated/teams/teams.json | -                              |
+
+> To offboard teams, you can update your `teams.json` file by adding the `offboarded: true` flag to the teams you want to offboard and run the same workflow.
+
+#### Resource Governor
+
+After onboarding, the team will have access to their `Konnect Resource Governor` repository. In this repository, they will be able to define the Konnect resources they need and start consuming the APIM platform.
+
+Example repository structure:
+
+```plaintext
+TeamName_KRG
+├── resources
+│   ├── resources.json
+```
+```
+
+Example konnect resourses files can be found at `examples/platformops/federated/teams/kronos/resources.json` & `examples/platformops/federated/teams/tiger/resources.json`
+
+Example Kronos team `resources.json` file:
+
+```json
+{
+    "metadata": {
+        "format_version": "1.0.0",
+        "type": "konnect.team.resources",
         "region": "eu",
-        "name": "kronos",
-        "description": "Kronos team is building IaC services in the EU region"
+        "team": "Kronos",
+        "description": "Kronos team Konnect resources in the EU region"
     },
     "resources": [
         {
@@ -293,7 +392,22 @@ The provisioning and deployment process is based on predefined resources. You ca
 }
 ```
 
-The above configuration will result in the following high level setup
+To provision the above resources, run the following command:
+
+```bash
+# Team Kronos resources
+act --input config=examples/platformops/federated/teams/kronos/resources.json -W .github/workflows/provision-konnect-team-resources.yaml
+```
+
+For every requested resource type, the workflow will:
+
+- Create the requested resource in Konnect, such as a Control Plane or API Product.
+- Assign the `Viewer` role to the team for the requested resource.
+- Provision an admin system account for the requested resource.
+- Generate a token for the admin system account and store it securely in HashiCorp Vault.
+- Additionally, it will create a `Konnect Config Store` for every Control Plane.
+
+This will result in the following high level setup
 
 ```mermaid
 graph TD;
@@ -335,35 +449,6 @@ graph TD;
   K --> |Admin|I
 
 ```
-
-#### Run the Team Onboarding workflow
-
-To onboard the example teams in Konnect, execute the following command: 
-
-```bash
-## Onboard team Kronos
-$ act --input config=examples/platformops/federated/kronos-team.json \
-  -W .github/workflows/provision-konnect.yaml 
-```
-
-To offboard the teams, you can execute the same commands with `--input action=destroy`.
-
-```bash
-## Offboard team Kronos
-$ act --input config=examples/platformops/federated/kronos-team.json \
-  --input action=destroy
-  -W .github/workflows/provision-konnect.yaml 
-
-```
-
-***Input Parameters***
-
-| Name        | Description                                            | Required | Default     |
-| ----------- | ------------------------------------------------------ | -------- | ----------- |
-| config      | The path to the resources config file                  | Yes      | -           |
-| action      | The action to perform. Either `provision` or `destroy` | No       | `provision` |
-| environment | The environment to provision                           | No       | `dev`       |
-
 
 ## Deploy the Observability stack (Optional)
 
