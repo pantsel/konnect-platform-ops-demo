@@ -320,8 +320,13 @@ Example repository structure:
 
 ```plaintext
 TeamName_KRG
+├── .github
+│   └── workflows
+│       └── provision-resources.yaml
 ├── resources
-│   ├── resources.json
+│   └── resources.json
+├── README.md
+└── .gitignore
 ```
 
 Example konnect resourses files can be found at `examples/platformops/federated/teams/kronos/resources.json` & `examples/platformops/federated/teams/tiger/resources.json`
