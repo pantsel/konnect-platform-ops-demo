@@ -20,6 +20,15 @@
             "labels": {
                 "TID": "KTEAM_00002"
             }
+        },
+        {
+            "type": "konnect.team",
+            "name": "Gorillaz",
+            "offboarded": true,
+            "description": "Gorillaz team is building the legagy services",
+            "labels": {
+                "TID": "KTEAM_00003"
+            }
         }
     ]
 }
