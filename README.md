@@ -323,7 +323,6 @@ TeamName_KRG
 ├── resources
 │   ├── resources.json
 ```
-```
 
 Example konnect resourses files can be found at `examples/platformops/federated/teams/kronos/resources.json` & `examples/platformops/federated/teams/tiger/resources.json`
 
