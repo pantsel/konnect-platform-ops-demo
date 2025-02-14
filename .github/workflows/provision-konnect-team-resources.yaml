@@ -1,7 +1,7 @@
 name: Provision Konnect Team resources
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       config:
         description: 'Path to the provisioning config file'
@@ -9,21 +9,12 @@ on:
         required: true
       action:
         description: 'Action to perform'
-        required: true
-        type: choice
+        type: string
         default: 'provision'
-        options:
-          - 'provision'
-          - 'destroy'
       environment:
         description: 'Environment to provision'
-        type: choice
+        type: string
         default: 'dev'
-        options:
-          - 'dev'
-          - 'tst'
-          - 'acc'
-          - 'prd'
 
 jobs:
   provision-konnect:
@@ -38,12 +29,19 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
 
+      - name: Debug secrets
+        run: |
+          echo "VAULT_TOKEN: ${{ env.VAULT_TOKEN }}"
+          echo "KONNECT_PAT: ${{ env.KONNECT_PAT }}"
+          echo "S3_ACCESS_KEY: ${{ env.S3_ACCESS_KEY }}"
+          echo "S3_SECRET_KEY: ${{ env.S3_SECRET_KEY }}"
+
       - name: Provision Konnect Resources
         uses: ./.github/actions/konnect-team-resources
         with:
           action: ${{ inputs.action }}
           config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
           vault_token: ${{ env.VAULT_TOKEN }}
-          system_account_token: ${{ secrets.KONNECT_PAT }}
-          s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
-          s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          system_account_token: ${{ env.KONNECT_PAT }}
+          s3_access_key: ${{ env.S3_ACCESS_KEY }}
+          s3_secret_key: ${{ env.S3_SECRET_KEY }}
