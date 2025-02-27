@@ -9,6 +9,8 @@ terraform {
 locals {
   metadata = lookup(jsondecode(var.config), "metadata", {})
   teams = [for team in lookup(jsondecode(var.config), "resources", []) : team if lookup(team, "offboarded", false) != true]
+  days_to_hours        = 365 * 24 // 1 year
+  expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
 resource "konnect_team" "this" {
@@ -62,4 +64,14 @@ resource "konnect_system_account_role" "ap_creators" {
   entity_type_name = "API Products"
   role_name        = "Creator"
   account_id = each.value.id
+}
+
+# Create an access token for every system account
+resource "konnect_system_account_access_token" "this" {
+  for_each = { for account in konnect_system_account.this : account.name => account }
+
+  name       = "${each.value.name}-token"
+  expires_at = local.expiration_date
+  account_id = each.value.id
+
 }

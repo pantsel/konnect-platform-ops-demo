@@ -284,8 +284,10 @@ Onboarding flow:
 2. The Platform team reviews the request. Upon approval, the team is added to the repository's teams list.
 3. Once the list is updated, the onboarding workflow is triggered. This workflow will:
    1. Provision the team in Konnect.
-   2. Provision a **Konnect Resource Governor** Repository (ex: MyTeam_KRG) for the team. This repository will be used by the team to manage their Konnect Resources.
-   3. Any other use-case specific provisioning can be added to this workflow.
+   2. Create the base System Account for the team.
+   3. Assign the `Control Plane` and `API Product` `Creator` role to the system account.
+   4. Provision a **Konnect Resource Governor** Repository (ex: MyTeam_KRG) for the team. This repository will be used by the team to manage their Konnect Resources.
+   5. Any other use-case specific provisioning can be added to this workflow.
 
 ```mermaid
 graph LR;
