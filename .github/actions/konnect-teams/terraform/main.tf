@@ -3,6 +3,11 @@ terraform {
     konnect = {
       source = "kong/konnect"
     }
+
+    vault = {
+      source = "hashicorp/vault"
+      version = "4.4.0"
+    }
   }
 }
 
@@ -21,6 +26,16 @@ resource "konnect_team" "this" {
     "generated_by" = "terraform"
   }))
   name = each.value.name
+}
+
+# Create a team vault mount for the KV version 2 secret engine
+resource "vault_mount" "kvv2" {
+  for_each = { for team in konnect_team.this : team.name => team }
+
+  path        = "${replace(lower(each.value.name), " ", "-")}-kv"
+  type        = "kv"
+  options     = { version = "2" }
+  description = "Vault mount for the ${each.value.name} team"
 }
 
 ### Foreach team, create system accounts
@@ -74,4 +89,22 @@ resource "konnect_system_account_access_token" "this" {
   expires_at = local.expiration_date
   account_id = each.value.id
 
+}
+
+# Store the access tokens in the respective team kvs
+resource "vault_kv_secret_v2" "this" {
+
+  for_each = { for sat in konnect_system_account_access_token.this : sat.name => sat }
+
+  mount               = "${replace(replace(each.value.name, "-token", ""), "sa-", "")}-kv"
+  name                = "konnect-${replace(each.value.name, "-token", "")}"
+  delete_all_versions = true
+  data_json = jsonencode(
+    {
+      token = each.value.token
+    }
+  )
+  custom_metadata {
+    max_versions = 5
+  }
 }

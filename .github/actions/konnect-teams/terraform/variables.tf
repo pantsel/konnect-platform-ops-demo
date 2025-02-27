@@ -25,3 +25,13 @@ variable "config" {
   description = "Configuration for the resources to create"
   type        = string
 }
+
+variable "vault_address" {
+  description = "The address of the Vault server"
+  type        = string
+}
+
+variable "vault_token" {
+  description = "The token to authenticate with the Vault server"
+  type        = string
+}

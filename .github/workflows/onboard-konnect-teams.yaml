@@ -139,3 +139,5 @@ jobs:
           config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          vault_token: ${{ secrets.VAULT_TOKEN }}
+          vault_address: ${{env.VAULT_ADDR}}

@@ -14,6 +14,12 @@ inputs:
   s3_secret_key:
     description: "S3 secret key"
     required: true
+  vault_address:
+    description: "Vault address"
+    required: true
+  vault_token:  
+    description: "Vault token"
+    required: true
 
 runs:
   using: "composite"
@@ -69,7 +75,10 @@ runs:
         
         echo "RESOURCE_TYPE=$RESOURCE_TYPE" >> $GITHUB_ENV
         echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
+
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
+        echo "TF_VAR_vault_address=${{ inputs.vault_address }}" >> $GITHUB_ENV
+        echo "TF_VAR_vault_token=${{ inputs.vault_token }}" >> $GITHUB_ENV
       shell: bash
 
     - name: Create S3 bucket if required
@@ -92,8 +101,6 @@ runs:
           -backend-config="region=main" \
           -backend-config="access_key=${{ inputs.s3_access_key }}" \
           -backend-config="secret_key=${{ inputs.s3_secret_key }}"
-      env:
-        TF_VAR_resources_file: ${{ inputs.config }}
       working-directory: ${{env.TERRAFORM_DIR}}
 
     - name: Terraform Plan
@@ -101,8 +108,6 @@ runs:
       if: ${{ inputs.action == 'provision' }}
       run: |
         terraform plan -out=tfplan
-      env:
-        TF_VAR_resources_file: ${{ inputs.config }}
       working-directory: ${{env.TERRAFORM_DIR}}
 
     - name: Terraform Apply
@@ -111,8 +116,6 @@ runs:
       id: tfapply
       run: |
         terraform apply -auto-approve tfplan
-      env:
-        TF_VAR_resources_file: ${{ inputs.config }}
       working-directory: ${{env.TERRAFORM_DIR}}
 
     - name: Terraform destroy
@@ -120,6 +123,4 @@ runs:
       if: ${{ inputs.action == 'destroy' }}
       run: |
         terraform destroy -auto-approve
-      env:
-        TF_VAR_resources_file: ${{ inputs.config }}
       working-directory: ${{env.TERRAFORM_DIR}}
