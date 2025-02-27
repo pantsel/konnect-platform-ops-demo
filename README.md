@@ -297,9 +297,10 @@ graph LR;
   A -->|Creating a pull request| B;
   B -->|Approved| C[Add team to repository's teams list];
   C --> D[Trigger onboarding workflow];
-  D --> E[Provision team in Konnect];
-  D --> F[Provision Konnect Resource Governor Repository];
-  D --> G[Other provisioning];
+  D --> E[Provision team and RBAC in Konnect];
+  D --> F[Provision Team KVs];
+  D --> G[Provision Konnect Resource Governor Repository];
+  D --> H[Other provisioning];
 ```
 
 #### Run the example Teams Onboarding workflow
