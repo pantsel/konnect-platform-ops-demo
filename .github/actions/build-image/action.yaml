@@ -1,0 +1,129 @@
+name: Build Kong Image
+description: A composite action to build a Docker image for Kong.
+
+inputs:
+  image_push_registry:
+    description: 'The Docker registry to push the image to'
+    default: localhost:5000
+  image_push_respo:
+    description: 'The Docker image repository to push the image to'
+    default: myrepo/kong
+  docker_username:
+    description: 'The Docker registry username'
+  docker_password:
+    description: 'The Docker registry password'
+  image_tag:
+    description: 'The tag to apply to the Docker image'
+  kong_version:
+    description: 'Kong Gateway to build'
+    default: "latest"
+  continue_on_scan_failure:
+    description: 'Continue on Trivy scan failure'
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: grafana/setup-k6-action@v1
+
+    - name: Setup Bats and bats libs
+      id: setup-bats
+      uses: bats-core/bats-action@3.0.0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: network=host
+
+    - id: set-variables
+      run: |
+        ACTION_FILES_DIR=${{ github.action_path }}/files
+
+
+        echo "ACTION_FILES_DIR=$ACTION_FILES_DIR" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Login to the Docker registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.docker_registry }}
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_password }}
+
+    - name: Download Kong Gateway
+      shell: bash
+      run: |
+        KONG_VERSION="${{ inputs.kong_version }}"
+        KONG_MAJOR_MINOR_VERSION=$(echo "$KONG_VERSION" | cut -d. -f1-2 | tr -d '.')
+        KONG_PACKAGE_NAME="kong-enterprise-edition_${KONG_VERSION}_amd64.deb"
+        KONG_URL="https://packages.konghq.com/public/gateway-${KONG_MAJOR_MINOR_VERSION}/deb/debian/pool/bullseye/main/k/ko/kong-enterprise-edition_${KONG_VERSION}/${KONG_PACKAGE_NAME}"
+
+        echo "Downloading Kong Gateway version: $KONG_VERSION (major version: $KONG_MAJOR_MINOR_VERSION)..."
+        echo "Fetching from URL: $KONG_URL"
+
+        curl -s -o kong.deb "$KONG_URL"
+      working-directory: ${{ env.ACTION_FILES_DIR }}
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ env.ACTION_FILES_DIR }}
+        platforms: linux/amd64
+        push: false
+        load: true
+        tags: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+    - name: Run Trivy vulnerability scanner
+      continue-on-error: ${{ inputs.continue_on_scan_failure }}
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+        format: 'table'
+        output: 'reports/trivy-report.txt'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Output Trivy report
+      shell: bash
+      run: |
+        cat reports/trivy-report.txt
+      if: always()
+
+    - name: Create docker network for smoke tests
+      shell: bash
+      run: |
+        docker network create kong-net-${{ github.run_id }}
+      continue-on-error: true
+
+    - name: Run docker container
+      shell: bash
+      run: |
+          docker run -d --name kong-gateway \
+          --network kong-net-${{ github.run_id }} \
+          -p 8000:8000 -p 8100:8100 -p 8443:8443 \
+          --env KONG_DATABASE=off \
+          --env KONG_PLUGINS=bundled,myplugin \
+          --env KONG_STATUS_LISTEN=0.0.0.0:8100 \
+          --env KONG_DECLARATIVE_CONFIG=/kong.yaml \
+          --env KONG_NGINX_WORKER_PROCESSES=1 \
+          --health-cmd "kong health" \
+          --health-interval 10s \
+          --health-timeout 5s \
+          --health-retries 3 \
+          --volume $(pwd)/kong.yaml:/kong.yaml \
+          ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+      working-directory: ${{ env.ACTION_FILES_DIR }}
+
+    - name: Wait for Kong Gateway to start
+      run: |
+        timeout 60s sh -c 'until docker ps | grep kong-gateway | grep -q healthy; do echo "Waiting for Kong Gateway to be available..."; sleep 2; done'
+      shell: bash
+
+    - name: Run smoke tests
+      shell: bash
+      run: |
+        bats kong-smoke-tests.bats | tee ${{ github.workspace }}/reports/smoke_test_report.log
+      working-directory: ${{ github.workspace }}/scripts

@@ -1,0 +1,33 @@
+_format_version: "3.0"
+
+consumers:
+  - username: test
+    keyauth_credentials:
+      - key: test
+
+services:
+  - name: service
+    url: http://test.local
+    plugins:
+      - name: request-termination
+        config:
+          status_code: 200
+          message: "OK"
+          echo: true
+    routes:
+      - name: service-route
+        paths:
+          - /test
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 10
+              policy: local
+      - name: auth-route
+        paths:
+          - /auth
+        plugins:
+          - name: key-auth
+            config:
+              key_names:
+                - apikey
