@@ -284,7 +284,7 @@ Onboarding flow:
 2. The Platform team reviews the request. Upon approval, the team is added to the repository's teams list.
 3. Once the list is updated, the onboarding workflow is triggered. This workflow will:
    1. Provision the team in Konnect.
-   2. Provision dedicated mounts in HashiCorp Vault for the team.
+   2. Provision a dedicated mount in HashiCorp Vault for the team.
    3. Create the base System Account for the team.
    4. Assign the `Control Plane` and `API Product` `Creator` role to the system account.
    5. Create token for the system account and store it securely in the teams Vault mount.
