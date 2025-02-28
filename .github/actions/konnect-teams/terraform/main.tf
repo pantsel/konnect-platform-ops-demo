@@ -21,6 +21,7 @@ resource "konnect_team" "this" {
   }))
   name = each.value.name
 }
+
 module "system-account" {
   for_each = { for team in konnect_team.this : team.name => team }
 
