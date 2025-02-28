@@ -10,8 +10,6 @@ locals {
   metadata = lookup(jsondecode(var.config), "metadata", {})
   teams = [for team in lookup(jsondecode(var.config), "resources", []) : team if lookup(team, "offboarded", false) != true]
   sanitized_team_names = { for team in local.teams : team.name => replace(lower(team.name), " ", "-") }
-  days_to_hours        = 365 * 24 // 1 year
-  expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
 resource "konnect_team" "this" {
