@@ -28,45 +28,53 @@ resource "konnect_team" "this" {
   name = each.value.name
 }
 
-# Create a team vault mount for the KV version 2 secret engine
-resource "vault_mount" "this" {
+module "vault" {
   for_each = { for team in konnect_team.this : team.name => team }
 
-  path        = "${replace(lower(each.value.name), " ", "-")}-kv"
-  type        = "kv"
-  options     = { version = "2" }
-  description = "Vault mount for the ${each.value.name} team"
+  source = "./modules/vault"
+
+  team_name = replace(lower(each.value.name), " ", "-")
 }
 
-data "vault_auth_backend" "this" {
-  path = "github"
-}
+# # Create a team vault mount for the KV version 2 secret engine
+# resource "vault_mount" "this" {
+#   for_each = { for team in konnect_team.this : team.name => team }
 
-# Create team vault policies
-resource "vault_policy" "this" {
-  for_each = { for kv in vault_mount.this : kv.path => kv }
-  name = "${each.value.path}-policy"
+#   path        = "${replace(lower(each.value.name), " ", "-")}-kv"
+#   type        = "kv"
+#   options     = { version = "2" }
+#   description = "Vault mount for the ${each.value.name} team"
+# }
 
-  policy = <<EOT
-path "${each.value.path}/data/*" {
-  capabilities = ["read"]
-}
+# data "vault_auth_backend" "this" {
+#   path = "github"
+# }
 
-path "${each.value.path}/metadata/*" {
-  capabilities = ["read"]
-}
+# # Create team vault policies
+# resource "vault_policy" "this" {
+#   for_each = { for kv in vault_mount.this : kv.path => kv }
+#   name = "${each.value.path}-policy"
 
-EOT
-}
+#   policy = <<EOT
+# path "${each.value.path}/data/*" {
+#   capabilities = ["read"]
+# }
 
-# Map policies to teams
-resource "vault_github_team" "this" {
-  for_each = { for team in konnect_team.this : team.name => team }
+# path "${each.value.path}/metadata/*" {
+#   capabilities = ["read"]
+# }
 
-  backend  = data.vault_auth_backend.this.id
-  team     = "${replace(lower(each.value.name), " ", "-")}-kv"
-  policies = ["${replace(lower(each.value.name), " ", "-")}-kv-policy"]
-}
+# EOT
+# }
+
+# # Map policies to teams
+# resource "vault_github_team" "this" {
+#   for_each = { for team in konnect_team.this : team.name => team }
+
+#   backend  = data.vault_auth_backend.this.id
+#   team     = "${replace(lower(each.value.name), " ", "-")}-kv"
+#   policies = ["${replace(lower(each.value.name), " ", "-")}-kv-policy"]
+# }
 
 ### Foreach team, create system accounts
 resource "konnect_system_account" "this" {
