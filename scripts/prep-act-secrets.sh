@@ -34,6 +34,10 @@ else
     fi
 fi
 
+# Prompt for optional github_org
+read -p $'\n'"Enter GitHub organization (optional): " github_org
+github_org=${github_org:-null}
+
 read -s -p $'\n'"Enter konnect personal access token: " konnect_token
 while [[ -z "$konnect_token" ]]; do
     read -s -p $'\n'"konnect personal access token cannot be empty. Please enter again: " konnect_token
@@ -91,3 +95,7 @@ DD_API_KEY=$dd_api_key
 DT_API_TOKEN=$dt_api_token
 KUBE_CONTEXT=$kube_context
 EOF
+
+if [[ "$github_org" != "null" ]]; then
+    echo "GITHUB_ORG=$github_org" >> "$secret_file"
+fi

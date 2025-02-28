@@ -2,6 +2,7 @@
 
 export VAULT_ADDR=http://localhost:8300
 export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
+export GITHUB_ORG=$(shell grep -o 'GITHUB_ORG=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
@@ -61,7 +62,7 @@ vault-pki: ## Setup vault pki
 	@echo "Setting up vault pki."
 	@./scripts/check-vault.sh
 	@docker exec vault chmod +x /vault-pki-setup.sh
-	@docker exec -it vault /vault-pki-setup.sh $(VAULT_ADDR) $(VAULT_TOKEN)
+	@docker exec -it vault /vault-pki-setup.sh $(VAULT_ADDR) $(VAULT_TOKEN) $(GITHUB_ORG)
 	
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."

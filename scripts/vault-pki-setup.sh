@@ -5,6 +5,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 # Define variables
 VAULT_ADDR="${1:-http://127.0.0.1:8300}"
 VAULT_TOKEN="${2:-root}"
+GITHUB_ORG="${3:-null}"
 PKI_MOUNT_PATH="pki"           
 CERT_TTL="43800h" # 5 years               
 COMMON_NAME_ROOT="ca.kong.edu.local"         
@@ -55,8 +56,27 @@ create_role() {
     echo "Role ${ROLE_NAME} created."
 }
 
+configure_vault_github_auth() {
+    if ! vault auth list | grep -q "^github/"; then
+        vault auth enable github
+        echo "GitHub auth method enabled."
+    else
+        echo "GitHub auth method already enabled."
+        return
+    fi
+
+    if [ "${GITHUB_ORG}" = "null" ]; then
+        echo "No GitHub organization provided. Skipping GitHub auth org configuration."
+        return
+    fi
+
+    vault write auth/github/config organization=${GITHUB_ORG}
+    echo "GitHub organization configured: ${GITHUB_ORG}."
+}
+
 # Main script execution
 enable_pki
 configure_root_cert
 configure_ca_endpoint
 create_role
+configure_vault_github_auth
