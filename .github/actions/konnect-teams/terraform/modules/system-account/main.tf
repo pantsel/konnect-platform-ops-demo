@@ -1,47 +1,61 @@
 terraform {
   required_providers {
-    vault = {
-      source = "hashicorp/vault"
-      version = "4.4.0"
+    konnect = {
+      source = "kong/konnect"
     }
   }
 }
 
 locals {
-  team_name = var.team_name
+  days_to_hours        = 365 * 24 // 1 year
+  expiration_date      = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
-data "vault_auth_backend" "this" {
-  path = "github"
+### Foreach team, create system accounts
+resource "konnect_system_account" "this" {
+
+  name = "sa-${var.team_name}"
+  description = "System account for creating control planes for the ${var.team_name} team"
+  
+  konnect_managed  = false
 }
 
-# Create a team vault mount for the KV version 2 secret engine
-resource "vault_mount" "this" {
-  path        = "${local.team_name}-kv"
-  type        = "kv"
-  options     = { version = "2" }
-  description = "Vault mount for the ${local.team_name} team"
+# Assign the system accounts to the teams
+resource "konnect_system_account_team" "this" {
+  team_id =  var.team_id
+
+  account_id = konnect_system_account.this.id
 }
 
-# Create team vault policy
-resource "vault_policy" "this" {
-  name = "${vault_mount.this.path}-policy"
+### Add the control plane creator role to every team system account
+resource "konnect_system_account_role" "cp_creators" {
 
-  policy = <<EOT
-path "${vault_mount.this.path}/data/*" {
-  capabilities = ["read"]
+  entity_id = "*"
+  entity_region    = "eu" # Hardcoded for now
+  entity_type_name = "Control Planes"
+  role_name        = "Creator"
+  account_id = konnect_system_account.this.id
 }
 
-path "${vault_mount.this.path}/metadata/*" {
-  capabilities = ["read"]
+### Add the api product creator role to every team system account
+resource "konnect_system_account_role" "ap_creators" {
+  entity_id = "*"
+  entity_region    = "eu" # Hardcoded for now
+  entity_type_name = "API Products"
+  role_name        = "Creator"
+  account_id = konnect_system_account.this.id
 }
 
-EOT
+# Create an access token for every system account
+resource "konnect_system_account_access_token" "this" {
+  name       = "${konnect_system_account.this.name}-token"
+  expires_at = local.expiration_date
+  account_id = konnect_system_account.this.id
+
 }
 
-# Map policy to team
-resource "vault_github_team" "this" {
-  backend  = data.vault_auth_backend.this.id
-  team     = local.team_name
-  policies = ["${vault_policy.this.name}"]
+output "system_account_token" {
+  value = konnect_system_account_access_token.this.token
+
+  sensitive = true
 }
