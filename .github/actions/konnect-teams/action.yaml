@@ -20,6 +20,12 @@ inputs:
   vault_token:  
     description: "Vault token"
     required: true
+  github_org:
+    description: "GitHub organization"
+    required: true
+  github_token:
+    description: "GitHub token"
+    required: true
 
 runs:
   using: "composite"
@@ -79,6 +85,8 @@ runs:
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
         echo "TF_VAR_vault_address=${{ inputs.vault_address }}" >> $GITHUB_ENV
         echo "TF_VAR_vault_token=${{ inputs.vault_token }}" >> $GITHUB_ENV
+        echo "TF_VAR_github_token=${{ inputs.github_token }}" >> $GITHUB_ENV
+        echo "TF_VAR_github_org=${{ inputs.github_org }}" >> $GITHUB_ENV
       shell: bash
 
     - name: Create S3 bucket if required

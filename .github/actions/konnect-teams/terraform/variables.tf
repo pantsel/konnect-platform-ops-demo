@@ -35,3 +35,13 @@ variable "vault_token" {
   description = "The token to authenticate with the Vault server"
   type        = string
 }
+
+variable "github_org" {
+  description = "The GitHub organization to create teams and repositories in"
+  type        = string
+}
+
+variable "github_token" {
+  description = "The GitHub token to authenticate with the GitHub API"
+  type        = string
+}

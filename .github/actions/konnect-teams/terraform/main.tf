@@ -3,12 +3,17 @@ terraform {
     konnect = {
       source = "kong/konnect"
     }
+
+    github = {
+      source  = "integrations/github"
+      version = "6.6.0"
+    }
   }
 }
 
 locals {
-  metadata = lookup(jsondecode(var.config), "metadata", {})
-  teams = [for team in lookup(jsondecode(var.config), "resources", []) : team if lookup(team, "offboarded", false) != true]
+  metadata             = lookup(jsondecode(var.config), "metadata", {})
+  teams                = [for team in lookup(jsondecode(var.config), "resources", []) : team if lookup(team, "offboarded", false) != true]
   sanitized_team_names = { for team in local.teams : team.name => replace(lower(team.name), " ", "-") }
 }
 
@@ -28,15 +33,25 @@ module "system-account" {
   source = "./modules/system-account"
 
   team_name = local.sanitized_team_names[each.value.name]
-  team_id = each.value.id
+  team_id   = each.value.id
 }
 
 module "vault" {
   for_each = { for team in konnect_team.this : team.name => team }
 
   source = "./modules/vault"
- 
-  team_name = local.sanitized_team_names[each.value.name]
+
+  team_name                  = local.sanitized_team_names[each.value.name]
   system_account_secret_path = "sa-${local.sanitized_team_names[each.value.name]}"
-  system_account_token = module.system-account[each.value.name].system_account_token
+  system_account_token       = module.system-account[each.value.name].system_account_token
+}
+
+module "github" {
+  for_each = { for team in konnect_team.this : team.name => team }
+
+  source = "./modules/github"
+
+  team_name        = local.sanitized_team_names[each.value.name]
+  team_description = each.value.description
+  github_org       = var.github_org
 }

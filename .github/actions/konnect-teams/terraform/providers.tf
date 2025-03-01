@@ -7,3 +7,8 @@ provider "vault" {
   address = var.vault_address
   token = var.vault_token
 }
+
+provider "github" {
+  token = var.github_token
+  owner = var.github_org
+}
