@@ -126,7 +126,7 @@ jobs:
           terraform destroy -auto-approve
         working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
 
-  onboard-konnect-teams:
+  provision-konnect-teams:
     runs-on: ubuntu-latest
     needs: offboard-konnect-teams
     if: always()
