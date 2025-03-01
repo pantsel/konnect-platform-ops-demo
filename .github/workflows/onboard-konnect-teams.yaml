@@ -15,6 +15,16 @@ on:
         options:
           - 'provision'
           - 'destroy'
+      konnect_region:
+        description: 'Konnect region'
+        type: choice
+        default: 'eu'
+        options:
+          - 'us'
+          - 'eu'
+          - 'me'
+          - 'au'
+          - 'in'
       environment:
         description: 'Environment to provision'
         type: choice
@@ -115,6 +125,10 @@ jobs:
 
   onboard-konnect-teams:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      repository-projects: write
     needs: offboard-konnect-teams
     if: always()
     
@@ -137,4 +151,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           github_org: ${{ github.repository_owner }}
           konnect_token: ${{ secrets.KONNECT_PAT }}
-          konnect_server_url: ${{ vars.KONNECT_SERVER_URL }}
+          konnect_server_url: https://${{ inputs.konnect_region }}.api.konghq.com
