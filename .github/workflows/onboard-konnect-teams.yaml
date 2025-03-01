@@ -42,13 +42,13 @@ jobs:
           MATRIX=$( cat ${{ github.workspace }}/${{ inputs.config }} | jq -c '[.resources[] | select(.offboarded == true)]' )
 
           if [[ "$MATRIX" == "[]" ]]; then
-            echo "::set-output name=is_empty::true"
-            echo "::set-output name=matrix::[]"
+            echo "is_empty=true" >> $GITHUB_ENV
+            echo "matrix=[]" >> $GITHUB_ENV
             exit 0
           fi
 
-          echo "::set-output name=is_empty::false"
-          echo "::set-output name=matrix::$MATRIX"
+          echo "is_empty=false" >> $GITHUB_ENV
+          echo "matrix=$MATRIX" >> $GITHUB_ENV
         shell: bash
 
   offboard-konnect-teams:
@@ -88,9 +88,9 @@ jobs:
         shell: bash
         run: |
           if mc ls "s3/$KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX.$TEAM_NAME_NORMALIZED" > /dev/null 2>&1; then
-            echo "::set-output name=exists::true"
+            echo "exists=true" >> $GITHUB_ENV
           else
-            echo "::set-output name=exists::false"
+            echo "exists=false" >> $GITHUB_ENV
           fi
 
       - name: Terraform Init
