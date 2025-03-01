@@ -102,7 +102,6 @@ runs:
         echo "TF_VAR_vault_address=${{ inputs.vault_address }}" >> $GITHUB_ENV
         echo "TF_VAR_vault_token=${{ inputs.vault_token }}" >> $GITHUB_ENV
         echo "TF_VAR_github_token=${{ inputs.github_token }}" >> $GITHUB_ENV
-        echo "GITHUB_TOKEN=${{ inputs.github_token }}" >> $GITHUB_ENV
         echo "TF_VAR_github_org=${{ inputs.github_org }}" >> $GITHUB_ENV
 
         echo "TF_VAR_minio_server=${{ inputs.minio_host }}" >> $GITHUB_ENV
@@ -111,6 +110,8 @@ runs:
 
         echo "TF_VAR_konnect_personal_access_token=${{ inputs.konnect_token }}" >> $GITHUB_ENV
         echo "TF_VAR_konnect_server_url=${{ inputs.konnect_server_url }}" >> $GITHUB_ENV
+
+        env
       shell: bash
 
     - name: Terraform Init
