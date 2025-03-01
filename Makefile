@@ -10,6 +10,10 @@ RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
 prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki setup-minio-gh-auth ## Prepare the project
 
+prepare-aws:
+	@echo "Preparing AWS.."
+	@./scripts/aws/setup-s3.sh
+
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
 	@./scripts/prep-actrc.sh

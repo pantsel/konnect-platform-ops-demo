@@ -117,11 +117,10 @@ runs:
       shell: bash
       run: |
         terraform init -upgrade \
-          -backend-config=config.s3.tfbackend \
+          -backend-config=config.aws.s3.tfbackend \
           -backend-config="bucket=$RESOURCE_TYPE" \
-          -backend-config='endpoints={s3="https://${{ inputs.minio_host }}"}' \
           -backend-config="key=tfstate" \
-          -backend-config="region=main" \
+          -backend-config="region=eu-central-1" \
           -backend-config="access_key=${{ inputs.s3_access_key }}" \
           -backend-config="secret_key=${{ inputs.s3_secret_key }}"
       working-directory: ${{env.TERRAFORM_DIR}}
@@ -133,17 +132,17 @@ runs:
         terraform plan -out=tfplan
       working-directory: ${{env.TERRAFORM_DIR}}
 
-    - name: Terraform Apply
-      shell: bash
-      if: ${{ inputs.action == 'provision' }}
-      id: tfapply
-      run: |
-        terraform apply -auto-approve tfplan
-      working-directory: ${{env.TERRAFORM_DIR}}
+    # - name: Terraform Apply
+    #   shell: bash
+    #   if: ${{ inputs.action == 'provision' }}
+    #   id: tfapply
+    #   run: |
+    #     terraform apply -auto-approve tfplan
+    #   working-directory: ${{env.TERRAFORM_DIR}}
 
-    - name: Terraform destroy
-      shell: bash
-      if: ${{ inputs.action == 'destroy' }}
-      run: |
-        terraform destroy -auto-approve
-      working-directory: ${{env.TERRAFORM_DIR}}
+    # - name: Terraform destroy
+    #   shell: bash
+    #   if: ${{ inputs.action == 'destroy' }}
+    #   run: |
+    #     terraform destroy -auto-approve
+    #   working-directory: ${{env.TERRAFORM_DIR}}

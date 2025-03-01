@@ -143,8 +143,8 @@ jobs:
           minio_host: ${{ vars.MINIO_HOST || 'localhost:9000' }}
           minio_user: ${{ secrets.MINIO_ROOT_USER || 'minio-root-user' }}
           minio_password: ${{ secrets.MINIO_ROOT_PASSWORD || 'minio-root-password' }}
-          s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
-          s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          s3_access_key: ${{ secrets.AWS_ACCESS_KEY_ID || secrets.S3_ACCESS_KEY }}
+          s3_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY || secrets.S3_SECRET_KEY }}
           vault_token: ${{ secrets.VAULT_TOKEN }}
           vault_address: ${{vars.VAULT_ADDR}}
           github_token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
