@@ -125,10 +125,7 @@ jobs:
 
   onboard-konnect-teams:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: read
-      repository-projects: write
+    permissions: write-all
     needs: offboard-konnect-teams
     if: always()
     
