@@ -1,4 +1,4 @@
-name: Provision Konnect Teams
+name: Onboard Konnect Teams
 
 on:
   workflow_dispatch:
