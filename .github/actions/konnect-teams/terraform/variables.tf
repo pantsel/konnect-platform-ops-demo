@@ -45,3 +45,21 @@ variable "github_token" {
   description = "The GitHub token to authenticate with the GitHub API"
   type        = string
 }
+
+variable "minio_server" {
+  description = "The Minio server to connect to"
+  type        = string
+  default = "localhost:9000"
+}
+
+variable "minio_user" {
+  description = "The Minio user to authenticate with"
+  type = string
+  default = "minio-root-user"
+}
+
+variable "minio_password" {
+  description = "The Minio password to authenticate with"
+  type = string
+  default = "minio-root-password"
+}

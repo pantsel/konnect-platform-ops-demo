@@ -8,6 +8,10 @@ terraform {
       source  = "integrations/github"
       version = "6.6.0"
     }
+    minio = {
+      source = "aminueza/minio"
+      version = "3.3.0"
+    }
   }
 }
 
@@ -46,12 +50,22 @@ module "vault" {
   system_account_token       = module.system-account[each.value.name].system_account_token
 }
 
-module "github" {
+# module "github" {
+#   for_each = { for team in konnect_team.this : team.name => team }
+
+#   source = "./modules/github"
+
+#   team_name        = local.sanitized_team_names[each.value.name]
+#   team_description = each.value.description
+#   github_org       = var.github_org
+# }
+
+module "minio" {
   for_each = { for team in konnect_team.this : team.name => team }
 
-  source = "./modules/github"
+  source = "./modules/minio"
 
-  team_name        = local.sanitized_team_names[each.value.name]
-  team_description = each.value.description
-  github_org       = var.github_org
+  team_name = local.sanitized_team_names[each.value.name]
+  github_org = var.github_org
+  repo_name = "${local.sanitized_team_names[each.value.name]}-krg"
 }

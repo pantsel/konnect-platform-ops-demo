@@ -5,10 +5,15 @@ provider "konnect" {
 
 provider "vault" {
   address = var.vault_address
-  token = var.vault_token
+  token   = var.vault_token
 }
 
 provider "github" {
   token = var.github_token
   owner = var.github_org
+}
+provider "minio" {
+  minio_server   = var.minio_server
+  minio_user     = var.minio_user
+  minio_password = var.minio_password
 }
