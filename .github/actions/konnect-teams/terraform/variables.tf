@@ -10,12 +10,6 @@ variable "konnect_server_url" {
   type        = string
 }
 
-variable "konnect_region" {
-  description = "The region to create the resources in"
-  default     = "eu"
-  type        = string
-}
-
 variable "config" {
   description = "Configuration for the resources to create"
   type        = string

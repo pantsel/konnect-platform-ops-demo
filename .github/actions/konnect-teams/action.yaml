@@ -101,6 +101,9 @@ runs:
         echo "TF_VAR_minio_user=${{ inputs.minio_user }}" >> $GITHUB_ENV
         echo "TF_VAR_minio_password=${{ inputs.minio_password }}" >> $GITHUB_ENV
 
+        echo "TF_VAR_konnect_personal_access_token=${{ secrets.KONNECT_PAT }}" >> $GITHUB_ENV
+        echo "TF_VAR_konnect_server_url=${{ vars.KONNECT_SERVER_URL }}" >> $GITHUB_ENV
+
         env
       shell: bash
 
