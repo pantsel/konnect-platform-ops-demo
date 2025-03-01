@@ -26,6 +26,15 @@ inputs:
   github_token:
     description: "GitHub token"
     required: true
+  minio_host:
+    description: "MinIO host"
+    required: true
+  minio_user:
+    description: "MinIO user"
+    required: true
+  minio_password:
+    description: "MinIO password"
+    required: true
 
 runs:
   using: "composite"
@@ -87,17 +96,21 @@ runs:
         echo "TF_VAR_vault_token=${{ inputs.vault_token }}" >> $GITHUB_ENV
         echo "TF_VAR_github_token=${{ inputs.github_token }}" >> $GITHUB_ENV
         echo "TF_VAR_github_org=${{ inputs.github_org }}" >> $GITHUB_ENV
+
+        echo "TF_VAR_minio_server=${{ inputs.minio_host }}" >> $GITHUB_ENV
+        echo "TF_VAR_minio_user=${{ inputs.minio_user }}" >> $GITHUB_ENV
+        echo "TF_VAR_minio_password=${{ inputs.minio_password }}" >> $GITHUB_ENV
       shell: bash
 
-    - name: Create S3 bucket if required
-      if: ${{ inputs.action == 'provision' }}
-      shell: bash
-      run: |
-        ./create-minio-bucket.sh konnect $RESOURCE_TYPE
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
-      working-directory: ${{ github.action_path }}/scripts
+    # - name: Create S3 bucket if required
+    #   if: ${{ inputs.action == 'provision' }}
+    #   shell: bash
+    #   run: |
+    #     ./create-minio-bucket.sh konnect $RESOURCE_TYPE
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
+    #   working-directory: ${{ github.action_path }}/scripts
 
     - name: Terraform Init
       shell: bash

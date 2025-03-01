@@ -52,6 +52,13 @@ variable "minio_server" {
   default = "localhost:9000"
 }
 
+variable "minio_ssl" {
+  description = "Whether to use SSL when connecting to Minio"
+  type = bool
+  default = true
+  
+}
+
 variable "minio_user" {
   description = "The Minio user to authenticate with"
   type = string
