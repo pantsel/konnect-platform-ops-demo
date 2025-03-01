@@ -35,6 +35,13 @@ inputs:
   minio_password:
     description: "MinIO password"
     required: true
+  konnect_token:
+    description: "Konnect personal access token"
+    required: true
+  konnect_server_url:
+    description: "Konnect server URL"
+    required: true
+    default: "https://eu.api.konghq.com"
 
 runs:
   using: "composite"
@@ -101,10 +108,8 @@ runs:
         echo "TF_VAR_minio_user=${{ inputs.minio_user }}" >> $GITHUB_ENV
         echo "TF_VAR_minio_password=${{ inputs.minio_password }}" >> $GITHUB_ENV
 
-        echo "TF_VAR_konnect_personal_access_token=${{ secrets.KONNECT_PAT }}" >> $GITHUB_ENV
-        echo "TF_VAR_konnect_server_url=${{ vars.KONNECT_SERVER_URL }}" >> $GITHUB_ENV
-
-        env
+        echo "TF_VAR_konnect_personal_access_token=${{ inputs.konnect_token }}" >> $GITHUB_ENV
+        echo "TF_VAR_konnect_server_url=${{ inputs.konnect_server_url }}" >> $GITHUB_ENV
       shell: bash
 
     - name: Terraform Init

@@ -136,3 +136,5 @@ jobs:
           vault_address: ${{vars.VAULT_ADDR}}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           github_org: ${{ github.repository_owner }}
+          konnect_token: ${{ secrets.KONNECT_PAT }}
+          konnect_server_url: ${{ vars.KONNECT_SERVER_URL }}
