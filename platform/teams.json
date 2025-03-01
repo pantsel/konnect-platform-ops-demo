@@ -8,6 +8,7 @@
         {
             "type": "konnect.team",
             "name": "Kronos",
+            "offboarded": true,
             "description": "Kronos team is building IaC services",
             "labels": {
                 "TID": "KTEAM_00001"
@@ -16,6 +17,7 @@
         {
             "type": "konnect.team",
             "name": "Tiger",
+            "offboarded": true,
             "description": "Tiger team is building the Global Observability Platform",
             "labels": {
                 "TID": "KTEAM_00002"

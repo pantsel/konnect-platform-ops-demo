@@ -35,6 +35,9 @@ on:
           - 'acc'
           - 'prd'
 
+env:
+  KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX: "konnect.team"
+
 jobs:
   generate-offboarding-matrix:
     runs-on: ubuntu-latest
@@ -137,9 +140,9 @@ jobs:
         with:
           action: ${{ inputs.action }}
           config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
-          minio_host: ${{ vars.MINIO_HOST }}
-          minio_user: ${{ secrets.MINIO_ROOT_USER }}
-          minio_password: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          minio_host: ${{ vars.MINIO_HOST || 'http://localhost:9000' }}
+          minio_user: ${{ secrets.MINIO_ROOT_USER || 'minio-root-user' }}
+          minio_password: ${{ secrets.MINIO_ROOT_PASSWORD || 'minio-root-password' }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           vault_token: ${{ secrets.VAULT_TOKEN }}
