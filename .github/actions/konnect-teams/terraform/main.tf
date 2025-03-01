@@ -50,22 +50,22 @@ module "vault" {
   system_account_token       = module.system-account[each.value.name].system_account_token
 }
 
-# module "github" {
-#   for_each = { for team in konnect_team.this : team.name => team }
-
-#   source = "./modules/github"
-
-#   team_name        = local.sanitized_team_names[each.value.name]
-#   team_description = each.value.description
-#   github_org       = var.github_org
-# }
-
-module "minio" {
+module "github" {
   for_each = { for team in konnect_team.this : team.name => team }
 
-  source = "./modules/minio"
+  source = "./modules/github"
 
-  team_name = local.sanitized_team_names[each.value.name]
-  github_org = var.github_org
-  repo_name = "${local.sanitized_team_names[each.value.name]}-krg"
+  team_name        = local.sanitized_team_names[each.value.name]
+  team_description = each.value.description
+  github_org       = var.github_org
 }
+
+# module "minio" {
+#   for_each = { for team in konnect_team.this : team.name => team }
+
+#   source = "./modules/minio"
+
+#   team_name = local.sanitized_team_names[each.value.name]
+#   github_org = var.github_org
+#   repo_name = "${local.sanitized_team_names[each.value.name]}-krg"
+# }

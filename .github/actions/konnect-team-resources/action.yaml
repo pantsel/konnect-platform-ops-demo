@@ -133,73 +133,98 @@ runs:
         secrets: |
           pki/cert/ca certificate | TF_VAR_cacert ;
 
-    - name: Create S3 bucket if required
-      if: ${{ inputs.action == 'provision' }}
+    - name: Request OIDC Token
       shell: bash
+      id: oidc
       run: |
-        ./create-minio-bucket.sh konnect $RESOURCE_TYPE.$TEAM_NAME_NORMALIZED
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
-      working-directory: ${{ github.action_path }}/scripts
+        echo "Requesting OIDC token"
+        echo "Requesting OIDC token from $ACTIONS_ID_TOKEN_REQUEST_URL"
+        echo "Requesting OIDC token with $ACTIONS_ID_TOKEN_REQUEST_TOKEN"
 
-    - name: Terraform Init
-      shell: bash
-      run: |
-        terraform init -upgrade \
-          -backend-config=config.s3.tfbackend \
-          -backend-config="bucket=$RESOURCE_TYPE.$TEAM_NAME_NORMALIZED" \
-          -backend-config="key=tfstate" \
-          -backend-config="region=main" \
-          -backend-config="access_key=${{ inputs.s3_access_key }}" \
-          -backend-config="secret_key=${{ inputs.s3_secret_key }}"
-      env:
-        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
-      working-directory: ${{env.TERRAFORM_DIR}}
+        export TOKEN=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+                    -H "Accept: application/json" \
+                    "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')
 
-    - name: Terraform Plan
-      shell: bash
-      if: ${{ inputs.action == 'provision' }}
-      run: |
-        terraform plan -out=tfplan
-      env:
-        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
-      working-directory: ${{env.TERRAFORM_DIR}}
+        echo "OIDC Token: $TOKEN"
+        echo "::add-mask::$TOKEN"
+        echo "TOKEN=$TOKEN" >> $GITHUB_ENV
 
-    - name: Terraform Apply
-      shell: bash
-      if: ${{ inputs.action == 'provision' }}
-      id: tfapply
-      run: |
-        terraform apply -auto-approve tfplan
-        echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
-      env:
-        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
-      working-directory: ${{env.TERRAFORM_DIR}}
+    # - name: Authenticate to MinIO using OIDC token
+    #   shell: bash
+    #   run: |
+    #     mc alias set myminio http://your-minio-server:9000 \
+    #       --oidc-token "$TOKEN"
+        
+    #     # Verify access
+    #     mc ls myminio/konnect.team.kronos
 
-    - name: Store System Account tokens in Vault
-      shell: bash
-      if: ${{ inputs.action == 'provision' }}
-      run: |
-        for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
-          _jq() {
-            echo ${row} | base64 --decode | jq -r ${1}
-          }
+    # - name: Create S3 bucket if required
+    #   if: ${{ inputs.action == 'provision' }}
+    #   shell: bash
+    #   run: |
+    #     ./create-minio-bucket.sh konnect $RESOURCE_TYPE.$TEAM_NAME_NORMALIZED
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
+    #   working-directory: ${{ github.action_path }}/scripts
 
-          secret_name=$(_jq '.name')
-          secret_value=$(_jq '.token')
+    # - name: Terraform Init
+    #   shell: bash
+    #   run: |
+    #     terraform init -upgrade \
+    #       -backend-config=config.s3.tfbackend \
+    #       -backend-config="bucket=$RESOURCE_TYPE.$TEAM_NAME_NORMALIZED" \
+    #       -backend-config="key=tfstate" \
+    #       -backend-config="region=main" \
+    #       -backend-config="access_key=${{ inputs.s3_access_key }}" \
+    #       -backend-config="secret_key=${{ inputs.s3_secret_key }}"
+    #   env:
+    #     TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+    #   working-directory: ${{env.TERRAFORM_DIR}}
 
-          vault kv put secret/system-accounts/${secret_name} token=${secret_value}
+    # - name: Terraform Plan
+    #   shell: bash
+    #   if: ${{ inputs.action == 'provision' }}
+    #   run: |
+    #     terraform plan -out=tfplan
+    #   env:
+    #     TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+    #   working-directory: ${{env.TERRAFORM_DIR}}
 
-          echo "Stored secret ${secret_name} in Vault."
-        done
-      working-directory: ${{env.TERRAFORM_DIR}}
+    # - name: Terraform Apply
+    #   shell: bash
+    #   if: ${{ inputs.action == 'provision' }}
+    #   id: tfapply
+    #   run: |
+    #     terraform apply -auto-approve tfplan
+    #     echo "$(terraform-bin output -json system_account_access_tokens)" > system_account_tokens.json
+    #   env:
+    #     TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+    #   working-directory: ${{env.TERRAFORM_DIR}}
 
-    - name: Terraform destroy
-      shell: bash
-      if: ${{ inputs.action == 'destroy' }}
-      run: |
-        terraform destroy -auto-approve
-      env:
-        TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
-      working-directory: ${{env.TERRAFORM_DIR}}
+    # - name: Store System Account tokens in Vault
+    #   shell: bash
+    #   if: ${{ inputs.action == 'provision' }}
+    #   run: |
+    #     for row in $(cat system_account_tokens.json | jq -r '.[] | @base64'); do
+    #       _jq() {
+    #         echo ${row} | base64 --decode | jq -r ${1}
+    #       }
+
+    #       secret_name=$(_jq '.name')
+    #       secret_value=$(_jq '.token')
+
+    #       vault kv put secret/system-accounts/${secret_name} token=${secret_value}
+
+    #       echo "Stored secret ${secret_name} in Vault."
+    #     done
+    #   working-directory: ${{env.TERRAFORM_DIR}}
+
+    # - name: Terraform destroy
+    #   shell: bash
+    #   if: ${{ inputs.action == 'destroy' }}
+    #   run: |
+    #     terraform destroy -auto-approve
+    #   env:
+    #     TF_VAR_team: ${{ steps.fetch-team.outputs.team }}
+    #   working-directory: ${{env.TERRAFORM_DIR}}
