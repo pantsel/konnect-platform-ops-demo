@@ -127,12 +127,12 @@ jobs:
         with:
           action: ${{ inputs.action }}
           config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
-          minio_host: ${{ env.MINIO_HOST }}
-          minio_user: ${{ env.MINIO_ROOT_USER }}
-          minio_password: ${{ env.MINIO_ROOT_PASSWORD }}
+          minio_host: ${{ vars.MINIO_HOST }}
+          minio_user: ${{ secrets.MINIO_ROOT_USER }}
+          minio_password: ${{ secrets.MINIO_ROOT_PASSWORD }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           vault_token: ${{ secrets.VAULT_TOKEN }}
-          vault_address: ${{env.VAULT_ADDR}}
+          vault_address: ${{vars.VAULT_ADDR}}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           github_org: ${{ secrets.GITHUB_ORG }}
