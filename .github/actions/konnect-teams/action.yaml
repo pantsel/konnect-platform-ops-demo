@@ -108,7 +108,7 @@ runs:
         terraform init -upgrade \
           -backend-config=config.s3.tfbackend \
           -backend-config="bucket=$RESOURCE_TYPE" \
-          -backend-config="endponts.s3=https://${{ inputs.inputs.minio_host }}" \
+          -backend-config="endpoints.s3=https://${{ inputs.inputs.minio_host }}" \
           -backend-config="key=tfstate" \
           -backend-config="region=main" \
           -backend-config="access_key=${{ inputs.s3_access_key }}" \
