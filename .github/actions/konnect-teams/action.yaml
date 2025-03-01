@@ -111,7 +111,6 @@ runs:
         echo "TF_VAR_konnect_personal_access_token=${{ inputs.konnect_token }}" >> $GITHUB_ENV
         echo "TF_VAR_konnect_server_url=${{ inputs.konnect_server_url }}" >> $GITHUB_ENV
 
-        env
       shell: bash
 
     - name: Terraform Init

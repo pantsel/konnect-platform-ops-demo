@@ -140,7 +140,7 @@ jobs:
         with:
           action: ${{ inputs.action }}
           config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
-          minio_host: ${{ vars.MINIO_HOST || 'http://localhost:9000' }}
+          minio_host: ${{ vars.MINIO_HOST || 'localhost:9000' }}
           minio_user: ${{ secrets.MINIO_ROOT_USER || 'minio-root-user' }}
           minio_password: ${{ secrets.MINIO_ROOT_PASSWORD || 'minio-root-password' }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
