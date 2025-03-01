@@ -63,11 +63,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-
       - name: Install MinIO Client
         shell: bash
         run: |
@@ -126,11 +121,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
 
       - name: Provision Konnect Teams
         uses: ./.github/actions/konnect-teams

@@ -102,16 +102,6 @@ runs:
         echo "TF_VAR_minio_password=${{ inputs.minio_password }}" >> $GITHUB_ENV
       shell: bash
 
-    # - name: Create S3 bucket if required
-    #   if: ${{ inputs.action == 'provision' }}
-    #   shell: bash
-    #   run: |
-    #     ./create-minio-bucket.sh konnect $RESOURCE_TYPE
-    #   env:
-    #     AWS_ACCESS_KEY_ID: ${{ inputs.s3_access_key }}
-    #     AWS_SECRET_ACCESS_KEY: ${{ inputs.s3_secret_key }}
-    #   working-directory: ${{ github.action_path }}/scripts
-
     - name: Terraform Init
       shell: bash
       run: |
