@@ -84,7 +84,7 @@ runs:
         echo "Config validation passed"
       shell: bash
 
-    - name: Set resource variables from config file
+    - name: Set variables
       run: |
         config_content=${{ inputs.config }}
         RESOURCE_TYPE=$(echo "$config_content" | jq -r '.metadata.type')
@@ -94,22 +94,12 @@ runs:
         echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
 
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
-        echo "TF_VAR_vault_address=${{ inputs.vault_address }}" >> $GITHUB_ENV
-        echo "TF_VAR_vault_token=${{ inputs.vault_token }}" >> $GITHUB_ENV
+        
         echo "TF_VAR_github_token=${{ inputs.github_token }}" >> $GITHUB_ENV
         echo "TF_VAR_github_org=${{ inputs.github_org }}" >> $GITHUB_ENV
 
-        echo "TF_VAR_minio_server=${{ inputs.minio_host }}" >> $GITHUB_ENV
-        echo "TF_VAR_minio_user=${{ inputs.minio_user }}" >> $GITHUB_ENV
-        echo "TF_VAR_minio_password=${{ inputs.minio_password }}" >> $GITHUB_ENV
-
         echo "TF_VAR_konnect_personal_access_token=${{ inputs.konnect_token }}" >> $GITHUB_ENV
         echo "TF_VAR_konnect_server_url=${{ inputs.konnect_server_url }}" >> $GITHUB_ENV
-
-        # AWS credentials
-        echo "AWS_ACCESS_KEY_ID=${{ inputs.s3_access_key }}" >> $GITHUB_ENV
-        echo "AWS_SECRET_ACCESS_KEY=${{ inputs.s3_secret_key }}" >> $GITHUB_ENV
-        echo "AWS_REGION=${{ inputs.aws_region }}" >> $GITHUB_ENV
 
       shell: bash
 
