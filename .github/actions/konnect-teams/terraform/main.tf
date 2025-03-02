@@ -45,7 +45,7 @@ module "aws-secrets-manager" {
   for_each = { for team in konnect_team.this : team.name => team }
 
   source = "./modules/aws-secrets-manager"
-  
+
   team_name = local.sanitized_team_names[each.value.name]
   system_account_secret_path = "sa-${local.sanitized_team_names[each.value.name]}"
   system_account_token       = module.system-account[each.value.name].system_account_token
@@ -53,33 +53,3 @@ module "aws-secrets-manager" {
   aws_account_id = var.aws_account_id
   aws_region = var.aws_region
 }
-
-# module "vault" {
-#   for_each = { for team in konnect_team.this : team.name => team }
-
-#   source = "./modules/vault"
-
-#   team_name                  = local.sanitized_team_names[each.value.name]
-#   system_account_secret_path = "sa-${local.sanitized_team_names[each.value.name]}"
-#   system_account_token       = module.system-account[each.value.name].system_account_token
-# }
-
-# module "github" {
-#   for_each = { for team in konnect_team.this : team.name => team }
-
-#   source = "./modules/github"
-
-#   team_name        = local.sanitized_team_names[each.value.name]
-#   team_description = each.value.description
-#   github_org       = var.github_org
-# }
-
-# module "minio" {
-#   for_each = { for team in konnect_team.this : team.name => team }
-
-#   source = "./modules/minio"
-
-#   team_name = local.sanitized_team_names[each.value.name]
-#   github_org = var.github_org
-#   repo_name = "${local.sanitized_team_names[each.value.name]}-krg"
-# }
