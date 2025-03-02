@@ -48,3 +48,13 @@ module "aws-secrets-manager" {
   github_org                 = var.github_org
   aws_region                 = var.aws_region
 }
+
+module "github" {
+  for_each = { for team in konnect_team.this : team.name => team }
+
+  source = "./modules/github"
+
+  team_name        = local.sanitized_team_names[each.value.name]
+  team_description = each.value.description
+  github_org       = var.github_org
+}
