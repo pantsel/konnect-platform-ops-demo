@@ -13,7 +13,7 @@ if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>&1 | grep -q 'Not Found'; the
     # Enable versioning (Optional)
     aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled >/dev/null 2>&1
     
-    echo "Bucket '$BUCKET_NAME' created successfully."
+    echo "✅ Bucket '$BUCKET_NAME' created successfully."
 else
-    echo "Bucket '$BUCKET_NAME' already exists. No action needed."
+    echo "✅ Bucket '$BUCKET_NAME' already exists. No action needed."
 fi
