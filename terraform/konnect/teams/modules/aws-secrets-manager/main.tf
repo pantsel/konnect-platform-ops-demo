@@ -50,11 +50,6 @@ resource "aws_iam_role" "this" {
   })
 }
 
-output "account_id" {
-  value = local.account_id
-  
-}
-
 resource "aws_iam_policy" "this" {
   name        = "gh-actions-${var.team_name}-secretsPolicy"
   description = "Allows access to secrets under teams/${var.team_name}/secrets/*"
@@ -72,4 +67,9 @@ resource "aws_iam_policy" "this" {
       }
     ]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  role       = aws_iam_role.this.name
+  policy_arn = aws_iam_policy.this.arn
 }
