@@ -25,6 +25,10 @@ on:
           - 'me'
           - 'au'
           - 'in'
+      aws_region:
+        description: "AWS region"
+        required: true
+        default: "eu-central-1"
       environment:
         description: 'Environment to provision'
         type: choice
@@ -37,94 +41,97 @@ on:
 
 env:
   KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX: "konnect.team"
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ inputs.aws_region }}
 
 jobs:
-  # generate-offboarding-matrix:
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     matrix: ${{ steps.set-matrix.outputs.matrix }}
-  #     is_empty: ${{ steps.set-matrix.outputs.is_empty }}
+  generate-offboarding-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      is_empty: ${{ steps.set-matrix.outputs.is_empty }}
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Read Config JSON file
-  #       id: set-matrix
-  #       run: |
-  #         MATRIX=$( cat ${{ github.workspace }}/${{ inputs.config }} | jq -c '[.resources[] | select(.offboarded == true)]' )
+      - name: Read Config JSON file
+        id: set-matrix
+        run: |
+          MATRIX=$( cat ${{ github.workspace }}/${{ inputs.config }} | jq -c '[.resources[] | select(.offboarded == true)]' )
 
-  #         if [[ "$MATRIX" == "[]" ]]; then
-  #           echo "::set-output name=is_empty::true"
-  #           echo "::set-output name=matrix::[]"
-  #           exit 0
-  #         fi
+          if [[ "$MATRIX" == "[]" ]]; then
+            echo "::set-output name=is_empty::true"
+            echo "::set-output name=matrix::[]"
+            exit 0
+          fi
 
-  #         echo "::set-output name=is_empty::false"
-  #         echo "::set-output name=matrix::$MATRIX"
-  #       shell: bash
+          echo "::set-output name=is_empty::false"
+          echo "::set-output name=matrix::$MATRIX"
+        shell: bash
 
-  # offboard-konnect-teams:
-  #   needs: generate-offboarding-matrix
-  #   if: needs.generate-offboarding-matrix.outputs.is_empty == 'false'
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix: 
-  #       include: ${{ fromJSON(needs.generate-offboarding-matrix.outputs.matrix) }}
+  offboard-konnect-teams:
+    needs: generate-offboarding-matrix
+    if: needs.generate-offboarding-matrix.outputs.is_empty == 'false'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        include: ${{ fromJSON(needs.generate-offboarding-matrix.outputs.matrix) }}
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Install MinIO Client
-  #       shell: bash
-  #       run: |
-  #         wget https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
-  #         chmod +x /usr/local/bin/mc
-  #         echo "MinIO Client installed successfully"
+      - name: Install MinIO Client
+        shell: bash
+        run: |
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+          echo "MinIO Client installed successfully"
 
-  #     - name: Install vault cli
-  #       uses: eLco/setup-vault@v1
+      - name: Install vault cli
+        uses: eLco/setup-vault@v1
 
-  #     - name: Setup Terraform
-  #       uses: hashicorp/setup-terraform@v3
-  #       with:
-  #         terraform_version: 'latest'
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 'latest'
 
-  #     - name: Set resource variables from config file
-  #       run: |
-  #         TEAM_NAME_NORMALIZED=$(echo "${{ matrix.name }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-  #         echo "TEAM_NAME_NORMALIZED=$TEAM_NAME_NORMALIZED" >> $GITHUB_ENV
+      - name: Set resource variables from config file
+        run: |
+          TEAM_NAME_NORMALIZED=$(echo "${{ matrix.name }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          echo "TEAM_NAME_NORMALIZED=$TEAM_NAME_NORMALIZED" >> $GITHUB_ENV
 
-  #     - name: Check if S3 bucket exists
-  #       id: check-bucket
-  #       shell: bash
-  #       run: |
-  #         if mc ls "s3/$KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX.$TEAM_NAME_NORMALIZED" > /dev/null 2>&1; then
-  #           echo "::set-output name=exists::true"
-  #         else
-  #           echo "::set-output name=exists::false"
-  #         fi
+      - name: Check if S3 bucket exists
+        id: check-bucket
+        shell: bash
+        run: |
+          if mc ls "s3/$KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX.$TEAM_NAME_NORMALIZED" > /dev/null 2>&1; then
+            echo "::set-output name=exists::true"
+          else
+            echo "::set-output name=exists::false"
+          fi
 
-  #     - name: Terraform Init
-  #       if: steps.check-bucket.outputs.exists == 'true'
-  #       shell: bash
-  #       run: |
-  #         terraform init -upgrade \
-  #         -backend-config=config.s3.tfbackend \
-  #         -backend-config="bucket=$KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX.$TEAM_NAME_NORMALIZED" \
-  #         -backend-config="key=tfstate" \
-  #         -backend-config="region=main" \
-  #         -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
-  #         -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}"
-  #       working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
+      - name: Terraform Init
+        if: steps.check-bucket.outputs.exists == 'true'
+        shell: bash
+        run: |
+          terraform init -upgrade \
+          -backend-config=config.aws.s3.tfbackend \
+          -backend-config="bucket=$KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX.$TEAM_NAME_NORMALIZED" \
+          -backend-config="key=tfstate" \
+          -backend-config="region=${{ inputs.aws_region }}" \
+          -backend-config="access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+          -backend-config="secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
 
-  #     - name: Terraform destroy
-  #       if: steps.check-bucket.outputs.exists == 'true'
-  #       shell: bash
-  #       run: |
-  #         terraform destroy -auto-approve
-  #       working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
+      - name: Terraform destroy
+        if: steps.check-bucket.outputs.exists == 'true'
+        shell: bash
+        run: |
+          terraform destroy -auto-approve
+        working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
 
   provision-konnect-teams:
     runs-on: ubuntu-latest
@@ -151,3 +158,4 @@ jobs:
           github_org: ${{ github.repository_owner }}
           konnect_token: ${{ secrets.KONNECT_PAT }}
           konnect_server_url: https://${{ inputs.konnect_region }}.api.konghq.com
+          aws_region: ${{ inputs.aws_region }}
