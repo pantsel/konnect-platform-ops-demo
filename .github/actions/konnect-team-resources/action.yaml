@@ -4,25 +4,17 @@ inputs:
   config:
     description: 'Path to the provisioning config file'
     required: true
-  system_account_token:
-    description: 'System account token'
   action:
     description: 'Action to perform'
     required: true
     default: 'provision'
-  vault_addr:
-    description: 'Vault address'
-    required: false
-    default: 'http://localhost:8300'
-  vault_token:
-    description: 'Vault token'
+  aws_account_id:
+    description: 'AWS account ID'
     required: true
-  s3_access_key:
-    description: 'S3 access key'
+  aws_region:
+    description: 'AWS region'
     required: true
-  s3_secret_key:
-    description: 'S3 secret key'
-    required: true
+    default: 'eu-central-1'
 
 runs:
   using: 'composite'
@@ -84,6 +76,13 @@ runs:
         echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
       shell: bash
+
+    - name: Configure AWS Credentials for Secrets Manager
+      uses: aws-actions/configure-aws-credentials@v4
+      shell: bash
+      with:
+        role-to-assume: "arn:aws:iam::${{ inputs.aws_account_id }}:role/gh-actions-$TEAM_NAME_NORMALIZED-secretsRole"
+        aws-region: eu-central-1
 
     - name: Fetch Secrets from AWS Secrets Manager
       shell: bash
