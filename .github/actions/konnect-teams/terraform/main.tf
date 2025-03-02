@@ -19,6 +19,7 @@ locals {
   metadata             = lookup(jsondecode(var.config), "metadata", {})
   teams                = [for team in lookup(jsondecode(var.config), "resources", []) : team if lookup(team, "offboarded", false) != true]
   sanitized_team_names = { for team in local.teams : team.name => replace(lower(team.name), " ", "-") }
+  camelized_team_names = { for team in local.teams : team.name => replace(title(lower(team.name)), " ", "") }
 }
 
 resource "konnect_team" "this" {
@@ -40,25 +41,38 @@ module "system-account" {
   team_id   = each.value.id
 }
 
-module "vault" {
+module "aws-secrets-manager" {
   for_each = { for team in konnect_team.this : team.name => team }
 
-  source = "./modules/vault"
-
-  team_name                  = local.sanitized_team_names[each.value.name]
+  source = "./modules/aws-secrets-manager"
+  
+  team_name = local.sanitized_team_names[each.value.name]
   system_account_secret_path = "sa-${local.sanitized_team_names[each.value.name]}"
   system_account_token       = module.system-account[each.value.name].system_account_token
+  github_org = var.github_org
+  aws_account_id = var.aws_account_id
+  aws_region = var.aws_region
 }
 
-module "github" {
-  for_each = { for team in konnect_team.this : team.name => team }
+# module "vault" {
+#   for_each = { for team in konnect_team.this : team.name => team }
 
-  source = "./modules/github"
+#   source = "./modules/vault"
 
-  team_name        = local.sanitized_team_names[each.value.name]
-  team_description = each.value.description
-  github_org       = var.github_org
-}
+#   team_name                  = local.sanitized_team_names[each.value.name]
+#   system_account_secret_path = "sa-${local.sanitized_team_names[each.value.name]}"
+#   system_account_token       = module.system-account[each.value.name].system_account_token
+# }
+
+# module "github" {
+#   for_each = { for team in konnect_team.this : team.name => team }
+
+#   source = "./modules/github"
+
+#   team_name        = local.sanitized_team_names[each.value.name]
+#   team_description = each.value.description
+#   github_org       = var.github_org
+# }
 
 # module "minio" {
 #   for_each = { for team in konnect_team.this : team.name => team }

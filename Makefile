@@ -13,6 +13,7 @@ prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki setup-
 prepare-aws:
 	@echo "Preparing AWS.."
 	@./scripts/aws/setup-s3.sh
+	@./scripts/aws/create_github_oidc_provider.sh 
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"

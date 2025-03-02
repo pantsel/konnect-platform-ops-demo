@@ -59,3 +59,15 @@ variable "minio_password" {
   type = string
   default = "minio-root-password"
 }
+
+variable "aws_account_id" {
+  description = "The AWS account ID"
+  type        = string
+  default = "082840391035"
+}
+
+variable "aws_region" {
+  description = "The AWS region to create resources in"
+  type        = string
+  default = "eu-central-1"
+}
