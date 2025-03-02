@@ -12,12 +12,7 @@ provider "github" {
   token = var.github_token
   owner = var.github_org
 }
-provider "minio" {
-  minio_server   = var.minio_server
-  minio_ssl      = var.minio_ssl
-  minio_user     = var.minio_user
-  minio_password = var.minio_password
-}
 
 provider "aws" {
+  region = var.aws_region
 }

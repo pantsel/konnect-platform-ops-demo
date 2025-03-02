@@ -8,10 +8,6 @@ terraform {
       source  = "integrations/github"
       version = "6.6.0"
     }
-    minio = {
-      source = "aminueza/minio"
-      version = "3.3.0"
-    }
   }
 }
 
