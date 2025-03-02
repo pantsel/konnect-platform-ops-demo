@@ -41,6 +41,7 @@ on:
 
 env:
   KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX: "konnect.team"
+  TERRAFORM_DIR: ${{ github.workspace }}/terraform/konnect/teams
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ inputs.aws_region }}
@@ -124,14 +125,14 @@ jobs:
           -backend-config="region=${{ inputs.aws_region }}" \
           -backend-config="access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
           -backend-config="secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-        working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
       - name: Terraform destroy
         if: steps.check-bucket.outputs.exists == 'true'
         shell: bash
         run: |
           terraform destroy -auto-approve
-        working-directory: ${{ github.workspace }}/.github/actions/konnect-team-resources/terraform
+        working-directory: ${{ env.TERRAFORM_DIR }}
 
   provision-konnect-teams:
     runs-on: ubuntu-latest
@@ -142,20 +143,104 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Provision Konnect Teams
-        uses: ./.github/actions/konnect-teams
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          action: ${{ inputs.action }}
-          config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
-          minio_host: ${{ vars.MINIO_HOST || 'localhost:9000' }}
-          minio_user: ${{ secrets.MINIO_ROOT_USER || 'minio-root-user' }}
-          minio_password: ${{ secrets.MINIO_ROOT_PASSWORD || 'minio-root-password' }}
-          s3_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          s3_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          vault_token: ${{ secrets.VAULT_TOKEN }}
-          vault_address: ${{vars.VAULT_ADDR}}
-          github_token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-          github_org: ${{ github.repository_owner }}
-          konnect_token: ${{ secrets.KONNECT_PAT }}
-          konnect_server_url: https://${{ inputs.konnect_region }}.api.konghq.com
-          aws_region: ${{ inputs.aws_region }}
+          terraform_version: "latest"
+
+      - name: Validate config
+        run: |
+          config_content=$( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
+
+          # Validate metadata.type
+          metadata_type=$(echo "$config_content" | jq -r '.metadata.type')
+          if [ "$metadata_type" != "konnect.teams" ]; then
+            echo "Invalid metadata.type: $metadata_type. Expected 'konnect.teams'"
+            exit 1
+          fi
+
+          # Validate resources is an array
+          resources_type=$(echo "$config_content" | jq -r '.resources | type')
+          if [ "$resources_type" != "array" ]; then
+            echo "Invalid resources type: $resources_type. Expected 'array'"
+            exit 1
+          fi
+
+          # Validate each resource type
+          invalid_resources=$(echo "$config_content" | jq '[.resources[] | select(.type != "konnect.team")]')
+          if [ "$(echo "$invalid_resources" | jq 'length')" -ne 0 ]; then
+            echo "Invalid resource types found: $(echo "$invalid_resources" | jq -c '.[]')"
+            exit 1
+          fi
+
+          echo "Config validation passed"
+        shell: bash
+
+      - name: Set variables
+        run: |
+          config_content=$( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
+          RESOURCE_TYPE=$(echo "$config_content" | jq -r '.metadata.type')
+          
+          echo "RESOURCE_TYPE=$RESOURCE_TYPE" >> $GITHUB_ENV
+
+          echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
+          
+          echo "TF_VAR_github_token=${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "TF_VAR_github_org=${{ github.repository_owner }}" >> $GITHUB_ENV
+
+          echo "TF_VAR_konnect_personal_access_token=${{ secrets.KONNECT_PAT }}" >> $GITHUB_ENV
+          echo "TF_VAR_konnect_server_url=https://${{ inputs.konnect_region }}.api.konghq.com" >> $GITHUB_ENV
+
+        shell: bash
+
+      - name: Terraform Init
+        shell: bash
+        run: |
+          terraform init -upgrade \
+            -backend-config=config.aws.s3.tfbackend \
+            -backend-config="bucket=$RESOURCE_TYPE" \
+            -backend-config="key=tfstate" \
+            -backend-config="region=$AWS_REGION" \
+            -backend-config="access_key=$AWS_ACCESS_KEY_ID" \
+            -backend-config="secret_key=$AWS_SECRET_ACCESS_KEY"
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      - name: Terraform Plan
+        shell: bash
+        if: ${{ inputs.action == 'provision' }}
+        run: |
+          terraform plan -out=tfplan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      - name: Terraform Apply
+        shell: bash
+        if: ${{ inputs.action == 'provision' }}
+        id: tfapply
+        run: |
+          terraform apply -auto-approve tfplan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      - name: Terraform destroy
+        shell: bash
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          terraform destroy -auto-approve
+        working-directory: ${{ env.TERRAFORM_DIR }}
+
+      # - name: Provision Konnect Teams
+      #   uses: ./.github/actions/konnect-teams
+      #   with:
+      #     action: ${{ inputs.action }}
+      #     config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
+      #     minio_host: ${{ vars.MINIO_HOST || 'localhost:9000' }}
+      #     minio_user: ${{ secrets.MINIO_ROOT_USER || 'minio-root-user' }}
+      #     minio_password: ${{ secrets.MINIO_ROOT_PASSWORD || 'minio-root-password' }}
+      #     s3_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     s3_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     vault_token: ${{ secrets.VAULT_TOKEN }}
+      #     vault_address: ${{vars.VAULT_ADDR}}
+      #     github_token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+      #     github_org: ${{ github.repository_owner }}
+      #     konnect_token: ${{ secrets.KONNECT_PAT }}
+      #     konnect_server_url: https://${{ inputs.konnect_region }}.api.konghq.com
+      #     aws_region: ${{ inputs.aws_region }}
