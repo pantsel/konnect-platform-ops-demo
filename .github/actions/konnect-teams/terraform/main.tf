@@ -46,6 +46,5 @@ module "aws-secrets-manager" {
   system_account_secret_path = "sa-${local.sanitized_team_names[each.value.name]}"
   system_account_token       = module.system-account[each.value.name].system_account_token
   github_org                 = var.github_org
-  aws_account_id             = var.aws_account_id
   aws_region                 = var.aws_region
 }

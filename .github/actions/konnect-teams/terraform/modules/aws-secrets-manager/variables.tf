@@ -13,11 +13,6 @@ variable "system_account_token" {
     type        = string
 }
 
-variable "aws_account_id" {
-  description = "The AWS account ID"
-  type        = string
-}
-
 variable "github_org" {
   description = "The GitHub organization to create teams and repositories in"
   type        = string

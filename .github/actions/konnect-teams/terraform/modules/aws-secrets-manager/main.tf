@@ -7,6 +7,12 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
+locals {
+    account_id = data.aws_caller_identity.current.account_id
+}
+
 resource "aws_secretsmanager_secret" "this" {
   name        = "teams/${var.team_name}/secrets/konnect-${var.system_account_secret_path}"
   description = "Secret store for ${var.team_name} team"
@@ -28,7 +34,7 @@ resource "aws_iam_role" "this" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = "arn:aws:iam::${var.aws_account_id}:oidc-provider/token.actions.githubusercontent.com"
+          Federated = "arn:aws:iam::${local.account_id}:oidc-provider/token.actions.githubusercontent.com"
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -44,6 +50,11 @@ resource "aws_iam_role" "this" {
   })
 }
 
+output "account_id" {
+  value = local.account_id
+  
+}
+
 resource "aws_iam_policy" "this" {
   name        = "gh-actions-${var.team_name}-secretsPolicy"
   description = "Allows access to secrets under teams/${var.team_name}/secrets/*"
@@ -57,7 +68,7 @@ resource "aws_iam_policy" "this" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ],
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:teams/${var.team_name}/secrets/*"
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:teams/${var.team_name}/secrets/*"
       }
     ]
   })

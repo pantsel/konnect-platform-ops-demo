@@ -8,6 +8,9 @@ inputs:
     description: "Action to perform"
     required: true
     default: "provision"
+  aws_account_id:
+    description: "AWS account ID"
+    required: true
   aws_region:
     description: "AWS region"
     required: true
@@ -18,26 +21,11 @@ inputs:
   s3_secret_key:
     description: "S3 secret key"
     required: true
-  vault_address:
-    description: "Vault address"
-    required: true
-  vault_token:  
-    description: "Vault token"
-    required: true
   github_org:
     description: "GitHub organization"
     required: true
   github_token:
     description: "GitHub token"
-    required: true
-  minio_host:
-    description: "MinIO host"
-    required: true
-  minio_user:
-    description: "MinIO user"
-    required: true
-  minio_password:
-    description: "MinIO password"
     required: true
   konnect_token:
     description: "Konnect personal access token"
