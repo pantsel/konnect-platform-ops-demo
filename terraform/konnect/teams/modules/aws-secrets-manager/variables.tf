@@ -12,3 +12,13 @@ variable "system_account_token" {
     description = "The token for the system account"
     type        = string
 }
+
+variable "github_org" {
+  description = "The GitHub organization to create teams and repositories in"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "The AWS region to create resources in"
+  type        = string
+}

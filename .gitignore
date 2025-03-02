@@ -59,3 +59,4 @@ docker/*.deb
 *.log
 .deck.yaml
 .tests/
+ngrok.yaml

@@ -1,12 +1,13 @@
 # Description: Makefile for setting up the project
-
-export VAULT_ADDR=http://localhost:8300
-export VAULT_TOKEN=$(shell grep -o 'VAULT_TOKEN=\K.*' act.secrets)
-export GITHUB_ORG=$(shell grep -o 'GITHUB_ORG=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki ## Prepare the project
+prepare: check-deps actrc prep-act-secrets kind prepare-aws ## Prepare the project
+
+prepare-aws:
+	@echo "Preparing AWS.."
+	@./scripts/aws/setup-s3.sh
+	@./scripts/aws/create_github_oidc_provider.sh 
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
@@ -41,28 +42,6 @@ kind: ## Setup kind cluster
 	else \
 		echo "Skipping kind cluster creation. Using orbstack."; \
 	fi
-
-vault-secrets: ## Setup vault secrets
-	@echo "Setting up vault secrets.."
-	@./scripts/check-vault.sh
-	@docker cp .tls vault:/tmp
-	@if ! vault secrets list | grep -q 'konnect'; then \
-		vault secrets enable -path=konnect kv-v2; \
-	else \
-		echo "Vault secrets path 'konnect' already exists"; \
-	fi
-	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) konnect/certificates \
-		cluster_crt=@/tmp/.tls/cluster-tls.crt \
-		cluster_key=@/tmp/.tls/cluster-tls.key \
-		proxy_crt=@/tmp/.tls/proxy-tls.crt \
-		proxy_key=@/tmp/.tls/proxy-tls.key \
-		ca=@/tmp/.tls/ca.crt
-
-vault-pki: ## Setup vault pki
-	@echo "Setting up vault pki."
-	@./scripts/check-vault.sh
-	@docker exec vault chmod +x /vault-pki-setup.sh
-	@docker exec -it vault /vault-pki-setup.sh $(VAULT_ADDR) $(VAULT_TOKEN) $(GITHUB_ORG)
 	
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."
