@@ -27,15 +27,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Install MinIO Client
-      shell: bash
-      run: |
-        wget https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
-        chmod +x /usr/local/bin/mc
-        echo "MinIO Client installed successfully"
-
-    - name: Install vault cli
-      uses: eLco/setup-vault@v1
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -94,60 +85,43 @@ runs:
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
       shell: bash
 
-    - name: Fetch team information
-      id: fetch-team
-      run: |
-        # Make a request to the Konnect API to fetch required team information
-        # This is a GET request to https://global.api.konghq.com/v3/teams with a filter on the team name.
-        url_encoded_control_team_name=$(echo -n "$TEAM_NAME" | jq -s -R -r @uri)
-        response=$(curl -Gs -d "filter[name][eq]=${url_encoded_control_team_name}" -w "%{http_code}" "https://global.api.konghq.com/v3/teams" -H "Authorization: Bearer ${{ inputs.system_account_token }}" -H "Content-Type: application/json")
-        http_code=${response: -3}
-        response_body=${response:0:-3}
-
-        # Check the response code
-        if [ "$http_code" -ne 200 ]; then
-          echo "Request failed with status code $http_code"
-          echo "Response body: $response_body"
-          exit 1
-        fi
-
-        echo "Request succeeded with status code $http_code"
-
-        # Ensure only one team is returned in the response.
-        if [ $(echo "$response_body" | jq -r '.data | length') -ne 1 ]; then
-          echo "Expected one team to be returned, got $(echo "$response_body" | jq -r '.data | length')"
-          echo "Response body: $response_body"
-          exit 1
-        fi
-
-        # Save the control plane info to an output variable
-        echo "::set-output name=team::$( echo $response_body | jq -c .data[0])"
+    - name: Fetch Secrets from AWS Secrets Manager
       shell: bash
-
-    - name: Import CA Certificate
-      id: import-secrets
-      uses: hashicorp/vault-action@v2
-      with:
-        url: ${{ inputs.vault_addr }}
-        token: ${{ inputs.vault_token }}
-        secrets: |
-          pki/cert/ca certificate | TF_VAR_cacert ;
-
-    - name: Request OIDC Token
-      shell: bash
-      id: oidc
       run: |
-        echo "Requesting OIDC token"
-        echo "Requesting OIDC token from $ACTIONS_ID_TOKEN_REQUEST_URL"
-        echo "Requesting OIDC token with $ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+        SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id teams/$TEAM_NAME_NORMALIZED/secrets/konnect-sa-$TEAM_NAME_NORMALIZED --query SecretString --output text)
+        TOKEN_VALUE=$(echo $SECRET_JSON | jq -r '.token')
 
-        export TOKEN=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-                    -H "Accept: application/json" \
-                    "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')
+        echo "TOKEN_VALUE=$TOKEN_VALUE"
 
-        echo "OIDC Token: $TOKEN"
-        echo "::add-mask::$TOKEN"
-        echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+    # - name: Fetch team information
+    #   id: fetch-team
+    #   run: |
+    #     # Make a request to the Konnect API to fetch required team information
+    #     # This is a GET request to https://global.api.konghq.com/v3/teams with a filter on the team name.
+    #     url_encoded_control_team_name=$(echo -n "$TEAM_NAME" | jq -s -R -r @uri)
+    #     response=$(curl -Gs -d "filter[name][eq]=${url_encoded_control_team_name}" -w "%{http_code}" "https://global.api.konghq.com/v3/teams" -H "Authorization: Bearer ${{ inputs.system_account_token }}" -H "Content-Type: application/json")
+    #     http_code=${response: -3}
+    #     response_body=${response:0:-3}
+
+    #     # Check the response code
+    #     if [ "$http_code" -ne 200 ]; then
+    #       echo "Request failed with status code $http_code"
+    #       echo "Response body: $response_body"
+    #       exit 1
+    #     fi
+
+    #     echo "Request succeeded with status code $http_code"
+
+    #     # Ensure only one team is returned in the response.
+    #     if [ $(echo "$response_body" | jq -r '.data | length') -ne 1 ]; then
+    #       echo "Expected one team to be returned, got $(echo "$response_body" | jq -r '.data | length')"
+    #       echo "Response body: $response_body"
+    #       exit 1
+    #     fi
+
+    #     # Save the control plane info to an output variable
+    #     echo "::set-output name=team::$( echo $response_body | jq -c .data[0])"
+    #   shell: bash
 
     # - name: Authenticate to MinIO using OIDC token
     #   shell: bash
