@@ -1,14 +1,8 @@
 # Description: Makefile for setting up the project
-
-export VAULT_ADDR=http://localhost:8300
-export VAULT_TOKEN=$(shell awk -F '=' '/VAULT_TOKEN/ {print $$2}' act.secrets)
-export GITHUB_ORG=$(shell awk -F '=' '/GITHUB_ORG/ {print $$2}' act.secrets)
-export GH_MINIO_OIDC_APP_CLIENT_ID=$(shell awk -F '=' '/GH_MINIO_OIDC_APP_CLIENT_ID/ {print $$2}' act.secrets)
-export GH_MINIO_OIDC_APP_CLIENT_SECRET=$(shell awk -F '=' '/GH_MINIO_OIDC_APP_CLIENT_SECRET/ {print $$2}' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki setup-minio-gh-auth ## Prepare the project
+prepare: check-deps actrc prep-act-secrets kind prepare-aws ## Prepare the project
 
 prepare-aws:
 	@echo "Preparing AWS.."
@@ -48,32 +42,6 @@ kind: ## Setup kind cluster
 	else \
 		echo "Skipping kind cluster creation. Using orbstack."; \
 	fi
-
-vault-secrets: ## Setup vault secrets
-	@echo "Setting up vault secrets.."
-	@./scripts/check-vault.sh
-	@docker cp .tls vault:/tmp
-	@if ! vault secrets list | grep -q 'konnect'; then \
-		vault secrets enable -path=konnect kv-v2; \
-	else \
-		echo "Vault secrets path 'konnect' already exists"; \
-	fi
-	@docker exec -it vault vault kv put -address=$(VAULT_ADDR) konnect/certificates \
-		cluster_crt=@/tmp/.tls/cluster-tls.crt \
-		cluster_key=@/tmp/.tls/cluster-tls.key \
-		proxy_crt=@/tmp/.tls/proxy-tls.crt \
-		proxy_key=@/tmp/.tls/proxy-tls.key \
-		ca=@/tmp/.tls/ca.crt
-
-vault-pki: ## Setup vault pki
-	@echo "Setting up vault pki."
-	@./scripts/check-vault.sh
-	@docker exec vault chmod +x /vault-pki-setup.sh
-	@docker exec -it vault /vault-pki-setup.sh $(VAULT_ADDR) $(VAULT_TOKEN) $(GITHUB_ORG)
-
-setup-minio-gh-auth: ## Setup minio gh auth
-	@echo "Setting up minio gh auth.."
-	@./scripts/setup-minio-gh-auth.sh $(GH_MINIO_OIDC_APP_CLIENT_ID) $(GH_MINIO_OIDC_APP_CLIENT_SECRET)
 	
 check-deps: ## Check dependencies
 	@echo "Checking dependencies.."
