@@ -24,6 +24,7 @@
         {
             "type": "konnect.team",
             "name": "Gorillaz",
+            "offboarded": true,
             "description": "Gorillaz team is building the legacy services",
             "labels": {
                 "TID": "KTEAM_00003"
