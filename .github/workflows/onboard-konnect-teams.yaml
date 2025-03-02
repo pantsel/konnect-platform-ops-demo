@@ -135,7 +135,7 @@ jobs:
 
   provision-konnect-teams:
     runs-on: ubuntu-latest
-    # needs: offboard-konnect-teams
+    needs: offboard-konnect-teams
     if: always()
     
     steps:
