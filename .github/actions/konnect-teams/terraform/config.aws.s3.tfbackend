@@ -1,4 +1,0 @@
-bucket         = "tfstate"
-key            = "konnect.tfstate"
-region         = "eu-central-1"
-encrypt        = true
