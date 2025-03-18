@@ -34,13 +34,32 @@ module "control_planes" {
   cacert       = var.cacert
 }
 
+module "control_plane_membership" {
+  source = "./modules/control_plane_membership"
+
+  // for each control plane in the control_planes module with
+  // a cluster_type of CLUSTER_TYPE_CONTROL_PLANE_GROUP
+  for_each = { for k, v in module.control_planes : v.control_plane.name => v.control_plane if v.control_plane.cluster_type == "CLUSTER_TYPE_CONTROL_PLANE_GROUP" }
+
+  id = each.value.id
+  members = [
+    for member_name in lookup(
+      { for cp in local.control_planes : cp.name => lookup(cp, "members", []) if lookup(cp, "cluster_type", "") == "CLUSTER_TYPE_CONTROL_PLANE_GROUP" },
+      each.key,
+      []
+    ) : {
+      id = module.control_planes[member_name].control_plane.id
+    }
+  ]
+}
+
 module "vaults" {
   source = "./modules/vault"
 
   for_each = { for k, v in module.control_planes : v.control_plane.name => {
     name = v.control_plane.name, id = v.control_plane.id
     type = "Control Planes"
-  } }
+  } if v.control_plane.cluster_type != "CLUSTER_TYPE_CONTROL_PLANE_GROUP" }
 
   control_plane_name = lower(replace(each.value.name, " ", "-"))
   control_plane_id   = each.value.id

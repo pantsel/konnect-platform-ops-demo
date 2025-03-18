@@ -56,6 +56,20 @@
             "public_labels": {
                 "team": "kronos"
             }
+        },
+        {
+            "type": "konnect.control_plane",
+            "name": "Control Plane Group Kronos",
+            "description": "Sample Control Plane Group",
+            "cluster_type": "CLUSTER_TYPE_CONTROL_PLANE_GROUP",
+            "members": [
+                "Kronos Dev",
+                "Kronos Test"
+            ],
+            "labels": {},
+            "public_labels": {
+                "team": "kronos"
+            }
         }
     ]
 }
