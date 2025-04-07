@@ -10,7 +10,13 @@ runs:
     - name: Install MinIO Client
       shell: bash
       run: |
-        wget https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+        if [ -f "/mc-cache/mc" ]; then
+          echo "Using cached MinIO Client"
+          cp /mc-cache/mc /usr/local/bin/mc
+        else
+          echo "Downloading MinIO Client"
+          wget -v https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+        fi
         chmod +x /usr/local/bin/mc
         echo "MinIO Client installed successfully"
 
