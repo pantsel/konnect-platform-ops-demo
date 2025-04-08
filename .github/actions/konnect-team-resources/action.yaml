@@ -23,6 +23,9 @@ inputs:
   s3_secret_key:
     description: 'S3 secret key'
     required: true
+  konnect_token:  
+    description: "Konnect token"
+    required: true
 
 runs:
   using: 'composite'
@@ -41,7 +44,7 @@ runs:
     - name: Validate config
       run: |
         config_content=${{ inputs.config }}
-
+        echo "$config_content" 
         # Validate metadata.type
         metadata_type=$(echo "$config_content" | jq -r '.metadata.type')
         if [ "$metadata_type" != "konnect.team.resources" ]; then
@@ -88,6 +91,9 @@ runs:
         echo "TEAM_NAME_NORMALIZED=$TEAM_NAME_NORMALIZED" >> $GITHUB_ENV
         echo "TERRAFORM_DIR=$TERRAFORM_DIR" >> $GITHUB_ENV
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
+        echo "TF_VAR_konnect_personal_access_token=${{ inputs.konnect_token }}" >> $GITHUB_ENV
+        echo "VAULT_TOKEN=${{ inputs.vault_token }}" >> $GITHUB_ENV
+
       shell: bash
 
     - name: Fetch team information

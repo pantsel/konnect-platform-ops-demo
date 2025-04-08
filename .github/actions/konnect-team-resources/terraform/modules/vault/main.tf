@@ -14,7 +14,7 @@ resource "konnect_gateway_config_store" "this" {
 
 resource "konnect_gateway_vault" "this" {
   name   = "konnect"
-  prefix = "konnect-vault"
+  prefix = "${var.control_plane_name}-vault"
   config = jsonencode({
     config_store_id = konnect_gateway_config_store.this.id
   })

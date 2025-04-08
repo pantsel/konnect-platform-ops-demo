@@ -4,5 +4,5 @@
 --action-offline-mode
 --container-architecture=linux/amd64
 --platform=ubuntu-latest=catthehacker/ubuntu:act-latest
---container-options -v __KUBECONFIG_PATH__:/.kube
+--container-options -v __KUBECONFIG_PATH__:/.kube -v __MINIOCLIENT_PATH__:/mc-cache
 --network=host

@@ -20,6 +20,10 @@ inputs:
   vault_token:  
     description: "Vault token"
     required: true
+  konnect_token:  
+    description: "Konnect token"
+    required: true
+  
 
 runs:
   using: "composite"
@@ -75,6 +79,7 @@ runs:
         echo "TF_VAR_config=$(echo "$config_content" | jq -c .)" >> $GITHUB_ENV
         echo "TF_VAR_vault_address=${{ inputs.vault_address }}" >> $GITHUB_ENV
         echo "TF_VAR_vault_token=${{ inputs.vault_token }}" >> $GITHUB_ENV
+        echo "TF_VAR_konnect_personal_access_token=${{ inputs.konnect_token }}" >> $GITHUB_ENV
       shell: bash
 
     - name: Create S3 bucket if required

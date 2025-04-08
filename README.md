@@ -98,6 +98,11 @@ graph TD;
 
 ## Prepare the demo environment
 
+Download the minio client for the target runner platform architecture (e.g. linux amd64), place it into a folder (e.g. mc-binary) and export the path like this:
+```bash
+export MINIOCLIENT_PATH="/path-to/mc-binary"
+```
+
 To spin-up and prepare your local environment, execute: 
 
 ```bash
