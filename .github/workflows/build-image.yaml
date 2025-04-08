@@ -67,7 +67,7 @@ jobs:
         uses: hashicorp/vault-action@v2
         with:
           url: ${{ env.VAULT_ADDR }}
-          token: ${{ env.VAULT_TOKEN }}
+          token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
             pki/cert/ca certificate | CA_CERT ;
 

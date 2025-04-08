@@ -89,7 +89,7 @@ jobs:
         uses: hashicorp/vault-action@v3
         with:
           url: ${{ env.VAULT_ADDR }}
-          token: ${{ env.VAULT_TOKEN }}
+          token: ${{ secrets.VAULT_TOKEN }}
           pki: |
             pki/issue/kong {"common_name": "${{ inputs.clustering_cn }}", "alt_names": "www.${{ inputs.clustering_cn }}", "ttl": "4380h"};
 
@@ -99,7 +99,7 @@ jobs:
         uses: hashicorp/vault-action@v3
         with:
           url: ${{ env.VAULT_ADDR }}
-          token: ${{ env.VAULT_TOKEN }}
+          token: ${{ secrets.VAULT_TOKEN }}
           pki: |
             pki/issue/kong {"common_name": "${{ inputs.proxy_cn }}", "alt_names": "www.${{ inputs.proxy_cn }}", "ttl": "4380h"};
 
@@ -109,7 +109,7 @@ jobs:
         uses: hashicorp/vault-action@v2
         with:
           url: ${{ env.VAULT_ADDR }}
-          token: ${{ env.VAULT_TOKEN }}
+          token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
             secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
@@ -267,11 +267,11 @@ jobs:
       - name: Destroy Kong Deployment
         if: ${{ inputs.action == 'destroy' }}
         run: |
-          CONTROL_PLANE_NAME=$(echo ${{ inputs.control_plane_name }} | sed 's/_/-/g')
+          CONTROL_PLANE_NAME=$(echo "${{ inputs.control_plane_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[ _]/-/g')
           if helm status kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE >/dev/null 2>&1; then
             helm uninstall kong-dp-$CONTROL_PLANE_NAME -n $NAMESPACE
             helm uninstall kong-config-exporter-$CONTROL_PLANE_NAME -n $NAMESPACE
-            kubect delete secret kong-cluster-cert -n $NAMESPACE
-            kubect delete secret kong-proxy-cert -n $NAMESPACE
-            kubeclt delete namespace $NAMESPACE
+            kubectl delete secret kong-cluster-cert -n $NAMESPACE
+            kubectl delete secret kong-proxy-cert -n $NAMESPACE
+            kubectl delete namespace $NAMESPACE
           fi
