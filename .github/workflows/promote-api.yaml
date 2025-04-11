@@ -149,7 +149,6 @@ jobs:
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > kong_diff.txt
         working-directory: ${{ env.BUILD_FOLDER }}
     
-
       - name: Sync Kong Gateway configuration
         id: sync
         run: |
