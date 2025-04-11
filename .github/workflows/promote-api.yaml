@@ -159,6 +159,7 @@ jobs:
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
         working-directory: ${{ env.BUILD_FOLDER }}
 
+        # https://github.com/schemathesis/schemathesis
       - name: Run Contract Tests
         uses: schemathesis/action@v1
         if: inputs.environment != 'prd' && steps.sync.outcome == 'success'
@@ -167,7 +168,7 @@ jobs:
           schema: ${{ env.API_SPEC}}
           base-url: ${{ inputs.gateway_url }}${{ env.DECK_CONFIG_NAMESPACE_PATH_PREFIX }}
           checks: all
-          args: '--auth demo:h2f8jgfkUclMa8GEmxJWNxOp00yzF6Wv --experimental openapi-3.1'
+          args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
         continue-on-error: true
 
       - name: Rollback configuration
