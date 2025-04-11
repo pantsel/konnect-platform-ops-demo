@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.releaseName | default .Release.Name }}-routes-api
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.releaseName | default .Release.Name }}-routes-api
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.releaseName | default .Release.Name }}-routes-api
+    spec:
+      containers:
+        - name: routes-api
+          image: {{ .Values.routesApi.image }}
+          imagePullPolicy: {{ .Values.flightsApi.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.routesApi.containerPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.releaseName | default .Release.Name }}-routes-api
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: {{ .Values.releaseName | default .Release.Name }}-routes-api
+  ports:
+    - port: {{ .Values.routesApi.servicePort }}
+      targetPort: {{ .Values.routesApi.containerPort }}

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.releaseName | default .Release.Name }}-flights-api
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.releaseName | default .Release.Name }}-flights-api
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.releaseName | default .Release.Name }}-flights-api
+    spec:
+      containers:
+        - name: flights-api
+          image: {{ .Values.flightsApi.image }}
+          imagePullPolicy: {{ .Values.flightsApi.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.flightsApi.containerPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.releaseName | default .Release.Name }}-flights-api
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: {{ .Values.releaseName | default .Release.Name }}-flights-api
+  ports:
+    - port: {{ .Values.flightsApi.servicePort }}
+      targetPort: {{ .Values.flightsApi.containerPort }}

@@ -6,11 +6,16 @@ export GITHUB_ORG=$(shell grep -o 'GITHUB_ORG=\K.*' act.secrets)
 KIND_CLUSTER_NAME=konnect-platform-ops-demo
 RUNNER_IMAGE ?= pantsel/gh-runner:latest
 
-prepare: check-deps gencerts actrc docker prep-act-secrets kind vault-pki ## Prepare the project
+prepare: check-deps gencerts actrc build_images docker prep-act-secrets kind vault-pki ## Prepare the project
 
 actrc: ## Setup .actrc
 	@echo "Setting up .actrc"
 	@./scripts/prep-actrc.sh
+
+build_images: ## Build docker images
+	@echo "Building docker images.."
+	@docker build -t kongair/flights-api:latest -f ./examples/apiops/apis/flights/Dockerfile ./examples/apiops/apis/flights
+	@docker build -t kongair/routes-api:latest -f ./examples/apiops/apis/routes/Dockerfile ./examples/apiops/apis/routes
 
 gencerts: ## Generate certificates
 	@echo "Generating certificates..."
@@ -93,4 +98,4 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n\n"} \
 	/^[a-zA-Z_-]+:.*##/ { printf "  %-15s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-.PHONY: prepare actrc gencerts prep-act-secrets kind docker vault-secrets vault-pki clean stop check-deps test runner
+.PHONY: prepare actrc gencerts prep-act-secrets kind docker vault-secrets vault-pki clean stop check-deps test runner build_images
