@@ -45,7 +45,7 @@ resource "konnect_gateway_control_plane" "demo_cp_group" {
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
   # Can be "pinned_client_certs" or "pki_client_certs". For "pki_client_certs" we need to provide the CA certificate.
   # https://docs.konghq.com/konnect/gateway-manager/data-plane-nodes/secure-communications/
-  auth_type = "pinned_client_certs"
+  auth_type = "pki_client_certs"
 
   labels = {
     generated_by = "terraform"

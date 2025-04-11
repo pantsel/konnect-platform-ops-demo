@@ -112,6 +112,31 @@ services:
     labels:
       - dev.orbstack.domains=idp.local
 
+
+  flights-api:
+    container_name: flights-api
+    networks:
+      - konnect-platform-ops-demo
+    build:
+      context: ./examples/apiops/apis/flights
+      dockerfile: Dockerfile
+    ports:
+      - 8081:8080
+    labels:
+      - dev.orbstack.domains=flights-api.local
+
+  routes-api:
+    container_name: routes-api
+    networks:
+      - konnect-platform-ops-demo
+    build:
+      context: ./examples/apiops/apis/routes
+      dockerfile: Dockerfile
+    ports:
+      - 8082:8081
+    labels:
+      - dev.orbstack.domains=routes-api.local
+
 volumes:
   minio_data:
     driver: local
