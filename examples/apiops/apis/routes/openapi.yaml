@@ -1,6 +1,6 @@
 ---
 # OpenAPI Spec for the KongAir Routes service
-openapi: 3.0.0
+openapi: 3.1.0
 
 info:
   description: KongAir Routes service provides the registered routes KongAir flies between origin and destination airports
@@ -10,6 +10,10 @@ info:
 servers:
 - url: https://api.kong-air.com
   description: KongAir API Server
+  
+
+security:
+  - BasicAuth: []
 
 paths:
   /health:
@@ -53,6 +57,7 @@ paths:
           required: true
           schema:
             type: string
+            example: LHR-SYD
       responses:
         '200':
           description: Successful response with the found Route
@@ -60,6 +65,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid route id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid format for parameter"
+            text/plain:
+              schema:
+                type: string
         '404':
           description: Route not found
   "/routes":
@@ -101,6 +119,10 @@ paths:
                     }]
 
 components:
+  securitySchemes:
+      BasicAuth:
+        type: http
+        scheme: basic
   schemas:
     Route:
       type: object

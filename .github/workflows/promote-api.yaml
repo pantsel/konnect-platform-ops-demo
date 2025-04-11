@@ -24,6 +24,11 @@ on:
         description: "The system account to use for authentication with Konnect"
         type: string
         required: true
+      gateway_url:
+        description: "Kong Gateway URL"
+        type: string
+        required: true
+        default: http://localhost
 
 env:
   ENV_FILE: .github/env/${{ inputs.environment }}.yaml
@@ -96,6 +101,12 @@ jobs:
         run: cat kong.yaml | deck file namespace --path-prefix=$DECK_CONFIG_NAMESPACE_PATH_PREFIX -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
+      - name: Apply Platform level plugins
+        run: |
+          cat kong.yaml | deck file add-plugins \
+            $PLATFORM_FOLDER/kong/plugins/*.yaml -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
       - name: Apply Platform level patches
         run: |
           cat kong.yaml | deck file patch \
@@ -154,8 +165,9 @@ jobs:
         id: tests
         with:
           schema: ${{ env.API_SPEC}}
-          base-url: 'http://k8s.orb.local/flight-data'
-          checks: not_a_server_error,response_headers_conformance,response_schema_conformance,negative_data_rejection,ignored_auth
+          base-url: ${{ inputs.gateway_url }}${{ env.DECK_CONFIG_NAMESPACE_PATH_PREFIX }}
+          checks: all
+          args: '--auth demo:h2f8jgfkUclMa8GEmxJWNxOp00yzF6Wv --experimental openapi-3.1'
         continue-on-error: true
 
       - name: Rollback configuration

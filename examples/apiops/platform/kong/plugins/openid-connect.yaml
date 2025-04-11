@@ -2,12 +2,12 @@
 _format_version: '3.0'
 add-plugins:
 - selectors:
-  - "$"
-  overwrite: false
+  - "$..services[0]"
+  overwrite: true
   plugins:
     - name: openid-connect
       tags:
-        - governance
+        - platform
       config:
         issuer: ${{ env "DECK_CONFIG_OIDC_ISSUER"}}
         run_on_preflight: false
