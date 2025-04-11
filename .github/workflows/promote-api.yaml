@@ -27,7 +27,9 @@ on:
 
 env:
   ENV_FILE: .github/env/${{ inputs.environment }}.yaml
-  API_SPEC: ${{ inputs.api_folder }}/openapi.yaml
+  API_SPEC: ${{ github.workspace }}/${{ inputs.api_folder }}/openapi.yaml
+  API_PLUGINS_FOLDER: ${{ github.workspace }}/${{ inputs.api_folder }}/kong/plugins
+  API_PATCHES_FOLDER: ${{ github.workspace }}/${{ inputs.api_folder }}/kong/patches
   PLATFORM_FOLDER: ${{ github.workspace }}/examples/apiops/platform
   BUILD_FOLDER: ${{ github.workspace }}/examples/apiops/.generated
   DECK_CONFIG_NAMESPACE_PATH_PREFIX: /flight-data
@@ -62,10 +64,10 @@ jobs:
       - name: Setup decK variables
         run: |
 
-          api_name=$(yq eval '.info.title' ${{ github.workspace }}/$API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
           echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
 
-          api_version=$(yq eval '.info.version' ${{ github.workspace }}/$API_SPEC)
+          api_version=$(yq eval '.info.version' $API_SPEC)
           echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
 
           major_version=$(echo $api_version | cut -d '.' -f 1)
@@ -81,14 +83,13 @@ jobs:
 
       - name: Add plugins to Kong Gateway configuration
         run: |
-          cat kong.yaml | deck file add-plugins \
-            ${{ github.workspace }}/${{ inputs.api_folder }}/kong/plugins.yaml -o kong.yaml
+          cat kong.yaml | deck file add-plugins $API_PLUGINS_FOLDER/*.yaml -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Apply patches to Kong Gateway configuration
         run: |
           cat kong.yaml | deck file patch \
-            ${{ github.workspace }}/${{ inputs.api_folder }}/kong/patches.yaml -o kong.yaml
+            $API_PATCHES_FOLDER/*.yaml -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Add namespace to Kong Gateway configuration
@@ -107,10 +108,6 @@ jobs:
           cat kong.yaml | deck file add-tags $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Output Kong Gateway configuration
-        run: cat kong.yaml
-        working-directory: ${{ env.BUILD_FOLDER }}
-
       - name: Lint Kong Gateway configuration
         run: deck file lint -s kong.yaml ${{ env.PLATFORM_FOLDER }}/kong.ruleset.yaml;
         working-directory: ${{ env.BUILD_FOLDER }}
@@ -123,6 +120,7 @@ jobs:
         run: |
           deck gateway dump \
             --yes \
+            --with-id \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
@@ -140,6 +138,7 @@ jobs:
     
 
       - name: Sync Kong Gateway configuration
+        id: sync
         run: |
           deck gateway sync kong.yaml  \
             --select-tag $DECK_API_NAME \
@@ -151,6 +150,7 @@ jobs:
 
       - name: Run Contract Tests
         uses: schemathesis/action@v1
+        if: inputs.environment != 'prd' && steps.sync.outcome == 'success'
         id: tests
         with:
           schema: ${{ env.API_SPEC}}
@@ -159,7 +159,7 @@ jobs:
         continue-on-error: true
 
       - name: Rollback configuration
-        if: steps.tests.outcome == 'failure'
+        if: steps.tests.outcome == 'failure' || steps.sync.outcome == 'failure'
         run: |
           echo "Tests failed. Rolling back configuration..."
           deck gateway sync kong_backup.yaml  \
@@ -171,10 +171,11 @@ jobs:
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Get a new backup of the current Kong Gateway configuration
-        if: steps.tests.outcome == 'success'
+        if: steps.tests.outcome == 'success' || steps.sync.outcome == 'skipped'
         run: |
           deck gateway dump \
             --yes \
+            --with-id \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
