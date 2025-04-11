@@ -1,0 +1,11 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+    - name: prometheus
+      tags:
+        - governance
+      enabled: true

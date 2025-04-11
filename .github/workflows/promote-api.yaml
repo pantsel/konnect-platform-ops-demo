@@ -3,8 +3,8 @@ name: Promote API
 on:
   workflow_dispatch:
     inputs:
-      openapi_spec:
-        description: "Path to the OpenAPI Specification file"
+      api_folder:
+        description: "Path to the api folder"
         required: true
         type: string
       environment:
@@ -27,6 +27,10 @@ on:
 
 env:
   ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+  API_SPEC: ${{ inputs.api_folder }}/openapi.yaml
+  PLATFORM_FOLDER: ${{ github.workspace }}/examples/apiops/platform
+  BUILD_FOLDER: ${{ github.workspace }}/examples/apiops/.generated
+  DECK_CONFIG_NAMESPACE_PATH_PREFIX: /flight-data
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }} # To be used in the OIDC plugin template
 
 jobs:
@@ -38,15 +42,13 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: kong/setup-deck@v1
+        with:
+          version: latest
 
       - name: Load environment configuration
         uses: ./.github/actions/load-config
         with:
           environment: ${{ inputs.environment }}
-
-      - name: Install extra rulesets for Spectral
-        run: |
-          npm install --save -D @stoplight/spectral-owasp-ruleset@^2.0
 
       - name: Import system account Token from Vault
         id: import-token
@@ -57,128 +59,146 @@ jobs:
           secrets: |
             secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
-      - name: Set current date as env variable
-        run: echo "NOW=$(date +'%Y_%m_%dT%H_%M_%S')" >> $GITHUB_ENV
-
       - name: Setup decK variables
         run: |
 
           # Set the API Name
-          api_name=$(yq eval '.info.title' ${{ github.workspace }}/${{ inputs.openapi_spec }} | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          api_name=$(yq eval '.info.title' ${{ github.workspace }}/$API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
           echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
 
-          # Set the Organization/BU
-          organization=$(yq eval '.info.x-business-unit' ${{ github.workspace }}/${{ inputs.openapi_spec }})
-          echo "DECK_ORGANIZATION=$organization" >> $GITHUB_ENV
+          api_version=$(yq eval '.info.version' ${{ github.workspace }}/$API_SPEC)
+          echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
 
-          # Set the team responsible for the API
-          team=$(yq eval '.info.x-team-name' ${{ github.workspace }}/${{ inputs.openapi_spec }})
-          echo "DECK_CONFIG_OWNER=$team" >> $GITHUB_ENV
+          # Major version
+          major_version=$(echo $api_version | cut -d '.' -f 1)
+          echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
 
-          # Set the namespace if available
-          namespace=$(yq eval '.["x-kong-namespace"]' ${{ github.workspace }}/${{ inputs.openapi_spec }})
-          if [ ! -z "$namespace" ]; then
-            echo "DECK_NAMESPACE=$namespace" >> $GITHUB_ENV
-          fi
-
-      - name: Filter OAS servers
-        run: |
-          # Since this pipeline is for configuring the gateway, 
-          # we only want to keep the internal servers for the environment we are deploying to.
-
-          ENVIRONMENT="${{ inputs.environment }}"
-          yq eval -i ".servers |= map(select(.x-environment == \"$ENVIRONMENT\" and .x-internal == true))"  ${{ github.workspace }}/${{ inputs.openapi_spec }}
-
-          # Debug
-          cat ${{ github.workspace }}/${{ inputs.openapi_spec }}
-
-      # This step is only required if you are using OAS Validation plugin
-      - name: Read OAS into an environment variable
-        id: oas-to-env
-        run: |
-          # Read the YAML file and convert to JSON string to be used with the OAS Validation plugin down the line.
-          # The plugin expects the OAS as a JSON string in an environment variable.
-          # https://docs.konghq.com/hub/kong-inc/oas-validation/configuration/#config-api_spec
+      # # This step is only required if you are using OAS Validation plugin
+      # - name: Read OAS into an environment variable
+      #   id: oas-to-env
+      #   run: |
+      #     # Read the YAML file and convert to JSON string to be used with the OAS Validation plugin down the line.
+      #     # The plugin expects the OAS as a JSON string in an environment variable.
+      #     # https://docs.konghq.com/hub/kong-inc/oas-validation/configuration/#config-api_spec
           
-          oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
+      #     oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
 
-          # Set as env variable
-          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
+      #     # Set as env variable
+      #     echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
 
-      - name: Lint OpenAPI Specification
-        uses: stoplightio/spectral-action@latest
-        with:
-          file_glob: '${{ github.workspace }}/${{ inputs.openapi_spec }}'
-          spectral_ruleset: .spectral.yaml
-          working-directory: ${{ github.workspace }}/examples/apiops
+      - name: Lint OpenAPI Spec
+        shell: bash
+        run: |
+          deck file lint -s $API_SPEC $PLATFORM_FOLDER/openapi.ruleset.yaml
 
       - name: Convert OpenAPI Specification to Kong Gateway configuration
-        run: cat ${{ github.workspace }}/${{ inputs.openapi_spec }} | deck file openapi2kong > kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+        run: cat $API_SPEC | deck file openapi2kong > $BUILD_FOLDER/kong.yaml
 
       - name: Add plugins to Kong Gateway configuration
         run: |
           cat kong.yaml | deck file add-plugins \
-            plugins/openid-connect.yaml \
-            plugins/oas-validation.yaml \
-            plugins/rate-limiting.yaml -o kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+            ${{ github.workspace }}/${{ inputs.api_folder }}/kong/plugins.yaml -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Add namespace to Kong Gateway configuration if required
-        if: ${{ env.DECK_NAMESPACE && env.DECK_NAMESPACE != '/' && env.DECK_NAMESPACE != 'null' }}
-        run: cat kong.yaml | deck file namespace --path-prefix=${{ env.DECK_NAMESPACE }} -o kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+      - name: Apply patches to Kong Gateway configuration
+        run: |
+          cat kong.yaml | deck file patch \
+            ${{ github.workspace }}/${{ inputs.api_folder }}/kong/patches.yaml -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Add select_tags patch to Kong Gateway configuration
-        run: cat kong.yaml | deck file patch patches/select_tags.yaml -o kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+      - name: Add namespace to Kong Gateway configuration
+        run: cat kong.yaml | deck file namespace --path-prefix=$DECK_CONFIG_NAMESPACE_PATH_PREFIX -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Apply Platform level patches
+        run: |
+          cat kong.yaml | deck file patch \
+            $PLATFORM_FOLDER/kong/patches/*.yaml -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Add Tags
+        shell: bash
+        run: |
+          cat kong.yaml | deck file add-tags $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Output Kong Gateway configuration
         run: cat kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Lint Kong Gateway configuration
+        run: deck file lint -s kong.yaml ${{ env.PLATFORM_FOLDER }}/kong.ruleset.yaml;
+        working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Validate Generated Kong Gateway configuration
         run: deck file validate kong.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
-
-      - name: Get a backup of the previous Kong Gateway configuration
+        working-directory: ${{ env.BUILD_FOLDER }}
+      
+      - name: Get a full backup of the Control Plane Configuration
         run: |
           deck gateway dump \
+            --yes \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup_${{ env.NOW }}.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Diff Kong Gateway configuration
         run: |
           deck gateway diff kong.yaml  \
+            --select-tag $DECK_API_NAME \
+            --select-tag $DECK_API_MAJOR_VERSION \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}" > diff_${{ env.NOW }}.txt
-        working-directory: ${{ github.workspace }}/examples/apiops
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}" > kong_diff.txt
+        working-directory: ${{ env.BUILD_FOLDER }}
     
 
       - name: Sync Kong Gateway configuration
         run: |
           deck gateway sync kong.yaml  \
+            --select-tag $DECK_API_NAME \
+            --select-tag $DECK_API_MAJOR_VERSION \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
-        working-directory: ${{ github.workspace }}/examples/apiops
+        working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Get a backup of the current Kong Gateway configuration
+      - name: Run Contract Tests
+        uses: schemathesis/action@v1
+        id: tests
+        with:
+          schema: ${{ env.API_SPEC}}
+          base-url: 'http://k8s.orb.local/flight-data'
+          checks: not_a_server_error,response_headers_conformance,response_schema_conformance,negative_data_rejection,ignored_auth
+        continue-on-error: true
+
+      - name: Rollback configuration
+        if: steps.tests.outcome == 'failure'
         run: |
-          deck gateway dump \
+          echo "Tests failed. Rolling back configuration..."
+          deck gateway sync kong_backup.yaml  \
+            --select-tag $DECK_API_NAME \
+            --select-tag $DECK_API_MAJOR_VERSION \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_current_${{ env.NOW }}.yaml
-        working-directory: ${{ github.workspace }}/examples/apiops
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}"
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Get a new backup of the current Kong Gateway configuration
+        if: steps.tests.outcome == 'success'
+        run: |
+          deck gateway dump \
+            --yes \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: |
-            ${{ github.workspace }}/examples/apiops/kong_backup_${{ env.NOW }}.yaml
-            ${{ github.workspace }}/examples/apiops/kong_current_${{ env.NOW }}.yaml
-            ${{ github.workspace }}/examples/apiops/diff_${{ env.NOW }}.txt
+            ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+            ${{ env.BUILD_FOLDER }}/kong_diff.txt

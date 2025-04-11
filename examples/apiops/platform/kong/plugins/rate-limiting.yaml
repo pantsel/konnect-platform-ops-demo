@@ -1,0 +1,20 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+    - name: rate-limiting-advanced
+      tags:
+        - governance
+      config:
+        limit:
+        - 1000
+        window_size:
+        - 30
+        identifier: consumer
+        sync_rate: -1
+        namespace: example_namespace
+        strategy: local
+        hide_client_headers: false

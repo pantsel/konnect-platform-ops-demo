@@ -1,0 +1,20 @@
+extends: [[spectral:oas, recommended]]
+
+rules:
+  operation-id-required:
+    description: "Every OpenAPI operation must have an operationId specified."
+    message: "Operation object is missing operationId."
+    severity: error
+    given: "$.paths[*][*]"
+    then:
+      field: operationId
+      function: truthy
+  paths-kebab-case:
+    description: Paths should be kebab-case.
+    message: "{{property}} should be kebab-case (lower-case and separated with hyphens)"
+    severity: warn
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: "^(/|[a-z0-9-.]+|{[a-zA-Z0-9_]+})+$"

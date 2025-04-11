@@ -1,6 +1,6 @@
 ---
 # OpenAPI Spec for the KongAir Flights service
-openapi: 3.1.0
+openapi: 3.0.0
 
 info:
   description: KongAir Flights service provides the scheduled flights for KongAir
@@ -166,6 +166,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FlightDetails'
+        '400':
+          description: Invalid flight number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid format for parameter"
         '404':
           description: Flight not found
           content:
@@ -212,5 +222,5 @@ components:
       required:
         - flight_number
         - in_flight_entertainment
-        - mean_options
+        - meal_options
         - aircraft_type

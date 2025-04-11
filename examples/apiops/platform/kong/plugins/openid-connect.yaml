@@ -1,0 +1,25 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+    - name: openid-connect
+      tags:
+        - governance
+      config:
+        issuer: ${{ env "DECK_CONFIG_OIDC_ISSUER"}}
+        run_on_preflight: false
+        consumer_optional: true
+        display_errors: true
+        preserve_query_args: true
+        scopes_required:
+          - email profile
+        scopes:
+          - openid
+          - email
+          - profile
+        auth_methods:
+          - client_credentials
+      enabled: true

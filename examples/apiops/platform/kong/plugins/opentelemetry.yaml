@@ -1,0 +1,17 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+  - name: opentelemetry
+    enabled: false
+    tags:
+      - governance
+    config:
+      traces_endpoint: ${{ env "DECK_CONFIG_OTEL_TRACES_ENDPOINT" }}
+      resource_attributes:
+        namespace: kong
+        service.name: ${{ env "DECK_CONFIG_OTEL_SERVICE_NAME" }}
+      send_timeout: 5000

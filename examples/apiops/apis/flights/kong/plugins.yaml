@@ -1,0 +1,13 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$..services[0]"
+  overwrite: false
+  plugins:
+    - name: request-transformer-advanced
+      enabled: true
+      config:
+        add:
+          headers:
+            - x-api-name:{{ env "DECK_API_NAME" }}

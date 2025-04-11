@@ -1,0 +1,12 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$"
+  overwrite: false
+  plugins:
+    - name: file-log
+      tags:
+        - governance
+      config:
+        path: /dev/stdout
