@@ -132,6 +132,7 @@ jobs:
           deck gateway dump \
             --yes \
             --with-id \
+            --select-tag generated_by:deck \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
@@ -142,6 +143,7 @@ jobs:
           deck gateway diff kong.yaml  \
             --select-tag $DECK_API_NAME \
             --select-tag $DECK_API_MAJOR_VERSION \
+            --select-tag generated_by:deck \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > kong_diff.txt
@@ -154,6 +156,7 @@ jobs:
           deck gateway sync kong.yaml  \
             --select-tag $DECK_API_NAME \
             --select-tag $DECK_API_MAJOR_VERSION \
+            --select-tag generated_by:deck \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
@@ -178,6 +181,7 @@ jobs:
           deck gateway sync kong_backup.yaml  \
             --select-tag $DECK_API_NAME \
             --select-tag $DECK_API_MAJOR_VERSION \
+            --select-tag generated_by:deck \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
@@ -189,6 +193,7 @@ jobs:
           deck gateway dump \
             --yes \
             --with-id \
+            --select-tag generated_by:deck \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
