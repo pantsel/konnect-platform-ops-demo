@@ -62,34 +62,19 @@ jobs:
       - name: Setup decK variables
         run: |
 
-          # Set the API Name
           api_name=$(yq eval '.info.title' ${{ github.workspace }}/$API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
           echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
 
           api_version=$(yq eval '.info.version' ${{ github.workspace }}/$API_SPEC)
           echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
 
-          # Major version
           major_version=$(echo $api_version | cut -d '.' -f 1)
           echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
-
-      # # This step is only required if you are using OAS Validation plugin
-      # - name: Read OAS into an environment variable
-      #   id: oas-to-env
-      #   run: |
-      #     # Read the YAML file and convert to JSON string to be used with the OAS Validation plugin down the line.
-      #     # The plugin expects the OAS as a JSON string in an environment variable.
-      #     # https://docs.konghq.com/hub/kong-inc/oas-validation/configuration/#config-api_spec
-          
-      #     oas_json=$(yq eval -o=json ${{ github.workspace }}/${{ inputs.openapi_spec }} | jq -c .)
-
-      #     # Set as env variable
-      #     echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
 
       - name: Lint OpenAPI Spec
         shell: bash
         run: |
-          deck file lint -s $API_SPEC $PLATFORM_FOLDER/openapi.ruleset.yaml
+          deck file lint -s $API_SPEC $PLATFORM_FOLDER/openapi.ruleset.yaml -o ${BUILD_FOLDER}/openapi_lint_report.txt
 
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat $API_SPEC | deck file openapi2kong > $BUILD_FOLDER/kong.yaml
@@ -202,3 +187,5 @@ jobs:
           path: |
             ${{ env.BUILD_FOLDER }}/kong_backup.yaml
             ${{ env.BUILD_FOLDER }}/kong_diff.txt
+            ${{ env.BUILD_FOLDER }}/openapi_lint_report.txt
+            ${{ env.BUILD_FOLDER }}/kong.yaml

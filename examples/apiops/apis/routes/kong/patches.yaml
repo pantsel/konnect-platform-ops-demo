@@ -5,5 +5,5 @@ patches:
     - $.services[?(@.name=="routes-service")]
     values:
       host: routes-api.local
-      port: 8082
+      port: 80
       protocol: http

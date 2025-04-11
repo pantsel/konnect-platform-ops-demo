@@ -26,6 +26,21 @@ rules:
   #         minItems: 1
   #         items:
   #           type: "string"
+  no-global-entities-allowed:
+    description: "Ensure no global entities are used"
+    given: "$"
+    severity: error
+    then:
+      - field: plugins
+        function: undefined
+      - field: consumers
+        function: undefined
+      - field: certificates
+        function: undefined
+      - field: ca_certificates
+        function: undefined
+      - field: snis
+        function: undefined
   protocols_set:
     description: "Ensure route protocols are set"
     given: $.routes[*]
