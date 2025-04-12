@@ -1,0 +1,7 @@
+# teams.yaml
+teams:
+  flight-data:
+    namespace: /flight-data
+    apis:
+      - flights-service
+      - routes-service

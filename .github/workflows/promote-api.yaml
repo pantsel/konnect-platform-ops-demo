@@ -37,6 +37,7 @@ env:
   API_PATCHES_FOLDER: ${{ github.workspace }}/${{ inputs.api_folder }}/kong/patches
   PLATFORM_FOLDER: ${{ github.workspace }}/examples/apiops/platform
   BUILD_FOLDER: ${{ github.workspace }}/examples/apiops/.generated
+  TEAMS_REGISTRY: ${{ github.workspace }}/examples/apiops/platform/teams.yaml
   DECK_CONFIG_NAMESPACE_PATH_PREFIX: /flight-data
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }} # To be used in the OIDC plugin template
 
@@ -78,6 +79,14 @@ jobs:
           major_version=$(echo $api_version | cut -d '.' -f 1)
           echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
 
+          # Get the namespace from the namespaces teams and also verify that the API is in the registry
+          namespace=$(yq e ".teams[] | select(.apis[] == \"$api_name\") | .namespace" $TEAMS_REGISTRY)
+          if [ -z "$namespace" ]; then
+            echo "API $api_name is not registered in the namespaces registry"
+            exit 1
+          fi
+          echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=$namespace" >> $GITHUB_ENV
+
       - name: Lint OpenAPI Spec
         shell: bash
         run: |
@@ -86,22 +95,22 @@ jobs:
       - name: Convert OpenAPI Specification to Kong Gateway configuration
         run: cat $API_SPEC | deck file openapi2kong > $BUILD_FOLDER/kong.yaml
 
-      - name: Add plugins to Kong Gateway configuration
+      - name: Add plugins
         run: |
           cat kong.yaml | deck file add-plugins $API_PLUGINS_FOLDER/*.yaml -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Apply patches to Kong Gateway configuration
+      - name: Apply patches
         run: |
           cat kong.yaml | deck file patch \
             $API_PATCHES_FOLDER/*.yaml -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Add namespace to Kong Gateway configuration
+      - name: Add namespace
         run: cat kong.yaml | deck file namespace --path-prefix=$DECK_CONFIG_NAMESPACE_PATH_PREFIX -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Apply Platform level plugins
+      - name: Add Platform level plugins
         run: |
           cat kong.yaml | deck file add-plugins \
             $PLATFORM_FOLDER/kong/plugins/*.yaml -o kong.yaml
@@ -119,15 +128,15 @@ jobs:
           cat kong.yaml | deck file add-tags $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Lint Kong Gateway configuration
+      - name: Lint Config
         run: deck file lint -s kong.yaml ${{ env.PLATFORM_FOLDER }}/kong.ruleset.yaml;
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Validate Generated Kong Gateway configuration
+      - name: Validate Config
         run: deck file validate kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
       
-      - name: Get a full backup of the Control Plane Configuration
+      - name: Get Control Plane Backup
         run: |
           deck gateway dump \
             --yes \
@@ -138,7 +147,7 @@ jobs:
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Diff Kong Gateway configuration
+      - name: Diff Config
         run: |
           deck gateway diff kong.yaml  \
             --select-tag $DECK_API_NAME \
@@ -149,7 +158,7 @@ jobs:
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > kong_diff.txt
         working-directory: ${{ env.BUILD_FOLDER }}
     
-      - name: Sync Kong Gateway configuration
+      - name: Sync Config
         id: sync
         run: |
           deck gateway sync kong.yaml  \
@@ -173,7 +182,7 @@ jobs:
           args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
         continue-on-error: true
 
-      - name: Rollback configuration
+      - name: Rollback Config
         if: steps.tests.outcome == 'failure' || steps.sync.outcome == 'failure'
         run: |
           echo "Tests failed. Rolling back configuration..."
@@ -186,7 +195,7 @@ jobs:
             --konnect-control-plane-name="${{ inputs.control_plane_name }}"
         working-directory: ${{ env.BUILD_FOLDER }}
 
-      - name: Get a new backup of the current Kong Gateway configuration
+      - name: Get a fresh backup
         if: steps.tests.outcome == 'success' || steps.sync.outcome == 'skipped'
         run: |
           deck gateway dump \
