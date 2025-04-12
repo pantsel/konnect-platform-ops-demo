@@ -46,32 +46,35 @@ jobs:
 
   # Run contract testing with SchemaThesis.
   # The tests are based on the OpenAPI specifications of the services.
-  # contract-test:
-  #   name: Contract testing
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-go@v5
-  #       with:
-  #         go-version: 1.24
-  #     # Start the API implementation services and execute contract testing
-  #     # If you have a schemathesis token, you can uncomment the token line and use it
-  #     - name: Start service
-  #       run: |
-  #         make build
-  #         ./flights "8081" > /tmp/api.log 2>&1 &
-  #       working-directory: ${{ env.API_FOLDER }}
-
-  #     - name: Contract testing flights
-  #       uses: schemathesis/action@v1
-  #       with:
-  #         schema: ${{ env.API_SPEC }}
-  #         base-url: http://localhost:8081
-  #         args: '--experimental openapi-3.1'
-  #         #token: ${{ secrets.SCHEMATHESIS_TOKEN }}
-  
-  publish-api:
+  contract-test:
+    name: Contract testing
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Start service
+        run: |
+          go build -o server .
+          nohup ./server "8081" > /tmp/api.log 2>&1 &
+          echo $! > ./server.pid
+          sleep 2
+          ps aux | grep server
+        working-directory: ${{ env.API_FOLDER }}
+
+      - name: Contract testing flights
+        uses: schemathesis/action@v1
+        with:
+          schema: ${{ env.API_SPEC }}
+          base-url: http://localhost:8081
+          args: '--experimental openapi-3.1 --exclude-checks=ignored_auth'
+  
+  build:
+    runs-on: ubuntu-latest
+    needs: contract-test
+    name: Build Config
 
     steps:
       - name: Checkout repository
@@ -141,7 +144,7 @@ jobs:
         run: |
           deck file lint -s $API_SPEC $PLATFORM_FOLDER/openapi.ruleset.yaml -o ${BUILD_FOLDER}/openapi_lint_report.txt
 
-      - name: Convert OpenAPI Specification to Kong Gateway configuration
+      - name: Convert OAS to Kong
         run: cat $API_SPEC | deck file openapi2kong > $BUILD_FOLDER/kong.yaml
 
       - name: Add plugins
@@ -177,23 +180,18 @@ jobs:
           cat kong.yaml | deck file add-tags $DECK_TEAM_NAME $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
+      - name: Render Config
+        run: |
+          deck file render --populate-env-vars kong.yaml \
+            -o kong.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
       - name: Lint Config
         run: deck file lint -s kong.yaml ${{ env.PLATFORM_FOLDER }}/kong.ruleset.yaml;
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Validate Config
         run: deck file validate kong.yaml
-        working-directory: ${{ env.BUILD_FOLDER }}
-      
-      - name: Get Control Plane Backup
-        run: |
-          deck gateway dump \
-            --yes \
-            --with-id \
-            --select-tag generated_by:deck \
-            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
-            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Diff Config
@@ -206,62 +204,130 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ inputs.control_plane_name }}" > kong_diff.txt
         working-directory: ${{ env.BUILD_FOLDER }}
-    
-      - name: Sync Config
-        id: sync
-        run: |
-          deck gateway sync kong.yaml  \
-            --select-tag $DECK_API_NAME \
-            --select-tag $DECK_API_MAJOR_VERSION \
-            --select-tag generated_by:deck \
-            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
-            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}"
-        working-directory: ${{ env.BUILD_FOLDER }}
 
-        # https://github.com/schemathesis/schemathesis
-      - name: Run Contract Tests
-        uses: schemathesis/action@v1
-        if: inputs.environment != 'prd' && steps.sync.outcome == 'success'
-        id: tests
-        with:
-          schema: ${{ env.API_SPEC}}
-          base-url: ${{ inputs.gateway_url }}${{ env.DECK_CONFIG_NAMESPACE_PATH_PREFIX }}
-          checks: all
-          args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
-        continue-on-error: true
-
-      - name: Rollback Config
-        if: steps.tests.outcome == 'failure' || steps.sync.outcome == 'failure'
-        run: |
-          echo "Tests failed. Rolling back configuration..."
-          deck gateway sync kong_backup.yaml  \
-            --select-tag $DECK_API_NAME \
-            --select-tag $DECK_API_MAJOR_VERSION \
-            --select-tag generated_by:deck \
-            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
-            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}"
-        working-directory: ${{ env.BUILD_FOLDER }}
-
-      - name: Get a fresh backup
-        if: steps.tests.outcome == 'success' || steps.sync.outcome == 'skipped'
-        run: |
-          deck gateway dump \
-            --yes \
-            --with-id \
-            --select-tag generated_by:deck \
-            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
-            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
-        working-directory: ${{ env.BUILD_FOLDER }}
-
-      - name: Archive artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: config
           path: |
-            ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+            ${{ env.BUILD_FOLDER }}/kong.yaml
             ${{ env.BUILD_FOLDER }}/kong_diff.txt
             ${{ env.BUILD_FOLDER }}/openapi_lint_report.txt
-            ${{ env.BUILD_FOLDER }}/kong.yaml
+
+  deploy:
+      name: Deploy Config
+      runs-on: ubuntu-latest
+      needs: build
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - uses: kong/setup-deck@v1
+
+        - name: Load environment configuration
+          uses: ./.github/actions/load-config
+          with:
+            environment: ${{ inputs.environment }}
+
+        - name: Import system account Token from Vault
+          id: import-token
+          uses: hashicorp/vault-action@v2
+          with:
+            url: ${{ env.VAULT_ADDR }}
+            token: ${{ secrets.VAULT_TOKEN }}
+            secrets: |
+              secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+        - name: Download Artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: config
+            path: ${{ env.BUILD_FOLDER }}
+
+        - name: Setup decK variables
+          run: |
+
+            api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
+
+            api_version=$(yq eval '.info.version' $API_SPEC)
+            echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
+
+            major_version=$(echo $api_version | cut -d '.' -f 1)
+            echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
+
+            # Get the team name from the teams registry
+            team_name=$(yq e ".teams | to_entries[] | select(.value.apis[] == \"$api_name\") | .key" $TEAMS_REGISTRY)
+            if [ -z "$team_name" ]; then
+              echo "API $api_name is not registered in the teams registry"
+              exit 1
+            fi
+            echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
+
+        - name: Get Control Plane Backup
+          run: |
+            deck gateway dump \
+              --yes \
+              --with-id \
+              --select-tag generated_by:deck \
+              --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+              --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+              --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
+          working-directory: ${{ env.BUILD_FOLDER }}
+    
+        - name: Sync Config
+          id: sync
+          run: |
+            deck gateway sync kong.yaml  \
+              --select-tag $DECK_API_NAME \
+              --select-tag $DECK_API_MAJOR_VERSION \
+              --select-tag generated_by:deck \
+              --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+              --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+              --konnect-control-plane-name="${{ inputs.control_plane_name }}"
+          working-directory: ${{ env.BUILD_FOLDER }}
+
+        # https://github.com/schemathesis/schemathesis
+        - name: Run Contract Tests Against the Gateway
+          uses: schemathesis/action@v1
+          if: inputs.environment != 'prd' && steps.sync.outcome == 'success'
+          id: tests
+          with:
+            schema: ${{ env.API_SPEC}}
+            base-url: ${{ inputs.gateway_url }}${{ env.DECK_CONFIG_NAMESPACE_PATH_PREFIX }}
+            checks: all
+            args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
+          continue-on-error: true
+
+        - name: Rollback Config
+          if: steps.tests.outcome == 'failure' || steps.sync.outcome == 'failure'
+          run: |
+            echo "Tests failed. Rolling back configuration..."
+            deck gateway sync kong_backup.yaml  \
+              --select-tag $DECK_API_NAME \
+              --select-tag $DECK_API_MAJOR_VERSION \
+              --select-tag generated_by:deck \
+              --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+              --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+              --konnect-control-plane-name="${{ inputs.control_plane_name }}"
+          working-directory: ${{ env.BUILD_FOLDER }}
+
+        - name: Get a fresh backup
+          if: steps.tests.outcome == 'success' || steps.sync.outcome == 'skipped'
+          run: |
+            deck gateway dump \
+              --yes \
+              --with-id \
+              --select-tag generated_by:deck \
+              --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+              --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+              --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
+          working-directory: ${{ env.BUILD_FOLDER }}
+
+        - name: Archive artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: artifacts
+            path: |
+              ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+              ${{ env.BUILD_FOLDER }}/kong.yaml
