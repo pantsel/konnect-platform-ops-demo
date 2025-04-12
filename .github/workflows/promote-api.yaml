@@ -49,6 +49,7 @@ jobs:
   contract-test:
     name: Contract testing
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v5
@@ -75,6 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: contract-test
     name: Build Config
+    environment: ${{ inputs.environment }}
     outputs:
       api_name: ${{ steps.deck-vars.outputs.api_name }}
       api_version: ${{ steps.deck-vars.outputs.api_version }}
@@ -231,6 +233,7 @@ jobs:
       name: Deploy Config
       runs-on: ubuntu-latest
       needs: build
+      environment: ${{ inputs.environment }}
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4
