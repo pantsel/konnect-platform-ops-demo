@@ -5,3 +5,9 @@ teams:
     apis:
       - flights-service
       - routes-service
+sales:
+  bookings-service:
+    namespace: /bookings
+    apis:
+      - bookings-service
+      - customer-information-service
