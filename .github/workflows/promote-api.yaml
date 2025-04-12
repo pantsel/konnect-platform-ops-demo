@@ -79,13 +79,34 @@ jobs:
           major_version=$(echo $api_version | cut -d '.' -f 1)
           echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
 
-          # Get the namespace from the namespaces teams and also verify that the API is in the registry
+          # Get the team name from the teams registry
+          team_name=$(yq e ".teams | to_entries[] | select(.value.apis[] == \"$api_name\") | .key" $TEAMS_REGISTRY)
+          if [ -z "$team_name" ]; then
+            echo "API $api_name is not registered in the teams registry"
+            exit 1
+          fi
+          echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
+
+          # Get the namespace from the teams registry and also verify that the API is in the registry
           namespace=$(yq e ".teams[] | select(.apis[] == \"$api_name\") | .namespace" $TEAMS_REGISTRY)
           if [ -z "$namespace" ]; then
             echo "API $api_name is not registered in the namespaces registry"
             exit 1
           fi
           echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=$namespace" >> $GITHUB_ENV
+
+      # This step is only pertinent if you are using OAS Validation plugin
+      - name: Read OAS into an environment variable
+        id: oas-to-env
+        run: |
+          # Read the YAML file and convert to JSON string to be used with the OAS Validation plugin down the line.
+          # The plugin expects the OAS as a JSON string in an environment variable.
+          # https://docs.konghq.com/hub/kong-inc/oas-validation/configuration/#config-api_spec
+          
+          oas_json=$(yq eval -o=json ${{ env.API_SPEC }} | jq -c .)
+
+          # Set as env variable
+          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
 
       - name: Lint OpenAPI Spec
         shell: bash
@@ -125,7 +146,7 @@ jobs:
       - name: Add Tags
         shell: bash
         run: |
-          cat kong.yaml | deck file add-tags $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong.yaml
+          cat kong.yaml | deck file add-tags $DECK_TEAM_NAME $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong.yaml
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Lint Config

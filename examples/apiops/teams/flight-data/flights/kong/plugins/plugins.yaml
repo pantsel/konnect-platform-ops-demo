@@ -1,0 +1,28 @@
+---
+_format_version: '3.0'
+add-plugins:
+- selectors:
+  - "$..services[0]"
+  overwrite: false
+  plugins:
+    - name: request-transformer-advanced
+      instance_name: ${{ env "DECK_API_NAME" }}-${{ env "DECK_API_MAJOR_VERSION" }}-rta
+      enabled: true
+      config:
+        add:
+          headers:
+            - x-api-name:{{ env "DECK_API_NAME" }}
+- selectors:
+  - "$..services[0]"
+  overwrite: false
+  plugins:
+    - name: oas-validation
+      instance_name: ${{ env "DECK_API_NAME" }}-${{ env "DECK_API_MAJOR_VERSION" }}-oas-validation
+      config:
+        api_spec: |
+          ${{ env "DECK_CONFIG_API_SPEC"}}
+        verbose_response: true
+        validate_response_body: false
+        include_base_path: true
+        custom_base_path: ${{ env "DECK_CONFIG_NAMESPACE_PATH_PREFIX" }}
+      enabled: true
