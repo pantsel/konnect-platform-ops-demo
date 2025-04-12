@@ -109,9 +109,7 @@ jobs:
         run: |
 
           api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-
           api_version=$(yq eval '.info.version' $API_SPEC)
-
           major_version=$(echo $api_version | cut -d '.' -f 1)
 
           # Get the team name from the teams registry
