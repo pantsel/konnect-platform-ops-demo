@@ -75,6 +75,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: contract-test
     name: Build Config
+    outputs:
+      api_name: ${{ steps.deck-vars.outputs.api_name }}
+      api_version: ${{ steps.deck-vars.outputs.api_version }}
+      api_major_version: ${{ steps.deck-vars.outputs.api_major_version }}
+      api_namespace: ${{ steps.deck-vars.outputs.api_namespace }}
+      team_name: ${{ steps.deck-vars.outputs.team_name }}
 
     steps:
       - name: Checkout repository
@@ -99,16 +105,14 @@ jobs:
             secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Setup decK variables
+        id: deck-vars
         run: |
 
           api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-          echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
 
           api_version=$(yq eval '.info.version' $API_SPEC)
-          echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
 
           major_version=$(echo $api_version | cut -d '.' -f 1)
-          echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
 
           # Get the team name from the teams registry
           team_name=$(yq e ".teams | to_entries[] | select(.value.apis[] == \"$api_name\") | .key" $TEAMS_REGISTRY)
@@ -116,7 +120,6 @@ jobs:
             echo "API $api_name is not registered in the teams registry"
             exit 1
           fi
-          echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
 
           # Get the namespace from the teams registry and also verify that the API is in the registry
           namespace=$(yq e ".teams[] | select(.apis[] == \"$api_name\") | .namespace" $TEAMS_REGISTRY)
@@ -124,7 +127,19 @@ jobs:
             echo "API $api_name is not registered in the namespaces registry"
             exit 1
           fi
+
+          # Set deck environment variables to be used in the deck command
+          echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
+          echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
+          echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
+          echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
           echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=$namespace" >> $GITHUB_ENV
+
+          # Set the job outputs to be used in the deploy job
+          echo "api_name=$api_name" >> $GITHUB_OUTPUT
+          echo "api_major_version=v$major_version" >> $GITHUB_OUTPUT
+          echo "api_namespace=$namespace" >> $GITHUB_OUTPUT
+          echo "team_name=$team_name" >> $GITHUB_OUTPUT
 
       # This step is only pertinent if you are using OAS Validation plugin
       - name: Read OAS into an environment variable
@@ -244,26 +259,6 @@ jobs:
             name: config
             path: ${{ env.BUILD_FOLDER }}
 
-        - name: Setup decK variables
-          run: |
-
-            api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-            echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
-
-            api_version=$(yq eval '.info.version' $API_SPEC)
-            echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
-
-            major_version=$(echo $api_version | cut -d '.' -f 1)
-            echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
-
-            # Get the team name from the teams registry
-            team_name=$(yq e ".teams | to_entries[] | select(.value.apis[] == \"$api_name\") | .key" $TEAMS_REGISTRY)
-            if [ -z "$team_name" ]; then
-              echo "API $api_name is not registered in the teams registry"
-              exit 1
-            fi
-            echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
-
         - name: Get Control Plane Backup
           run: |
             deck gateway dump \
@@ -279,8 +274,8 @@ jobs:
           id: sync
           run: |
             deck gateway sync kong.yaml  \
-              --select-tag $DECK_API_NAME \
-              --select-tag $DECK_API_MAJOR_VERSION \
+              --select-tag ${{ needs.build.outputs.api_name }} \
+              --select-tag ${{ needs.build.outputs.api_major_version }} \
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
@@ -294,7 +289,7 @@ jobs:
           id: tests
           with:
             schema: ${{ env.API_SPEC}}
-            base-url: ${{ inputs.gateway_url }}${{ env.DECK_CONFIG_NAMESPACE_PATH_PREFIX }}
+            base-url: ${{ inputs.gateway_url }}${{ needs.build.outputs.api_namespace }}
             checks: all
             args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
           continue-on-error: true
@@ -304,8 +299,8 @@ jobs:
           run: |
             echo "Tests failed. Rolling back configuration..."
             deck gateway sync kong_backup.yaml  \
-              --select-tag $DECK_API_NAME \
-              --select-tag $DECK_API_MAJOR_VERSION \
+              --select-tag ${{ needs.build.outputs.api_name }} \
+              --select-tag ${{ needs.build.outputs.api_major_version }} \
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
