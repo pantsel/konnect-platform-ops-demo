@@ -1,5 +1,3 @@
-include ../../base.mk
-
 check-dependencies:
 	@$(call check-dependency,go)
 

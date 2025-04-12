@@ -32,6 +32,7 @@ on:
 
 env:
   ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+  API_FOLDER: ${{ github.workspace }}/${{ inputs.api_folder }}
   API_SPEC: ${{ github.workspace }}/${{ inputs.api_folder }}/openapi.yaml
   API_PLUGINS_FOLDER: ${{ github.workspace }}/${{ inputs.api_folder }}/kong/plugins
   API_PATCHES_FOLDER: ${{ github.workspace }}/${{ inputs.api_folder }}/kong/patches
@@ -42,6 +43,33 @@ env:
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }} # To be used in the OIDC plugin template
 
 jobs:
+
+  # Run contract testing with SchemaThesis.
+  # The tests are based on the OpenAPI specifications of the services.
+  # contract-test:
+  #   name: Contract testing
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version: 1.24
+  #     # Start the API implementation services and execute contract testing
+  #     # If you have a schemathesis token, you can uncomment the token line and use it
+  #     - name: Start service
+  #       run: |
+  #         make build
+  #         ./flights "8081" > /tmp/api.log 2>&1 &
+  #       working-directory: ${{ env.API_FOLDER }}
+
+  #     - name: Contract testing flights
+  #       uses: schemathesis/action@v1
+  #       with:
+  #         schema: ${{ env.API_SPEC }}
+  #         base-url: http://localhost:8081
+  #         args: '--experimental openapi-3.1'
+  #         #token: ${{ secrets.SCHEMATHESIS_TOKEN }}
+  
   publish-api:
     runs-on: ubuntu-latest
 
