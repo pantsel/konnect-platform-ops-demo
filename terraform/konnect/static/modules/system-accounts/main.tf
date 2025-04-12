@@ -15,15 +15,15 @@ locals {
 # =================== GLOBAL CP ADMIN SYSTEM ACCOUNT =========
 # ============================================================
 
-resource "konnect_system_account" "platform_cp_admin" {
-  name            = "sa-platform-cp-admin"
-  description     = "Control Plane Admin system account"
+resource "konnect_system_account" "global_cp_admin" {
+  name            = "sa-global-cp-admin"
+  description     = "Global Control Plane Admin system account"
   konnect_managed = false
 }
 
-# Platform CP Admin can manage all control planes
-resource "konnect_system_account_role" "platform_cp_admin_role" {
-  account_id       = konnect_system_account.platform_cp_admin.id
+# Global CP Admin can manage all control planes
+resource "konnect_system_account_role" "global_cp_admin_role" {
+  account_id       = konnect_system_account.global_cp_admin.id
   entity_id        = "*"
   entity_region    = var.konnect_region
   entity_type_name = "Control Planes"
@@ -31,24 +31,24 @@ resource "konnect_system_account_role" "platform_cp_admin_role" {
 }
 
 # Create an access token for the system account
-resource "konnect_system_account_access_token" "platform_cp_admin_token" {
+resource "konnect_system_account_access_token" "global_cp_admin_token" {
 
-  name       = "sa-platform-cp-admin"
+  name       = "sa-global-cp-admin"
   expires_at = local.expiration_date
-  account_id = konnect_system_account.platform_cp_admin.id
+  account_id = konnect_system_account.global_cp_admin.id
 
 }
 
 # Store the access token in Vault
-resource "vault_kv_secret_v2" "platform_cp_admin_token_secret" {
+resource "vault_kv_secret_v2" "global_cp_admin_token_secret" {
   mount               = local.kv_mount
-  name                = "system-accounts/sa-platform-cp-admin"
+  name                = "system-accounts/sa-global-cp-admin"
   cas                 = 1
   delete_all_versions = true
 
   data_json = jsonencode(
     {
-      token = konnect_system_account_access_token.platform_cp_admin_token.token,
+      token = konnect_system_account_access_token.global_cp_admin_token.token,
     }
   )
 
