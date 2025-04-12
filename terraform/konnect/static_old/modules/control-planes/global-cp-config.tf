@@ -13,7 +13,7 @@ locals {
 
 resource "konnect_gateway_consumer" "global_cp_consumer" {
   for_each         = { for consumer in local.consumers : consumer.username => consumer }
-  control_plane_id = konnect_gateway_control_plane.platform_cp.id
+  control_plane_id = konnect_gateway_control_plane.global_cp.id
   tags = local.tags
   username = each.value.username
 }
@@ -27,7 +27,7 @@ resource "konnect_gateway_plugin_request_termination" "global_cp_plugin_request_
   consumer = {
     id = konnect_gateway_consumer.global_cp_consumer["anonymous"].id
   }
-  control_plane_id = konnect_gateway_control_plane.platform_cp.id
+  control_plane_id = konnect_gateway_control_plane.global_cp.id
   enabled          = true
   tags = local.tags
 }

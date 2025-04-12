@@ -34,7 +34,7 @@ module "system_accounts" {
   control_planes = module.control_planes.control_planes
 }
 
-# module "developer_portals" {
-#   source      = "./modules/developer-portals"
-#   environment = var.environment
-# }
+module "developer_portals" {
+  source      = "./modules/developer-portals"
+  environment = var.environment
+}

@@ -1,8 +1,8 @@
 // Outputs for the control planes module
 output "control_planes" {
   value = {
-    demo_cp = konnect_gateway_control_plane.demo_cp
-    global_cp = konnect_gateway_control_plane.global_cp
-    demo_cp_group = konnect_gateway_control_plane.demo_cp_group
+    flight_data_cp = konnect_gateway_control_plane.flight_data_cp
+    flight_data_cp_group = konnect_gateway_control_plane.flight_data_cp_group
+    platform_cp = konnect_gateway_control_plane.platform_cp
   }
 }

@@ -6,22 +6,23 @@ terraform {
   }
 }
 
-# Demo Team
-resource "konnect_team" "demo_cp_team_readonly" {
-  name        = "Demo CP Team Readonly"
-  description = "Allow read-only access to the demo control plane"
+# Flight Data Team
+resource "konnect_team" "flight_data_team" {
+  name        = "Flight Data Team"
+  description = "Flight Data Team"
 
   labels = {
     generated_by = "terraform"
     environment  = var.environment
+    team         = "flight-data"
   }
 }
 
-# Make the team an admin of the demo control plane
-resource "konnect_team_role" "demo_cp_viewer_role" {
-  entity_id        = var.control_planes.demo_cp.id
+# Make the team a Viewer of the flight data control plane
+resource "konnect_team_role" "flight_data_cp_role" {
+  entity_id        = var.control_planes.flight_data_cp.id
   entity_region    = var.konnect_region
   entity_type_name = "Control Planes"
   role_name        = "Viewer"
-  team_id          = konnect_team.demo_cp_team_readonly.id
+  team_id          = konnect_team.flight_data_team.id
 }
