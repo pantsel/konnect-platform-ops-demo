@@ -8,8 +8,8 @@ terraform {
 
 # Demo portal
 resource "konnect_portal" "demo_portal" {
-  name                      = "Demo Portal - ${var.environment}"
-  description               = "Demo Portal for the ${var.environment} environment"
+  name                      = "Demo Portal"
+  description               = "Demo Portal"
   auto_approve_applications = false
   auto_approve_developers   = false
   # custom_domain             = "demo.example.com"

@@ -1,4 +1,4 @@
-name: Provision Konnect Static
+name: Provision Konnect Simple
 
 on:
   workflow_dispatch:
@@ -79,7 +79,7 @@ jobs:
           terraform init -upgrade \
             -backend-config=config.s3.tfbackend \
             -backend-config="bucket=konnect.$PLANID" \
-            -backend-config="key=konnect.tfstate" \
+            -backend-config="key=${{ inputs.environment }}.tfstate" \
             -backend-config="region=main" \
             -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
             -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}" 

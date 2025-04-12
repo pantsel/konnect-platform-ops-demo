@@ -13,7 +13,6 @@ resource "konnect_team" "flight_data_team" {
 
   labels = {
     generated_by = "terraform"
-    environment  = var.environment
     team         = "flight-data"
   }
 }

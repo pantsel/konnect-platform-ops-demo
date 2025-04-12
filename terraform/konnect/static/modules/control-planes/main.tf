@@ -12,8 +12,8 @@ locals {
 
 # Control Planes
 resource "konnect_gateway_control_plane" "flight_data_cp" {
-  name         = "flight-data-${var.environment}"
-  description  = "${upper(var.environment)} Control Plane for flight data apis"
+  name         = "flight-data"
+  description  = "Control Plane for flight data apis"
   cluster_type = "CLUSTER_TYPE_HYBRID"
   # Can be "pinned_client_certs" or "pki_client_certs". For "pki_client_certs" we need to provide the CA certificate.
   # https://docs.konghq.com/konnect/gateway-manager/data-plane-nodes/secure-communications/
@@ -22,13 +22,12 @@ resource "konnect_gateway_control_plane" "flight_data_cp" {
   labels = {
     generated_by = "terraform"
     team         = "flight-data"
-    environment  = var.environment
   }
 }
 
 resource "konnect_gateway_control_plane" "platform_cp" {
-  name         = "platform-cp-${var.environment}"
-  description  = "${upper(var.environment)} Control Plane to manage global plugins and policies"
+  name         = "platform-cp"
+  description  = "Control Plane to manage global plugins and policies"
   cluster_type = "CLUSTER_TYPE_HYBRID"
   # Can be "pinned_client_certs" or "pki_client_certs". For "pki_client_certs" we need to provide the CA certificate.
   # https://docs.konghq.com/konnect/gateway-manager/data-plane-nodes/secure-communications/
@@ -37,13 +36,12 @@ resource "konnect_gateway_control_plane" "platform_cp" {
   labels = {
     generated_by = "terraform"
     team         = "platform"
-    environment  = var.environment
   }
 }
 
 resource "konnect_gateway_control_plane" "flight_data_cp_group" {
-  name         = "flight-data-cp-group-${var.environment}"
-  description  = "${upper(var.environment)} Flight Data Control Plane Group"
+  name         = "flight-data-cp-group"
+  description  = "Flight Data Control Plane Group"
   cluster_type = "CLUSTER_TYPE_CONTROL_PLANE_GROUP"
   # Can be "pinned_client_certs" or "pki_client_certs". For "pki_client_certs" we need to provide the CA certificate.
   # https://docs.konghq.com/konnect/gateway-manager/data-plane-nodes/secure-communications/
@@ -51,7 +49,6 @@ resource "konnect_gateway_control_plane" "flight_data_cp_group" {
 
   labels = {
     generated_by = "terraform"
-    environment  = var.environment
   }
 }
 
