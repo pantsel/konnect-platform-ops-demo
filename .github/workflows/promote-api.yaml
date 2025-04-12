@@ -39,7 +39,6 @@ env:
   PLATFORM_FOLDER: ${{ github.workspace }}/examples/apiops/platform
   BUILD_FOLDER: ${{ github.workspace }}/examples/apiops/.generated
   TEAMS_REGISTRY: ${{ github.workspace }}/examples/apiops/platform/teams.yaml
-  DECK_CONFIG_NAMESPACE_PATH_PREFIX: /flight-data
   DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }} # To be used in the OIDC plugin template
 
 jobs:
@@ -114,17 +113,10 @@ jobs:
           api_version=$(yq eval '.info.version' $API_SPEC)
           major_version=$(echo $api_version | cut -d '.' -f 1)
 
-          # Get the team name from the teams registry
+          # Get the team name from the teams registry.
           team_name=$(yq e ".teams | to_entries[] | select(.value.apis[] == \"$api_name\") | .key" $TEAMS_REGISTRY)
           if [ -z "$team_name" ]; then
             echo "API $api_name is not registered in the teams registry"
-            exit 1
-          fi
-
-          # Get the namespace from the teams registry and also verify that the API is in the registry
-          namespace=$(yq e ".teams[] | select(.apis[] == \"$api_name\") | .namespace" $TEAMS_REGISTRY)
-          if [ -z "$namespace" ]; then
-            echo "API $api_name is not registered in the namespaces registry"
             exit 1
           fi
 
@@ -133,12 +125,12 @@ jobs:
           echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
           echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
           echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
-          echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=$namespace" >> $GITHUB_ENV
+          echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=/$api_name" >> $GITHUB_ENV
 
           # Set the job outputs to be used in the deploy job
           echo "api_name=$api_name" >> $GITHUB_OUTPUT
           echo "api_major_version=v$major_version" >> $GITHUB_OUTPUT
-          echo "api_namespace=$namespace" >> $GITHUB_OUTPUT
+          echo "api_namespace=/$api_name" >> $GITHUB_OUTPUT
           echo "team_name=$team_name" >> $GITHUB_OUTPUT
 
       # This step is only pertinent if you are using OAS Validation plugin

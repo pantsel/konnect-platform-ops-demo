@@ -1,13 +1,11 @@
 # teams.yaml
 teams:
   flight-data:
-    namespace: /flight-data
     apis:
       - flights-service
       - routes-service
 sales:
   bookings-service:
-    namespace: /bookings
     apis:
       - bookings-service
       - customer-information-service
