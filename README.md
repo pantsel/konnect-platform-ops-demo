@@ -31,7 +31,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-1)
   - [Deploy the Flight Data APIs](#deploy-the-flight-data-apis)
-  - [Configure Flight Data APIs on Kong Gateway](#configure-flight-data-apis-on-kong-gateway)
+  - [Expose Flight Data APIs via Kong Gateway](#expose-flight-data-apis-via-kong-gateway)
 <!-- /TOC -->
 
 ## Useful links
@@ -321,34 +321,31 @@ This is the process of configuring Kong to proxy traffic to upstream APIs based 
 ### Flow
 
 ```mermaid
-graph LR;
-  A[OAS]
-  B[Patch OAS]
-  C[Lint OAS]
-  D["Deck Ops
-    - openapi2kong
-    - add plugins
-    - file merge
-    - namespace
-    - patch
-    ...
-  "]
-  E[Validate future state
-  deck file validate
-  ]
-  F["Backup current state
-  deck gateway dump"]
-  G[Diff current vs future state
-  deck gateway diff
-  ]
-  H[
-  Archive artifacts
-  ]
-  I[Sync future state
-  deck gateway sync
-  ]
+graph TD
+  A[workflow_dispatch] --> B[Contract Test]
+  B --> C[Build Config]
+  C --> D[Deploy Config]
 
-  A --> B --> C --> D --> E --> F --> G --> H --> I
+  subgraph Contract Test
+    B1[Run SchemaThesis on OpenAPI]
+    B --> B1
+  end
+
+  subgraph Build Config
+    C1[Prepare Config from OAS]
+    C2[Apply Plugins & Patches]
+    C3[Render & Validate Config]
+    C4[Upload Artifacts]
+    C --> C1 --> C2 --> C3 --> C4
+  end
+
+  subgraph Deploy Config
+    D1[Download & Backup]
+    D2[Sync to Kong Konnect]
+    D3[Run Post-Deploy Tests]
+    D4[Rollback or Final Backup]
+    D --> D1 --> D2 --> D3 --> D4
+  end
 ```
 
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
@@ -358,14 +355,10 @@ After you have provisioned the Konnect resources and a local Kong DP is up and r
 Workflow: `.github/workflows/deploy-apis.yaml`
 
 ```bash
-## Without any observability stack
 $ act --input action=deploy -W .github/workflows/deploy-apis.yaml
-
-## If you have deployed an observability stack
-$ act --input action=deploy --input observability_stack=<datadog|grafana|dynatrace> -W .github/workflows/deploy-apis.yaml
 ```
 
-### Configure Flight Data APIs on Kong Gateway
+### Expose Flight Data APIs via Kong Gateway
 
 Workflow: `.github/workflows/promote-api.yaml`
 
