@@ -32,3 +32,9 @@ variable "vault_token" {
   type        = string
   default = "root"
 }
+
+variable "observability_stack" {
+  description = "The observability stack to use"
+  type        = string
+  default     = "grafana"
+}

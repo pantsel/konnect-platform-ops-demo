@@ -3,7 +3,7 @@ _format_version: '3.0'
 add-plugins:
 - selectors:
   - "$"
-  overwrite: false
+  overwrite: true
   plugins:
   - name: http-log
     config:

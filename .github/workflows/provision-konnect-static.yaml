@@ -20,6 +20,15 @@ on:
         options:
           - "provision"
           - "destroy"
+      observability_stack:
+        description: "Observability stack"
+        required: true
+        type: choice
+        default: "grafana"
+        options:
+          - "grafana"
+          - "datadog"
+          - "dynatrace"
 
 jobs:
   provision-konnect:
@@ -28,6 +37,7 @@ jobs:
     env:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       TERRAFORM_DIR: ${{ github.workspace }}/terraform/konnect/static
+      TF_VAR_observability_stack: ${{ inputs.observability_stack }}
       PLANID: static
 
     steps:

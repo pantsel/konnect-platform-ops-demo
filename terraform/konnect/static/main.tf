@@ -18,6 +18,9 @@ terraform {
 module "control_planes" {
   source      = "./modules/control-planes"
   environment = var.environment
+  observability_stack = var.observability_stack
+  vault_address = var.vault_address
+  vault_token   = var.vault_token
 }
 
 module "teams" {

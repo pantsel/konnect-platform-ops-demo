@@ -53,23 +53,23 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configure global observability plugins
-        if: ${{ inputs.action == 'deploy' }}
-        run: |
+      # - name: Configure global observability plugins
+      #   if: ${{ inputs.action == 'deploy' }}
+      #   run: |
 
-          # Add Global observability plugins to the Kong Gateway configuration depending on the observability stack
-          cat kong.yaml | deck file add-plugins plugins/${{ inputs.observability_stack }}/* -o kong.yaml
+      #     # Add Global observability plugins to the Kong Gateway configuration depending on the observability stack
+      #     cat kong.yaml | deck file add-plugins plugins/${{ inputs.observability_stack }}/* -o kong.yaml
           
-          # Apply patches to the Kong Gateway configuration depending on the observability stack
-          cat kong.yaml | deck file patch patches/${{ inputs.observability_stack }}/* -o kong.yaml
+      #     # Apply patches to the Kong Gateway configuration depending on the observability stack
+      #     cat kong.yaml | deck file patch patches/${{ inputs.observability_stack }}/* -o kong.yaml
           
-          # Apply the Kong Gateway configuration
-          deck gateway sync kong.yaml  \
-            --konnect-addr=${{ inputs.konnect_server_url }} \
-            --konnect-token=${{ secrets.KONNECT_PAT }} \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}"
+      #     # Apply the Kong Gateway configuration
+      #     deck gateway sync kong.yaml  \
+      #       --konnect-addr=${{ inputs.konnect_server_url }} \
+      #       --konnect-token=${{ secrets.KONNECT_PAT }} \
+      #       --konnect-control-plane-name="${{ inputs.control_plane_name }}"
 
-        working-directory: ${{ github.workspace }}/examples/observability/
+      #   working-directory: ${{ github.workspace }}/examples/observability/
 
       - name: kubectl use context
         run: |
