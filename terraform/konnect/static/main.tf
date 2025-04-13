@@ -21,6 +21,7 @@ module "control_planes" {
   observability_stack = var.observability_stack
   vault_address = var.vault_address
   vault_token   = var.vault_token
+  host_address  = var.host_address
 }
 
 module "teams" {

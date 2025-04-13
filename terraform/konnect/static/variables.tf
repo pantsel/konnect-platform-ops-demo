@@ -38,3 +38,9 @@ variable "observability_stack" {
   type        = string
   default     = "grafana"
 }
+
+variable "host_address" {
+  description = "The host address of the docker host. This is used to access the host from the container. It's a local demo specific variable. Not pertinent to real world usage."
+  type        = string
+  default     = "localhost"
+}

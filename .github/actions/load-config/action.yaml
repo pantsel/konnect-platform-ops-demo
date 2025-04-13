@@ -41,3 +41,9 @@ runs:
         echo "KONNECT_SERVER_URL=$KONNECT_SERVER_URL" >> $GITHUB_ENV
         echo "TF_VAR_konnect_server_url=$KONNECT_SERVER_URL" >> $GITHUB_ENV
         echo "TF_VAR_environment=${{ inputs.environment }}" >> $GITHUB_ENV
+        
+        # Get Host IP address
+        HOST_ADDRESS=$(hostname -I | awk '{print $1}')
+        echo "TF_VAR_host_address=$HOST_ADDRESS" >> $GITHUB_ENV
+
+

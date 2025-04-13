@@ -49,13 +49,13 @@ EOT
 
 resource "konnect_gateway_vault" "gatewayvault" {
   config = jsonencode({
-    protocol = "http"
-    host = "vault.orb.local"
-    mount = "kong"
+    protocol = regex("^([^:]+)://", var.vault_address)[0]
+    host = var.host_address
+    mount = "secret"
     kv = "v2"
     token = var.vault_token
     auth_method = "token"
-    port = 8300
+    port = tonumber(regex("^https?://[^:]+:(\\d+)", var.vault_address)[0])
   })
   name             = "hcv"
   prefix           = "hcv-vault"
