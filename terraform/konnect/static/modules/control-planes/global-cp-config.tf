@@ -56,6 +56,7 @@ resource "konnect_gateway_vault" "gatewayvault" {
     token = var.vault_token
     auth_method = "token"
     port = tonumber(regex("^https?://[^:]+:(\\d+)", var.vault_address)[0])
+    ttl = 60
   })
   name             = "hcv"
   prefix           = "hcv-vault"
