@@ -44,72 +44,76 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-
-      - name: Install MinIO Client
-        uses: ./.github/actions/setup-minio-client
-
-      - uses: eLco/setup-vault@v1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 'latest'
-
-      - name: Import CA Certificate
-        id: import-secrets
-        uses: hashicorp/vault-action@v2
-        with:
-          url: ${{ env.VAULT_ADDR }}
-          token: ${{ secrets.VAULT_TOKEN }}
-          secrets: |
-            pki/cert/ca certificate | CA_CRT ;
-
-      - name: Save CA Certificate to file
+      - name: Debug
         run: |
-          mkdir -p .tls
-          touch .tls/ca.crt
-          echo "${{ steps.import-secrets.outputs.CA_CRT }}" > .tls/ca.crt
-        working-directory: ${{ env.TERRAFORM_DIR }}
+          hostname -I
+
+      # - name: Load environment configuration
+      #   uses: ./.github/actions/load-config
+      #   with:
+      #     environment: ${{ inputs.environment }}
+
+      # - name: Install MinIO Client
+      #   uses: ./.github/actions/setup-minio-client
+
+      # - uses: eLco/setup-vault@v1
+
+      # - name: Setup Terraform
+      #   uses: hashicorp/setup-terraform@v3
+      #   with:
+      #     terraform_version: 'latest'
+
+      # - name: Import CA Certificate
+      #   id: import-secrets
+      #   uses: hashicorp/vault-action@v2
+      #   with:
+      #     url: ${{ env.VAULT_ADDR }}
+      #     token: ${{ secrets.VAULT_TOKEN }}
+      #     secrets: |
+      #       pki/cert/ca certificate | CA_CRT ;
+
+      # - name: Save CA Certificate to file
+      #   run: |
+      #     mkdir -p .tls
+      #     touch .tls/ca.crt
+      #     echo "${{ steps.import-secrets.outputs.CA_CRT }}" > .tls/ca.crt
+      #   working-directory: ${{ env.TERRAFORM_DIR }}
       
-      - name: Create S3 bucket if required
-        if: ${{ inputs.action == 'provision' }}
-        run: |
-          ./create-minio-bucket.sh konnect konnect.$PLANID
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-        working-directory: scripts
+      # - name: Create S3 bucket if required
+      #   if: ${{ inputs.action == 'provision' }}
+      #   run: |
+      #     ./create-minio-bucket.sh konnect konnect.$PLANID
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+      #   working-directory: scripts
 
-      - name: Terraform Init
-        run: |
-          terraform init -upgrade \
-            -backend-config=config.s3.tfbackend \
-            -backend-config="bucket=konnect.$PLANID" \
-            -backend-config="key=konnect.tfstate" \
-            -backend-config="region=main" \
-            -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
-            -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}" 
-        working-directory: ${{env.TERRAFORM_DIR}}
+      # - name: Terraform Init
+      #   run: |
+      #     terraform init -upgrade \
+      #       -backend-config=config.s3.tfbackend \
+      #       -backend-config="bucket=konnect.$PLANID" \
+      #       -backend-config="key=konnect.tfstate" \
+      #       -backend-config="region=main" \
+      #       -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
+      #       -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}" 
+      #   working-directory: ${{env.TERRAFORM_DIR}}
 
-      - name: Terraform Plan
-        if: ${{ inputs.action == 'provision' }}
-        run: |
-          terraform plan -out=tfplan
-        working-directory: ${{env.TERRAFORM_DIR}}
+      # - name: Terraform Plan
+      #   if: ${{ inputs.action == 'provision' }}
+      #   run: |
+      #     terraform plan -out=tfplan
+      #   working-directory: ${{env.TERRAFORM_DIR}}
 
-      - name: Terraform Apply
-        if: ${{ inputs.action == 'provision' }}
-        id: tfapply
-        run: |
-          terraform apply -auto-approve tfplan
-        working-directory: ${{env.TERRAFORM_DIR}}
+      # - name: Terraform Apply
+      #   if: ${{ inputs.action == 'provision' }}
+      #   id: tfapply
+      #   run: |
+      #     terraform apply -auto-approve tfplan
+      #   working-directory: ${{env.TERRAFORM_DIR}}
       
-      - name: Terraform destroy
-        if: ${{ inputs.action == 'destroy' }}
-        run: |
-          terraform destroy -auto-approve
-        working-directory: ${{env.TERRAFORM_DIR}}
+      # - name: Terraform destroy
+      #   if: ${{ inputs.action == 'destroy' }}
+      #   run: |
+      #     terraform destroy -auto-approve
+      #   working-directory: ${{env.TERRAFORM_DIR}}
