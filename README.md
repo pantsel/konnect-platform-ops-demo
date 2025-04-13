@@ -27,11 +27,13 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Dynatrace](#dynatrace)
 - [Provision Konnect resources](#provision-konnect-resources)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
-- [Deploy Data Planes](#deploy-data-planes)
+- [Deploy Data Plane](#deploy-data-plane)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
-  - [Flow](#flow-1)
   - [Deploy the Flight Data APIs](#deploy-the-flight-data-apis)
-  - [Expose Flight Data APIs via Kong Gateway](#expose-flight-data-apis-via-kong-gateway)
+  - [Expose single API via Kong Gateway](#expose-single-api-via-kong-gateway)
+    - [Flow](#flow-1)
+  - [Expose All Flight Data APIs via Kong Gateway](#expose-all-flight-data-apis-via-kong-gateway)
+    - [Flow](#flow-2)
 <!-- /TOC -->
 
 ## Useful links
@@ -292,9 +294,9 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 | environment         | The environment to provision                           | No       | `dev`       |
 | observability_stack | The observability stack to integrate                   | No       | `grafana`   |
 
-## Deploy Data Planes
+## Deploy Data Plane
 
-After provisioning, you can deploy the Kong DPs to your local K8s:
+After provisioning, you can deploy the Kong DP to your local K8s:
 
 ```bash
 $ act --input control_plane_name=<cp_name> \
@@ -316,11 +318,45 @@ $ act --input control_plane_name=<cp_name> \
 | proxy_cn           | Common name for the proxy certificate                        | No       | proxy.kong.edu.local      |
 | system_account     | System account to use for fetching control plane information | Yes      | -                         |
 
+
+***Note:*** Ensure your DP is accessible outside the cluster. Depending on your k8s cluster setup, you may need to use `kubectl port-forward` to expose the DP locally.
+
+***Make a request to the Gateway to ensure it is up and running***
+
+```bash
+$ curl http://<gateway_url>
+HTTP/1.1 404 Not Found
+Connection: keep-alive
+Content-Length: 103
+Content-Type: application/json; charset=utf-8
+Date: Sun, 13 Apr 2025 19:08:33 GMT
+Server: kong/3.10.0.0-enterprise-edition
+X-Kong-Request-Id: 78637e50d7510e60698e77625fdf7976
+X-Kong-Response-Latency: 0
+
+{
+    "message": "no Route matched with those values",
+    "request_id": "78637e50d7510e60698e77625fdf7976"
+}
+```
+
+
 ## Promoting API configuration (State file management)
 
 This is the process of configuring Kong to proxy traffic to upstream APIs based on a provided Open API Specification (OAS).
+After you have provisioned the Konnect resources and a local Kong DP is up and running:
 
-### Flow
+### Deploy the Flight Data APIs
+
+Workflow: `.github/workflows/deploy-apis.yaml`
+
+```bash
+$ act --input action=deploy -W .github/workflows/deploy-apis.yaml
+```
+
+### Expose single API via Kong Gateway
+
+#### Flow
 
 ```mermaid
 graph TD
@@ -350,18 +386,6 @@ graph TD
   end
 ```
 
-After you have provisioned the Konnect resources and a local Kong DP is up and running:
-
-### Deploy the Flight Data APIs
-
-Workflow: `.github/workflows/deploy-apis.yaml`
-
-```bash
-$ act --input action=deploy -W .github/workflows/deploy-apis.yaml
-```
-
-### Expose Flight Data APIs via Kong Gateway
-
 Workflow: `.github/workflows/promote-api.yaml`
 
 ```bash
@@ -373,12 +397,50 @@ $ act --input api_folder=examples/apiops/teams/flight-data/<flights|routes> \
 
 ***Input Parameters***
 
-| Name               | Description                                                        | Required | Default |
-| ------------------ | ------------------------------------------------------------------ | -------- | ------- |
-| api_folder         | The folder containing the API configuration files                  | Yes      | -       |
-| environment        | Environment to deploy to                                           | No       | dev     |
-| control_plane_name | Kong Konnect control plane name                                    | Yes      | -       |
-| system_account     | The CP admin system account to use for authentication with Konnect | Yes      | -       |
+| Name               | Description                                                        | Required | Default          |
+| ------------------ | ------------------------------------------------------------------ | -------- | ---------------- |
+| api_folder         | The folder containing the API configuration files                  | Yes      | -                |
+| environment        | Environment to deploy to                                           | No       | dev              |
+| control_plane_name | Kong Konnect control plane name                                    | Yes      | -                |
+| system_account     | The CP admin system account to use for authentication with Konnect | Yes      | -                |
+| gateway_url        | The URL of the Kong Gateway. Used for the tests                    | No       | http://localhost |
+
+### Expose All Flight Data APIs via Kong Gateway
+
+#### Flow
+
+```mermaid
+flowchart TD
+    A[workflow_dispatch] --> B[<b>get-apis</b><br>Read APIs & repo from teams.yaml]
+
+    B --> C[<b>contract-test matrix</b><br>For each API:<br>Start API service & run SchemaThesis]
+    D[<b>build matrix</b><br>For each API:<br>Convert OAS to Kong config<br>plugins, patches, lint, validate]
+
+    C --> D
+
+    D --> E[<b>combine</b><br>Merge configs, add governance plugins & patches<br> lint/validate]
+
+    E --> F[<b>deploy</b><br>Backup config, deploy new config,<br>rollback if failure]
+
+    F --> I[<b>post-deploy matrix</b><br>Run contract tests against deployed APIs<br>rollback if tests fail]
+
+    I --> H[End]
+```
+
+Workflow: `.github/workflows/promote-apis.yaml`
+
+```bash
+$ act --input team=flight-data \
+    -W .github/workflows/promote-apis.yaml
+```
+
+***Input Parameters***
+
+| Name               | Description                                                        | Required | Default          |
+| ------------------ | ------------------------------------------------------------------ | -------- | ---------------- |
+| team               | The name of the team to deploy the APIs for.                       | Yes      | -                |
+| environment        | Environment to deploy to                                           | No       | dev              |
+| gateway_url        | The URL of the Kong Gateway. Used for the tests                    | No       | http://localhost |
 
 ***Make a request to the demo API***
 

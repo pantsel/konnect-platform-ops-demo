@@ -385,7 +385,6 @@ jobs:
       - get-apis
       - deploy
     name: Post deploy actions
-    if: inputs.environment != 'prd'
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     strategy:
@@ -426,6 +425,7 @@ jobs:
           echo "API_NAME=$api_name" >> $GITHUB_ENV
 
       # https://github.com/schemathesis/schemathesis
+      # Only run GET requests against the prod environment
       - name: Run Contract Tests Against the Gateway
         uses: schemathesis/action@v1
         id: tests
@@ -433,7 +433,7 @@ jobs:
           schema: ${{ env.API_SPEC}}
           base-url: ${{ inputs.gateway_url }}/${{ env.API_NAME }}
           checks: all
-          args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
+          args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1 --method=GET'
         continue-on-error: true
 
       - name: Rollback Config

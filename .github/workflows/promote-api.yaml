@@ -287,7 +287,7 @@ jobs:
             schema: ${{ env.API_SPEC}}
             base-url: ${{ inputs.gateway_url }}${{ needs.build.outputs.api_namespace }}
             checks: all
-            args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
+            args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1 --method=GET'
           continue-on-error: true
 
         - name: Rollback Config
