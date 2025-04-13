@@ -23,11 +23,6 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
-  - [Federated approach (Teams onboarding + Resource Governor)](#federated-approach-teams-onboarding--resource-governor)
-    - [Onboarding process](#onboarding-process)
-    - [Run the example Teams Onboarding workflow](#run-the-example-teams-onboarding-workflow)
-    - [Resource Governor](#resource-governor)
-    - [Run the example Team Kronos Resources workflow](#run-the-example-team-kronos-resources-workflow)
 - [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
   - [Datadog](#datadog)
   - [Grafana](#grafana)
@@ -35,8 +30,8 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-1)
-  - [Deploy the demo API](#deploy-the-demo-api)
-  - [Configure Kong Gateway](#configure-kong-gateway)
+  - [Deploy the Flight Data APIs](#deploy-the-flight-data-apis)
+  - [Configure Flight Data APIs on Kong Gateway](#configure-flight-data-apis-on-kong-gateway)
 <!-- /TOC -->
 
 ## Useful links
@@ -221,244 +216,6 @@ $ act -W .github/workflows/provision-konnect-static.yaml
 | environment | The environment to provision                           | No       | `dev`       |
 
 
-### Federated approach (Teams onboarding + Resource Governor)
-
-In a federated scenario, a central Platform team is responsible for managing the Konnect APIM platform and creating technical assets for individual Teams to consume.
-
-Individual Teams can onboard to the Platform and manage their own resources using the tools provided by the Platform team.
-
-#### Onboarding process
-
-Prerequisite:
-
-The platform team maintains a repository with a list of teams onboarded to the Platform.
-
-e.g. `examples/platformops/federated/teams/teams.json`
-
-```json
-{
-    "metadata": {
-        "format_version": "1.0.0",
-        "type": "konnect.teams",
-        "description": "Teams onboarded to the Konnect APIM platform"
-    },
-    "resources": [
-        {
-            "type": "konnect.team",
-            "name": "Kronos",
-            "description": "Kronos team is building IaC services",
-            "labels": {
-                "TID": "KTEAM_00001"
-            }
-        },
-        {
-            "type": "konnect.team",
-            "name": "Tiger",
-            "description": "Tiger team is building the Global Observability Platform",
-            "labels": {
-                "TID": "KTEAM_00002"
-            }
-        },
-        {
-            "type": "konnect.team",
-            "name": "Gorillaz",
-            "offboarded": true,
-            "description": "Gorillaz team is building the legagy services",
-            "labels": {
-                "TID": "KTEAM_00003"
-            }
-        }
-    ]
-}
-```
-
-Onboarding flow:
-
-1. The team requests onboarding to the Platform team. This can be done either by:
-  - **Filling out a form**: The team provides the required information through a designated form.
-  - **Creating a pull request**: The team submits a pull request to the Platform team's repository with the necessary details.
-
-2. The Platform team reviews the request. Upon approval, the team is added to the repository's teams list.
-3. Once the list is updated, the onboarding workflow is triggered. This workflow will:
-   1. Provision the team in Konnect.
-   2. Provision a dedicated mount in HashiCorp Vault for the team.
-   3. Create the base System Account for the team.
-   4. Assign the `Control Plane` and `API Product` `Creator` role to the system account.
-   5. Create token for the system account and store it securely in the teams Vault mount.
-   6. Provision a **Konnect Resource Governor** Repository (ex: MyTeam_KRG) for the team. This repository will be used by the team to manage their Konnect Resources.
-   7. Any other use-case specific provisioning can be added to this workflow.
-
-```mermaid
-graph LR;
-  A[Team requests onboarding] -->|Filling out a form| B[Platform team reviews request];
-  A -->|Creating a pull request| B;
-  B -->|Approved| C[Add team to repository's teams list];
-  C --> D[Trigger onboarding workflow];
-  D --> E[Provision team and RBAC in Konnect];
-  D --> F[Provision Team KVs];
-  D --> G[Provision Konnect Resource Governor Repository];
-  D --> H[Other provisioning];
-```
-
-#### Run the example Teams Onboarding workflow
-
-```bash
-act --input config=examples/platformops/federated/teams/teams.json -W .github/workflows/onboard-konnect-teams.yaml   
-```
-
-***Input Parameters***
-
-| Name        | Description                                            | Required | Default                                      | Options                        |
-| ----------- | ------------------------------------------------------ | -------- | -------------------------------------------- | ------------------------------ |
-| config      | Path to the provisioning config file                   | No       | examples/platformops/federated/teams/teams.json | -                              |
-
-> To offboard teams, you can update your `teams.json` file by adding the `offboarded: true` flag to the teams you want to offboard and run the same workflow.
-
-#### Resource Governor
-
-After onboarding, the team will have access to their `Konnect Resource Governor` repository. In this repository, they will be able to define the Konnect resources they need and start consuming the APIM platform.
-
-Example repository structure:
-
-```plaintext
-TeamName_KRG
-├── .github
-│   └── workflows
-│       └── provision-resources.yaml
-├── resources
-│   └── resources.json
-├── README.md
-└── .gitignore
-```
-
-Example konnect resourses files can be found at `examples/platformops/federated/teams/kronos/resources.json` & `examples/platformops/federated/teams/tiger/resources.json`
-
-Example Kronos team `resources.json` file:
-
-```json
-{
-    "metadata": {
-        "format_version": "1.0.0",
-        "type": "konnect.team.resources",
-        "region": "eu",
-        "team": "Kronos",
-        "description": "Kronos team Konnect resources in the EU region"
-    },
-    "resources": [
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Dev",
-            "description": "Kronos development control plane",
-            "labels": {
-                "env": "dev"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Test",
-            "description": "Kronos test control plane",
-            "labels": {
-                "env": "tst"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Acc",
-            "description": "Kronos acceptance control plane",
-            "labels": {
-                "env": "acc"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Prd",
-            "description": "Kronos production control plane",
-            "labels": {
-                "env": "prd"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Flights API",
-            "description": "API for managing flights",
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Routes API",
-            "description": "API for managing routes",
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
-        }
-    ]
-}
-```
-
-#### Run the example Team Kronos Resources workflow
-
-To provision the above resources, run the following command:
-
-```bash
-# Team Kronos resources
-act --input config=examples/platformops/federated/teams/kronos/resources.json -W .github/workflows/provision-konnect-team-resources.yaml
-```
-
-For every requested resource type, the workflow will:
-
-- Create the requested resource in Konnect, such as a Control Plane or API Product.
-- Assign the `Viewer` role to the team for the requested resource.
-- Provision an admin system account for the requested resource.
-- Generate a token for the admin system account and store it securely in HashiCorp Vault.
-- Additionally, it will create a `Konnect Config Store` for every Control Plane.
-
-This will result in the following high level setup
-
-```mermaid
-graph TD;
-  subgraph Konnect
-    subgraph Teams
-      A[Team Kronos]
-    end
-
-    subgraph System Accounts
-      E[sa-kronos-dev-cp-admin]
-      F[sa-kronos-acc-cp-admin]
-      G[sa-kronos-prd-cp-admin]
-      J[sa-flights-api-ap-admin]
-      K[sa-routes-api-ap-admin]
-    end
-
-    subgraph API Products
-      H[Flights API]
-      I[Routes API]
-    end
-
-    subgraph Control Planes
-      B[Kronos Dev]
-      C[Kronos Acc]
-      D[Kronos Prd]
-    end
-  end
-
-  A --> |Viewer|B
-  A --> |Viewer|C
-  A --> |Viewer|D
-  A --> |Viewer|H
-  A --> |Viewer|I
-
-  E --> |Admin|B
-  F --> |Admin|C
-  G --> |Admin|D
-  J --> |Admin|H
-  K --> |Admin|I
-
-```
-
 ## Deploy the Observability stack (Optional)
 
 Konnect provides out of the box visualization of Logs and Metrics via **Konnect Analytics**. In some cases, Kong Dataplanes may need to integrate with 3rd party observability tools for more use-case specific and fine grained observability.
@@ -596,24 +353,24 @@ graph LR;
 
 After you have provisioned the Konnect resources and a local Kong DP is up and running:
 
-### Deploy the demo API
+### Deploy the Flight Data APIs
 
-Workflow: `.github/workflows/deploy-api.yaml`
+Workflow: `.github/workflows/deploy-apis.yaml`
 
 ```bash
 ## Without any observability stack
-$ act --input action=deploy -W .github/workflows/deploy-api.yaml
+$ act --input action=deploy -W .github/workflows/deploy-apis.yaml
 
 ## If you have deployed an observability stack
-$ act --input action=deploy --input observability_stack=<datadog|grafana|dynatrace> -W .github/workflows/deploy-api.yaml
+$ act --input action=deploy --input observability_stack=<datadog|grafana|dynatrace> -W .github/workflows/deploy-apis.yaml
 ```
 
-### Configure Kong Gateway
+### Configure Flight Data APIs on Kong Gateway
 
 Workflow: `.github/workflows/promote-api.yaml`
 
 ```bash
-$ act --input openapi_spec=examples/apiops/openapi.yaml \
+$ act --input api_folder=examples/apiops/teams/flight-data/<flights|routes> \
     --input control_plane_name=<control_plane_name> \
     --input system_account=<system_account_access_token_name>  \
     -W .github/workflows/promote-api.yaml
@@ -623,7 +380,7 @@ $ act --input openapi_spec=examples/apiops/openapi.yaml \
 
 | Name               | Description                                                        | Required | Default |
 | ------------------ | ------------------------------------------------------------------ | -------- | ------- |
-| openapi_spec       | Path to the OpenAPI Specification file                             | Yes      | -       |
+| api_folder         | The folder containing the API configuration files                  | Yes      | -       |
 | environment        | Environment to deploy to                                           | No       | dev     |
 | control_plane_name | Kong Konnect control plane name                                    | Yes      | -       |
 | system_account     | The CP admin system account to use for authentication with Konnect | Yes      | -       |
@@ -637,7 +394,11 @@ $ kubectl port-forward deployment/<deployment_name>  8000:8000 -n kong
 ```
 
 ```curl
-$ curl -u demo:<client-secret> http://localhost:8000/petstore/pets
+$ curl -u demo:<client-secret> http://localhost:8000/flights-service/flights
+```
+
+```curl
+$ curl -u demo:<client-secret> http://localhost:8000/routes-service/routes
 ```
 
 To obtain the `client-secret`, follow these steps:
