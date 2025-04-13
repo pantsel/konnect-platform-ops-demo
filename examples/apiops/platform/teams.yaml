@@ -1,11 +1,12 @@
 # teams.yaml
 teams:
   flight-data:
+    repo: examples/apiops/teams/flight-data
     apis:
-      - flights-service
-      - routes-service
-sales:
-  bookings-service:
+      - flights
+      - routes
+  sales:
+    repo: examples/apiops/teams/sales
     apis:
-      - bookings-service
-      - customer-information-service
+      - bookings
+      - customer

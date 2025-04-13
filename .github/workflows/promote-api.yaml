@@ -113,12 +113,15 @@ jobs:
           api_version=$(yq eval '.info.version' $API_SPEC)
           major_version=$(echo $api_version | cut -d '.' -f 1)
 
-          # Get the team name from the teams registry.
-          team_name=$(yq e ".teams | to_entries[] | select(.value.apis[] == \"$api_name\") | .key" $TEAMS_REGISTRY)
-          if [ -z "$team_name" ]; then
-            echo "API $api_name is not registered in the teams registry"
-            exit 1
-          fi
+          # Get the team name from the api folder path
+          # The api folder path is expected to be in the format:
+          # examples/apiops/teams/<team_name>/<api>
+          # The teams folder structure is expected to be:
+          # - teams
+          #   - <team_name>
+          #     - <api>
+          #       - ...
+          team_name=$(basename "$(dirname "${{ inputs.api_folder }}")")
 
           # Set deck environment variables to be used in the deck command
           echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV

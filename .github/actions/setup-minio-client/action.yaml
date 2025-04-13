@@ -1,9 +1,5 @@
 name: "Install MinIO Client"
 description: "Installs MinIO Client (mc) on the runner"
-author: "Your Name"
-branding:
-  icon: "cloud"
-  color: "blue"
 runs:
   using: "composite"
   steps:

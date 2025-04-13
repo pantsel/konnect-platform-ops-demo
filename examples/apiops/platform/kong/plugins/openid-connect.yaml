@@ -2,7 +2,7 @@
 _format_version: '3.0'
 add-plugins:
 - selectors:
-  - "$..services[0]"
+  - "$..services[*]"
   overwrite: false
   plugins:
     - name: openid-connect

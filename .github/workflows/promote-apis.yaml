@@ -1,0 +1,449 @@
+name: Promote API
+
+on:
+  workflow_dispatch:
+    inputs:
+      team:
+        description: "The team to deploy APIs for"
+        required: true
+        type: string
+      environment:
+        description: "Environment to deploy to"
+        type: choice
+        default: "dev"
+        options:
+          - "dev"
+          - "tst"
+          - "acc"
+          - "prd"
+      gateway_url:
+        description: "Kong Gateway URL"
+        type: string
+        required: true
+        default: http://localhost
+
+env:
+  ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+  PLATFORM_FOLDER: ${{ github.workspace }}/examples/apiops/platform
+  BUILD_FOLDER: ${{ github.workspace }}/examples/apiops/.generated
+  TEAMS_REGISTRY: ${{ github.workspace }}/examples/apiops/platform/teams.yaml
+  DECK_CONFIG_OIDC_ISSUER: ${{ secrets.OIDC_ISSUER }} # To be used in the OIDC plugin template
+  CONTROL_PLANE_NAME: ${{ inputs.team }}-cp
+  SYSTEM_ACCOUNT: sa-${{ inputs.team }}-cp-admin
+
+jobs:
+  get-apis:
+    name: Get APIs for ${{ inputs.team }}
+    runs-on: ubuntu-latest
+    outputs:
+      apis: ${{ steps.get-apis.outputs.apis }}
+      repo: ${{ steps.get-apis.outputs.repo }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get APIs for team
+        id: get-apis
+        run: |
+          apis=$(yq e -o=json ".teams.\"${{ inputs.team }}\".apis" $TEAMS_REGISTRY)
+          repo=$(yq e -o=json ".teams.\"${{ inputs.team }}\".repo" $TEAMS_REGISTRY)
+
+          apis_with_index=$(echo "$apis" | jq -c '[.[]] | to_entries | map({index: .key, name: .value})')
+
+          echo "apis=$apis_with_index" >> "$GITHUB_OUTPUT"
+          echo "repo=$(echo "$repo" | jq -r .)" >> "$GITHUB_OUTPUT"
+
+  # Run contract testing with SchemaThesis.
+  # The tests are based on the OpenAPI specifications of the services.
+  contract-test:
+    name: Contract testing ${{ matrix.api.name }}
+    needs: get-apis
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    strategy:
+      matrix:
+        api: ${{ fromJson(needs.get-apis.outputs.apis) }}
+      fail-fast: false
+    env:
+      API_FOLDER: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}
+      API_SPEC: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}/openapi.yaml
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Calculate dynamic port
+        id: calc-port
+        run: |
+          echo "PORT=$((8081 + ${{ matrix.api.index }}))" >> $GITHUB_ENV
+
+      - name: Start service
+        run: |
+          go build -o server .
+          nohup ./server "${{ env.PORT }}" > /tmp/api.log 2>&1 &
+          echo $! > ./server.pid
+          sleep 2
+          ps aux | grep server
+        working-directory: ${{ env.API_FOLDER }}
+
+      - name: Test
+        uses: schemathesis/action@v1
+        with:
+          schema: ${{ env.API_SPEC }}
+          base-url: http://localhost:${{ env.PORT }}
+          args: '--experimental openapi-3.1 --exclude-checks=ignored_auth'
+  
+  build:
+    runs-on: ubuntu-latest
+    needs: 
+      - get-apis
+      - contract-test
+    name: Build Config for ${{ matrix.api.name }}
+    strategy:
+      matrix:
+        api: ${{ fromJson(needs.get-apis.outputs.apis) }}
+      fail-fast: false
+    environment: ${{ inputs.environment }}
+    env:
+      API_FOLDER: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}
+      API_SPEC: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}/openapi.yaml
+      API_PLUGINS_FOLDER: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}/kong/plugins
+      API_PATCHES_FOLDER: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}/kong/patches
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: kong/setup-deck@v1
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Import system account Token from Vault
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+      - name: Setup decK variables
+        id: deck-vars
+        run: |
+
+          api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          api_version=$(yq eval '.info.version' $API_SPEC)
+          major_version=$(echo $api_version | cut -d '.' -f 1)
+
+
+          # Set deck environment variables to be used in the deck command
+          echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
+          echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
+          echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
+          echo "DECK_TEAM_NAME=${{ inputs.team }}" >> $GITHUB_ENV
+          echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=/$api_name" >> $GITHUB_ENV
+
+      # This step is only pertinent if you are using OAS Validation plugin
+      - name: Read OAS into an environment variable
+        id: oas-to-env
+        run: |
+          # Read the YAML file and convert to JSON string to be used with the OAS Validation plugin down the line.
+          # The plugin expects the OAS as a JSON string in an environment variable.
+          # https://docs.konghq.com/hub/kong-inc/oas-validation/configuration/#config-api_spec
+          
+          oas_json=$(yq eval -o=json ${{ env.API_SPEC }} | jq -c .)
+
+          # Set as env variable
+          echo "DECK_CONFIG_API_SPEC=${oas_json}" >> $GITHUB_ENV
+
+      - name: Lint OpenAPI Spec
+        shell: bash
+        run: |
+          deck file lint -s $API_SPEC $PLATFORM_FOLDER/openapi.ruleset.yaml -o ${BUILD_FOLDER}/openapi_lint_report.txt
+
+      - name: Convert OAS to Kong
+        run: cat $API_SPEC | deck file openapi2kong > $BUILD_FOLDER/kong-${{ matrix.api.name }}.yaml
+
+      - name: Add plugins
+        run: |
+          cat kong-${{ matrix.api.name }}.yaml | deck file add-plugins $API_PLUGINS_FOLDER/*.yaml -o kong-${{ matrix.api.name }}.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Apply patches
+        run: |
+          cat kong-${{ matrix.api.name }}.yaml | deck file patch \
+            $API_PATCHES_FOLDER/*.yaml -o kong-${{ matrix.api.name }}.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Add namespace
+        run: cat kong-${{ matrix.api.name }}.yaml | deck file namespace --path-prefix=$DECK_CONFIG_NAMESPACE_PATH_PREFIX -o kong-${{ matrix.api.name }}.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Add Tags
+        shell: bash
+        run: |
+          cat kong-${{ matrix.api.name }}.yaml | deck file add-tags $DECK_TEAM_NAME $DECK_API_NAME $DECK_API_MAJOR_VERSION -o kong-${{ matrix.api.name }}.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Render Config
+        run: |
+          deck file render --populate-env-vars kong-${{ matrix.api.name }}.yaml \
+            -o kong-${{ matrix.api.name }}.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Lint Config
+        run: deck file lint -s kong-${{ matrix.api.name }}.yaml ${{ env.PLATFORM_FOLDER }}/kong.ruleset.yaml;
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Validate Config
+        run: deck file validate kong-${{ matrix.api.name }}.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kong-config-${{ matrix.api.name }}
+          path: ${{ env.BUILD_FOLDER }}/kong-${{ matrix.api.name }}.yaml
+  
+  combine:
+    needs:
+      - get-apis
+      - build
+    runs-on: ubuntu-latest
+    name: Combine Configs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: kong/setup-deck@v1
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Import system account Token from Vault
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: kong-config-*
+          path: ./downloaded
+
+      - name: Merge all artifacts into a single folder
+        shell: bash
+        run: |
+          find ./downloaded -type f -exec cp {} ${{ env.BUILD_FOLDER }}/ \;
+
+      - name: Merge Configs
+        shell: bash
+        run: |
+          deck file merge kong-*.yaml -o kong-combined.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Add Platform level plugins
+        run: |
+          cat kong-combined.yaml | deck file add-plugins \
+            $PLATFORM_FOLDER/kong/plugins/*.yaml -o kong-combined.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Apply Platform level patches
+        run: |
+          cat kong-combined.yaml | deck file patch \
+            $PLATFORM_FOLDER/kong/patches/*.yaml -o kong-combined.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Lint merged Kong Gateway configuration file
+        shell: bash
+        run: |
+          deck file lint -s kong-combined.yaml ${{ env.PLATFORM_FOLDER }}/kong.ruleset.yaml;
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Validate merged Kong Gateway configuration file
+        shell: bash
+        run: |
+          deck file validate kong-combined.yaml
+        working-directory: ${{ env.BUILD_FOLDER }}
+
+      - name: Show combined config in summary
+        shell: bash
+        run: |
+            echo "### 🔧 Combined config Preview" >> $GITHUB_STEP_SUMMARY
+            echo '```yaml' >> $GITHUB_STEP_SUMMARY
+            cat ${{ env.BUILD_FOLDER }}/kong-combined.yaml >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Show diff in summary
+        shell: bash
+        run: |
+          echo "### 🔍 Diff Preview" >> $GITHUB_STEP_SUMMARY
+          echo '```diff' >> $GITHUB_STEP_SUMMARY
+          deck gateway diff ${{ env.BUILD_FOLDER }}/kong-combined.yaml  \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload combined Kong Gateway configuration
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kong-combined
+          path: ${{ env.BUILD_FOLDER }}/kong-combined.yaml
+
+  deploy:
+    name: Deploy Config
+    runs-on: ubuntu-latest
+    needs: combine
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: kong/setup-deck@v1
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Import system account Token from Vault
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+      - name: Download combined configuration
+        uses: actions/download-artifact@v4
+        with:
+          name: kong-combined
+          path: ${{ env.BUILD_FOLDER }}/kong-combined.yaml
+
+      - name: Get backup of the current configuration
+        shell: bash
+        run: |
+          deck gateway dump \
+            --select-tag generated_by:deck \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}" -o ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+
+      - name: Sync configuration (${{ env.KONNECT_SERVER_URL }})
+        id: sync
+        shell: bash
+        run: |
+          deck gateway sync ${{ env.BUILD_FOLDER }}/kong-combined.yaml  \
+            --select-tag generated_by:deck \
+            --no-mask-deck-env-vars-value \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}"
+        continue-on-error: true
+
+      - name: Revert backup configuration
+        if: ${{ steps.sync.outcome == 'failure' }}
+        shell: bash
+        run: |
+          deck gateway sync ${{ env.BUILD_FOLDER }}/kong_backup.yaml  \
+            --select-tag generated_by:deck \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}"
+
+      - name: Get recent backup
+        if: ${{ steps.test.outcome == 'success' }}
+        shell: bash
+        run: |
+          deck gateway dump \
+            --yes \
+            --select-tag generated_by:deck \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}" -o ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+
+      - name: Upload backup
+        id: upload-backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup
+          path: ${{ env.BUILD_FOLDER }}/kong_backup.yaml 
+
+  post-deploy:
+    needs:
+      - get-apis
+      - deploy
+    name: Post deploy actions
+    if: inputs.environment != 'prd'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    strategy:
+      fail-fast: false 
+      matrix:
+        api: ${{ fromJson(needs.get-apis.outputs.apis) }}
+    env:
+      API_FOLDER: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}
+      API_SPEC: ${{ github.workspace }}/${{ needs.get-apis.outputs.repo }}/${{ matrix.api.name }}/openapi.yaml
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Download backup
+        uses: actions/download-artifact@v4
+        with:
+          name: backup
+          path: ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+
+      - name: Import system account Token from Vault
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+      - name: Setup extra environment variables
+        id: extra-vars
+        run: |
+          api_name=$(yq eval '.info.title' $API_SPEC | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          echo "API_NAME=$api_name" >> $GITHUB_ENV
+
+      # https://github.com/schemathesis/schemathesis
+      - name: Run Contract Tests Against the Gateway
+        uses: schemathesis/action@v1
+        id: tests
+        with:
+          schema: ${{ env.API_SPEC}}
+          base-url: ${{ inputs.gateway_url }}/${{ env.API_NAME }}
+          checks: all
+          args: '--auth ${{ secrets.OIDC_CLIENT_ID }}:${{ secrets.OIDC_CLIENT_SECRET }} --experimental openapi-3.1'
+        continue-on-error: true
+
+      - name: Rollback Config
+        if: steps.tests.outcome == 'failure'
+        run: |
+          echo "Tests failed. Rolling back configuration..."
+          deck gateway sync kong_backup.yaml  \
+            --select-tag generated_by:deck \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}"
+        working-directory: ${{ env.BUILD_FOLDER }}
+
