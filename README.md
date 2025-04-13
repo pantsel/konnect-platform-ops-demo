@@ -442,20 +442,14 @@ $ act --input team=flight-data \
 | environment        | Environment to deploy to                                           | No       | dev              |
 | gateway_url        | The URL of the Kong Gateway. Used for the tests                    | No       | http://localhost |
 
-***Make a request to the demo API***
+***Make a request to the APIs***
 
-Make sure you can access your Kong Dataplane:
-
-```bash
-$ kubectl port-forward deployment/<deployment_name>  8000:8000 -n kong
+```curl
+$ curl -u demo:<client-secret> <gateway-url>/flights-service/flights
 ```
 
 ```curl
-$ curl -u demo:<client-secret> http://localhost:8000/flights-service/flights
-```
-
-```curl
-$ curl -u demo:<client-secret> http://localhost:8000/routes-service/routes
+$ curl -u demo:<client-secret> <gateway-url>/routes-service/routes
 ```
 
 To obtain the `client-secret`, follow these steps:
