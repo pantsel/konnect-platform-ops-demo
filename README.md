@@ -21,12 +21,12 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 - [Build Kong Golden Image](#build-kong-golden-image)
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
-- [Provision Konnect resources](#provision-konnect-resources)
-    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
-- [Deploy the Observability stack (Optional)](#deploy-the-observability-stack-optional)
+- [Deploy the Observability stack](#deploy-the-observability-stack)
   - [Datadog](#datadog)
   - [Grafana](#grafana)
   - [Dynatrace](#dynatrace)
+- [Provision Konnect resources](#provision-konnect-resources)
+    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
 - [Deploy Data Planes](#deploy-data-planes)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Flow](#flow-1)
@@ -149,74 +149,8 @@ $ act -W .github/workflows/build-image.yaml
 | kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.9.0.1        |
 | continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           |
 
-## Provision Konnect resources
 
-Terraform project: `./terraform/konnect/static`
-
-Provisioning will result in the following high level setup:
-
-```mermaid
-graph TD;
-  subgraph Konnect
-        direction TB; 
-        subgraph Applications
-            J[Developer Portal]
-        end
-
-        subgraph Teams and System Accounts
-            subgraph Individual
-                A[Flight Data Team]
-                B[System Account<br>flight-data-cp-admin]
-            end
-            subgraph Platform
-                C[System Account<br>global-cp-admin]
-            end
-        end
-
-        subgraph Control Planes
-            D[Flight Data CP<br>API Configurations]
-            E[Platform CP<br>Global Plugins & Consumers]
-        end
-
-        subgraph Control Plane Groups
-            F[Flight Data CP Group]
-        end
-    end
-
-    subgraph Managed Cluster
-      direction RL
-        P[Kong DP]
-    end
-    
-    A -.-> |Read-Only| D
-    B --> |Admin| D
-
-    C -.-> |Admin| E
-
-    D --> |API Configurations| F 
-    E --> |Global Policies| F
-
-    F --> |API Configurations & Global Policies| P
-```
-
-
-#### Run the Provisioning workflow
-
-To provision the Konnect resources, execute the following command: 
-
-```bash
-$ act -W .github/workflows/provision-konnect-static.yaml 
-```
-
-***Input Parameters***
-
-| Name        | Description                                            | Required | Default     |
-| ----------- | ------------------------------------------------------ | -------- | ----------- |
-| action      | The action to perform. Either `provision` or `destroy` | No       | `provision` |
-| environment | The environment to provision                           | No       | `dev`       |
-
-
-## Deploy the Observability stack (Optional)
+## Deploy the Observability stack
 
 Konnect provides out of the box visualization of Logs and Metrics via **Konnect Analytics**. In some cases, Kong Dataplanes may need to integrate with 3rd party observability tools for more use-case specific and fine grained observability.
 
@@ -289,6 +223,74 @@ $ act --input control_plane_name=<control_plane_name> \
 
 View all metrics, traces and logs in your Dynatrace dashboards.
 
+
+
+## Provision Konnect resources
+
+Terraform project: `./terraform/konnect/static`
+
+Provisioning will result in the following high level setup:
+
+```mermaid
+graph TD;
+  subgraph Konnect
+        direction TB; 
+        subgraph Applications
+            J[Developer Portal]
+        end
+
+        subgraph Teams and System Accounts
+            subgraph Individual
+                A[Flight Data Team]
+                B[System Account<br>flight-data-cp-admin]
+            end
+            subgraph Platform
+                C[System Account<br>global-cp-admin]
+            end
+        end
+
+        subgraph Control Planes
+            D[Flight Data CP<br>API Configurations]
+            E[Platform CP<br>Global Plugins & Consumers]
+        end
+
+        subgraph Control Plane Groups
+            F[Flight Data CP Group]
+        end
+    end
+
+    subgraph Managed Cluster
+      direction RL
+        P[Kong DP]
+    end
+    
+    A -.-> |Read-Only| D
+    B --> |Admin| D
+
+    C -.-> |Admin| E
+
+    D --> |API Configurations| F 
+    E --> |Global Policies| F
+
+    F --> |API Configurations & Global Policies| P
+```
+
+
+#### Run the Provisioning workflow
+
+To provision the Konnect resources, execute the following command: 
+
+```bash
+$ act -W .github/workflows/provision-konnect-static.yaml 
+```
+
+***Input Parameters***
+
+| Name                | Description                                            | Required | Default     |
+| ------------------- | ------------------------------------------------------ | -------- | ----------- |
+| action              | The action to perform. Either `provision` or `destroy` | No       | `provision` |
+| environment         | The environment to provision                           | No       | `dev`       |
+| observability_stack | The observability stack to integrate                   | No       | `grafana`   |
 
 ## Deploy Data Planes
 
