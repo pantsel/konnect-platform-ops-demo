@@ -31,3 +31,37 @@ resource "konnect_gateway_plugin_request_termination" "global_cp_plugin_request_
   enabled          = true
   tags = local.tags
 }
+
+resource "konnect_gateway_plugin_prometheus" "global_cp_plugin_prometheus" {
+  config = {
+    status_code_metrics = true
+    latency_metrics     = true
+    bandwidth_metrics   = true
+    per_consumer_metrics = true
+  }
+
+  control_plane_id = konnect_gateway_control_plane.platform_cp.id
+  enabled          = true
+  tags = local.tags
+}
+
+resource "konnect_gateway_plugin_rate_limiting_advanced" "global_cp_plugin_rate_limiting_advanced" {
+  config = {
+    window_size = [60]
+    limit = [3000]
+  }
+
+  control_plane_id = konnect_gateway_control_plane.platform_cp.id
+  enabled          = true
+  tags = local.tags
+}
+
+resource "konnect_gateway_plugin_file_log" "global_cp_plugin_file_log" {
+  config = {
+    path = "/dev/stdout"
+  }
+
+  control_plane_id = konnect_gateway_control_plane.platform_cp.id
+  enabled          = true
+  tags = local.tags
+}

@@ -22,6 +22,7 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Flow](#flow)
   - [Run the Build workflow](#run-the-build-workflow)
 - [Provision Konnect resources](#provision-konnect-resources)
+  - [Static approach](#static-approach)
     - [Run the Provisioning workflow](#run-the-provisioning-workflow)
   - [Federated approach (Teams onboarding + Resource Governor)](#federated-approach-teams-onboarding--resource-governor)
     - [Onboarding process](#onboarding-process)
@@ -156,6 +157,13 @@ $ act -W .github/workflows/build-image.yaml
 
 ## Provision Konnect resources
 
+In this demo, there are two documented approaches for provisioning resources in Konnect.
+
+1. **Static**: A straightforward approach where all Konnect resources are statically defined
+2. **Federated**: Every team manages their own Konnect resources
+
+### Static approach
+
 Terraform project: `./terraform/konnect/static`
 
 Provisioning will result in the following high level setup:
@@ -170,27 +178,27 @@ graph TD;
 
         subgraph Teams and System Accounts
             subgraph Individual
-                A[Flight Data Team]
-                B[System Account<br>flight-data-cp-admin]
+                A[Demo CP Viewers]
+                B[System Account<br>demo_cp_admin]
             end
             subgraph Platform
-                C[System Account<br>global-cp-admin]
+                C[System Account<br>global_cp_admin]
             end
         end
 
         subgraph Control Planes
-            D[Flight Data CP<br>API Configurations]
-            E[Platform CP<br>Global Plugins & Consumers]
+            D[Demo_CP]
+            E[Global_CP<br>Preconfigured with Terraform]
         end
 
         subgraph Control Plane Groups
-            F[Flight Data CP Group]
+            F[CP_Group]
         end
     end
 
     subgraph Managed Cluster
       direction RL
-        P[Kong DP]
+        P[Kong DP Nodes]
     end
     
     A -.-> |Read-Only| D

@@ -12,7 +12,7 @@ locals {
 
 # Control Planes
 resource "konnect_gateway_control_plane" "flight_data_cp" {
-  name         = "flight-data"
+  name         = "flight-data-cp"
   description  = "Control Plane for flight data apis"
   cluster_type = "CLUSTER_TYPE_HYBRID"
   # Can be "pinned_client_certs" or "pki_client_certs". For "pki_client_certs" we need to provide the CA certificate.
@@ -26,7 +26,7 @@ resource "konnect_gateway_control_plane" "flight_data_cp" {
 }
 
 resource "konnect_gateway_control_plane" "platform_cp" {
-  name         = "platform-cp"
+  name         = "global-cp"
   description  = "Control Plane to manage global plugins and policies"
   cluster_type = "CLUSTER_TYPE_HYBRID"
   # Can be "pinned_client_certs" or "pki_client_certs". For "pki_client_certs" we need to provide the CA certificate.
