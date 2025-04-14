@@ -26,14 +26,16 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
   - [Grafana](#grafana)
   - [Dynatrace](#dynatrace)
 - [Provision Konnect resources](#provision-konnect-resources)
-    - [Run the Provisioning workflow](#run-the-provisioning-workflow)
+  - [Flow](#flow-1)
+  - [High Level Setup](#high-level-setup)
+  - [Run the Provisioning workflow](#run-the-provisioning-workflow)
 - [Deploy Data Plane](#deploy-data-plane)
 - [Promoting API configuration (State file management)](#promoting-api-configuration-state-file-management)
   - [Deploy the Flight Data APIs](#deploy-the-flight-data-apis)
   - [Expose single API via Kong Gateway](#expose-single-api-via-kong-gateway)
-    - [Flow](#flow-1)
-  - [Expose All Flight Data APIs via Kong Gateway](#expose-all-flight-data-apis-via-kong-gateway)
     - [Flow](#flow-2)
+  - [Expose All Flight Data APIs via Kong Gateway](#expose-all-flight-data-apis-via-kong-gateway)
+    - [Flow](#flow-3)
 <!-- /TOC -->
 
 ## Useful links
@@ -231,6 +233,34 @@ View all metrics, traces and logs in your Dynatrace dashboards.
 
 Terraform project: `./terraform/konnect/static`
 
+### Flow
+```mermaid
+graph LR;
+  A[Create Control Planes]
+  K[Create Flight Data CP]
+  L[Create Global CP]
+  B[Add to Control plane Group]
+  C[Configure Global Plugins & Policies]
+  D[Create Team]
+  E[Assign Team Roles]
+  F[Create System Accounts]
+  G[Assign System Account Roles]
+  H[Create System Account Access Tokens]
+  I[Store System Account Access Tokens in Vault]
+  J[Create Developer Portal]
+
+  A --> K
+  A --> L
+  L --> B
+  L --> C
+  K --> B
+  B --> D --> F --> J
+  D --> E
+  F --> G --> H --> I
+```
+
+### High Level Setup
+
 Provisioning will result in the following high level setup:
 
 ```mermaid
@@ -278,7 +308,7 @@ graph TD;
 ```
 
 
-#### Run the Provisioning workflow
+### Run the Provisioning workflow
 
 To provision the Konnect resources, execute the following command: 
 
