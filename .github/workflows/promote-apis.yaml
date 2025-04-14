@@ -362,17 +362,6 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}"
 
-      - name: Get recent backup
-        if: ${{ steps.test.outcome == 'success' }}
-        shell: bash
-        run: |
-          deck gateway dump \
-            --yes \
-            --select-tag generated_by:deck \
-            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
-            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}" -o ${{ env.BUILD_FOLDER }}/kong_backup.yaml
-
       - name: Upload backup
         id: upload-backup
         uses: actions/upload-artifact@v4
@@ -446,4 +435,48 @@ jobs:
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
             --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}"
         working-directory: ${{ env.BUILD_FOLDER }}
+
+  backup:
+    name: Backup Config
+    runs-on: ubuntu-latest
+    needs: post-deploy
+    if: ${{ needs.post-deploy.outputs.tests == 'success' }}
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - uses: kong/setup-deck@v1
+      
+      - name: Load environment configuration
+        uses: ./.github/actions/load-config
+        with:
+          environment: ${{ inputs.environment }}
+      
+      - name: Import system account Token from Vault
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+
+      - name: Get latest backup
+        if: ${{ steps.test.outcome == 'success' }}
+        shell: bash
+        run: |
+          deck gateway dump \
+            --yes \
+            --select-tag generated_by:deck \
+            --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
+            --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}" -o ${{ env.BUILD_FOLDER }}/kong_backup.yaml
+
+      - name: Upload backup
+        id: upload-backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup
+          path: ${{ env.BUILD_FOLDER }}/kong_backup.yaml 
 
