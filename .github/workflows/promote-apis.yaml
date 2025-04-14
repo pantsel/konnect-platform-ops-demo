@@ -1,4 +1,4 @@
-name: Promote API
+name: Promote All APIs of a Team
 
 on:
   workflow_dispatch:
