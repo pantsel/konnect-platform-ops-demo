@@ -281,7 +281,7 @@ jobs:
         # https://github.com/schemathesis/schemathesis
         - name: Run Contract Tests Against the Gateway
           uses: schemathesis/action@v1
-          if: inputs.environment != 'prd' && steps.sync.outcome == 'success'
+          if: steps.sync.outcome == 'success'
           id: tests
           with:
             schema: ${{ env.API_SPEC}}
