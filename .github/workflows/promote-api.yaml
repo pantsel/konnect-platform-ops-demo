@@ -277,6 +277,7 @@ jobs:
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
               --konnect-control-plane-name="${{ inputs.control_plane_name }}"
           working-directory: ${{ env.BUILD_FOLDER }}
+          continue-on-error: true
 
         # https://github.com/schemathesis/schemathesis
         - name: Run Contract Tests Against the Gateway
@@ -295,8 +296,6 @@ jobs:
           run: |
             echo "Tests failed. Rolling back configuration..."
             deck gateway sync kong_backup.yaml  \
-              --select-tag ${{ needs.build.outputs.api_name }} \
-              --select-tag ${{ needs.build.outputs.api_major_version }} \
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
