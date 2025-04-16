@@ -174,12 +174,10 @@ The different observability stack examples included is this repo are:
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
 
-The workflow will configure `prometheus`, `opentelemetry` and `file-log` global plugins on the requested Control Plane 
-and deploy a `Datadog Operator` on your local kind cluster.
+The workflow will deploy a `Datadog Operator` on your local k8s cluster.
 
 ```bash
-$ act --input control_plane_name=<control_plane_name> \
-   --input observability_stack=datadog \
+$ act --input observability_stack=datadog \
     -W .github/workflows/deploy-observability-tools.yaml   
 ```
 
@@ -189,12 +187,10 @@ View all metrics, traces and logs in your datadog dashboards.
 
 The workflow is available in `.github/workflows/deploy-observability-tools.yaml`
 
-The workflow will configure `prometheus`, `opentelemetry` and `http-log` global plugins on the requested Control Plane 
-and deploy the `Prometheus Operator` together with `Kong Grafana dashboards`, `fluentbit`, `loki` and `tempo` on your local kind cluster.
+The workflow will deploy the `Prometheus Operator` together with `Kong Grafana dashboards`, `fluentbit`, `loki` and `tempo` on your local k8s cluster.
 
 ```bash
-$ act --input control_plane_name=<control_plane_name> \
-   --input observability_stack=grafana \
+$ act --input observability_stack=grafana \
     -W .github/workflows/deploy-observability-tools.yaml   
 ```
 
@@ -216,12 +212,10 @@ Login with `username: admin` and `password: prom-operator`.
 
 > Make sure you have a Dynatrace account and a valid Dynatrace API key (https://www.dynatrace.com/). You can define your Dynatrace API token in `act.secrets` as `DT_API_TOKEN`.
 
-The workflow will configure `prometheus`, `opentelemetry` and `tcp-log` global plugins on the requested Control Plane
-and deploy the `otel Operator` and `Dynatrace otel collector` on your local kind cluster.
+The workflow will deploy the `otel Operator` and `Dynatrace otel collector` on your local kind cluster.
 
 ```bash
-$ act --input control_plane_name=<control_plane_name> \
-   --input observability_stack=dynatrace \
+$ act --input observability_stack=dynatrace \
     -W .github/workflows/deploy-observability-tools.yaml   
 ```
 
