@@ -16,14 +16,6 @@ on:
           - "tst"
           - "acc"
           - "prd"
-      control_plane_name:
-        description: "Kong Konnect control plane name"
-        type: string
-        required: true
-      system_account:
-        description: "The system account to use for authentication with Konnect"
-        type: string
-        required: true
       gateway_url:
         description: "Kong Gateway URL"
         type: string
@@ -57,11 +49,13 @@ jobs:
 
       - name: Start service
         run: |
-          go build -o server .
-          nohup ./server "8081" > /tmp/api.log 2>&1 &
-          echo $! > ./server.pid
+          file="server"
+          port="8081"
+
+          make run file=${file} port=${port} nohup=true
+          echo $! > ./${file}.pid
+
           sleep 2
-          ps aux | grep server
         working-directory: ${{ env.API_FOLDER }}
 
       - name: Contract testing flights
@@ -82,6 +76,8 @@ jobs:
       api_major_version: ${{ steps.deck-vars.outputs.api_major_version }}
       api_namespace: ${{ steps.deck-vars.outputs.api_namespace }}
       team_name: ${{ steps.deck-vars.outputs.team_name }}
+      control_plane_name: ${{ steps.deck-vars.outputs.control_plane_name }}
+      system_account: ${{ steps.deck-vars.outputs.system_account }}
 
     steps:
       - name: Checkout repository
@@ -95,15 +91,6 @@ jobs:
         uses: ./.github/actions/load-config
         with:
           environment: ${{ inputs.environment }}
-
-      - name: Import system account Token from Vault
-        id: import-token
-        uses: hashicorp/vault-action@v2
-        with:
-          url: ${{ env.VAULT_ADDR }}
-          token: ${{ secrets.VAULT_TOKEN }}
-          secrets: |
-            secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       - name: Setup decK variables
         id: deck-vars
@@ -122,19 +109,34 @@ jobs:
           #     - <api>
           #       - ...
           team_name=$(basename "$(dirname "${{ inputs.api_folder }}")")
+          control_plane_name="${team_name}-cp"
+          system_account="sa-${control_plane_name}-admin"
 
-          # Set deck environment variables to be used in the deck command
+          # Set environment variables to be used in the deck commands and followup steps
           echo "DECK_API_NAME=$api_name" >> $GITHUB_ENV
           echo "DECK_API_VERSION=$api_version" >> $GITHUB_ENV
           echo "DECK_API_MAJOR_VERSION=v$major_version" >> $GITHUB_ENV
           echo "DECK_TEAM_NAME=$team_name" >> $GITHUB_ENV
           echo "DECK_CONFIG_NAMESPACE_PATH_PREFIX=/$api_name" >> $GITHUB_ENV
+          echo "CONTROL_PLANE_NAME=$control_plane_name" >> $GITHUB_ENV
+          echo "SYSTEM_ACCOUNT=$system_account" >> $GITHUB_ENV
 
           # Set the job outputs to be used in the deploy job
           echo "api_name=$api_name" >> $GITHUB_OUTPUT
           echo "api_major_version=v$major_version" >> $GITHUB_OUTPUT
           echo "api_namespace=/$api_name" >> $GITHUB_OUTPUT
           echo "team_name=$team_name" >> $GITHUB_OUTPUT
+          echo "control_plane_name=$control_plane_name" >> $GITHUB_OUTPUT
+          echo "system_account=$system_account" >> $GITHUB_OUTPUT
+
+      - name: Import system account Token from Vault
+        id: import-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       # This step is only pertinent if you are using OAS Validation plugin
       - name: Read OAS into an environment variable
@@ -212,7 +214,7 @@ jobs:
             --select-tag generated_by:deck \
             --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
             --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-            --konnect-control-plane-name="${{ inputs.control_plane_name }}" > kong_diff.txt
+            --konnect-control-plane-name="${{ env.CONTROL_PLANE_NAME }}" > kong_diff.txt
         working-directory: ${{ env.BUILD_FOLDER }}
 
       - name: Upload Artifacts
@@ -247,7 +249,7 @@ jobs:
             url: ${{ env.VAULT_ADDR }}
             token: ${{ secrets.VAULT_TOKEN }}
             secrets: |
-              secret/data/system-accounts/${{ inputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
+              secret/data/system-accounts/${{ needs.build.outputs.system_account }} token | SYSTEM_ACCOUNT_TOKEN ;
 
         - name: Download Artifacts
           uses: actions/download-artifact@v4
@@ -263,7 +265,7 @@ jobs:
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-              --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
+              --konnect-control-plane-name="${{ needs.build.outputs.control_plane_name }}" -o kong_backup.yaml
           working-directory: ${{ env.BUILD_FOLDER }}
     
         - name: Sync Config
@@ -275,7 +277,7 @@ jobs:
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-              --konnect-control-plane-name="${{ inputs.control_plane_name }}"
+              --konnect-control-plane-name="${{ needs.build.outputs.control_plane_name }}"
           working-directory: ${{ env.BUILD_FOLDER }}
           continue-on-error: true
 
@@ -299,7 +301,7 @@ jobs:
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-              --konnect-control-plane-name="${{ inputs.control_plane_name }}"
+              --konnect-control-plane-name="${{ needs.build.outputs.control_plane_name }}"
           working-directory: ${{ env.BUILD_FOLDER }}
 
         - name: Get a fresh backup
@@ -311,7 +313,7 @@ jobs:
               --select-tag generated_by:deck \
               --konnect-addr="${{ env.KONNECT_SERVER_URL }}" \
               --konnect-token="${{ steps.import-token.outputs.SYSTEM_ACCOUNT_TOKEN }}" \
-              --konnect-control-plane-name="${{ inputs.control_plane_name }}" -o kong_backup.yaml
+              --konnect-control-plane-name="${{ needs.build.outputs.control_plane_name }}" -o kong_backup.yaml
           working-directory: ${{ env.BUILD_FOLDER }}
 
         - name: Archive artifacts

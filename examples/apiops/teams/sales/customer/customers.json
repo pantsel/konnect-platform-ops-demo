@@ -1,0 +1,59 @@
+[
+  {
+    "id": "1",
+    "name": "Jane Smith",
+    "username": "jsmith",
+    "information": {
+      "address": "123 Main St",
+      "phone_number": "1234567890",
+      "email": "jane@example.com",
+      "frequent_flier_number": "FF99938478",
+      "payment_methods": [
+        {
+          "id": "jsmith-PM-9012",
+          "redacted_card_number": "****-****-****-9012",
+          "card_holder_name": "Jane Smith",
+          "expiration_date": "01/29"
+        }
+      ]
+    }
+  },
+  {
+    "id": "2",
+    "name": "John Doe",
+    "username": "jdoe",
+    "information": {
+      "address": "123 Main St",
+      "phone_number": "867-5309",
+      "email": "john@example.com",
+      "frequent_flier_number": "FF123456",
+      "payment_methods": [
+        {
+          "id": "jdoe-PM-8453",
+          "redacted_card_number": "****-****-****-8453",
+          "card_holder_name": "John Doe",
+          "expiration_date": "09/27"
+        }
+      ]
+    }
+  },
+  {
+    "id": "3",
+    "name": "Danny Freese",
+    "username": "dfreese",
+    "information": {
+      "address": "567 Street St",
+      "phone_number": "555-1234",
+      "email": "danny@example.com",
+      "frequent_flier_number": "FF987abc",
+      "payment_methods": [
+        {
+          "id": "dfreese-PM-9734",
+          "redacted_card_number": "****-****-****-9734",
+          "card_holder_name": "Danny F",
+          "expiration_date": "09/28"
+        }
+      ]
+    }
+  }
+]

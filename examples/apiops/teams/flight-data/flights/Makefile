@@ -5,8 +5,11 @@ test: check-dependencies
 	go test -v ./...
 
 build: check-dependencies
-	go build .
+	go build -o ${file}
 
 run: check-dependencies build
-	./flights ${KONG_AIR_FLIGHTS_PORT}
-
+ifeq ($(nohup),true)
+	nohup ./${file} ${port} > /tmp/${file}.log 2>&1 &
+else
+	./${file} ${port}
+endif
