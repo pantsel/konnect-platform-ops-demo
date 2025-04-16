@@ -420,8 +420,6 @@ Workflow: `.github/workflows/promote-api.yaml`
 
 ```bash
 $ act --input api_folder=examples/apiops/teams/flight-data/<flights|routes> \
-    --input control_plane_name=<control_plane_name> \
-    --input system_account=<system_account_access_token_name>  \
     -W .github/workflows/promote-api.yaml
 ```
 
@@ -431,8 +429,6 @@ $ act --input api_folder=examples/apiops/teams/flight-data/<flights|routes> \
 | ------------------ | ------------------------------------------------------------------ | -------- | ---------------- |
 | api_folder         | The folder containing the API configuration files                  | Yes      | -                |
 | environment        | Environment to deploy to                                           | No       | dev              |
-| control_plane_name | Kong Konnect control plane name                                    | Yes      | -                |
-| system_account     | The CP admin system account to use for authentication with Konnect | Yes      | -                |
 | gateway_url        | The URL of the Kong Gateway. Used for the tests                    | No       | http://localhost |
 
 ### Expose All Flight Data APIs via Kong Gateway
