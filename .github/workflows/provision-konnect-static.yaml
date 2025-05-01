@@ -38,6 +38,9 @@ jobs:
       ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       TERRAFORM_DIR: ${{ github.workspace }}/terraform/konnect/static
       TF_VAR_observability_stack: ${{ inputs.observability_stack }}
+      TF_VAR_konnect_portal_oidc_client_id: ${{ secrets.KONNECT_PORTAL_OIDC_CLIENT_ID }}
+      TF_VAR_konnect_portal_oidc_client_secret: ${{ secrets.KONNECT_PORTAL_OIDC_CLIENT_SECRET }}
+      TF_VAR_konnect_portal_oidc_issuer: ${{ secrets.KONNECT_PORTAL_OIDC_ISSUER }}
       PLANID: static
 
     steps:

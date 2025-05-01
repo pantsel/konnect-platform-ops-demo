@@ -41,4 +41,7 @@ module "system_accounts" {
 module "developer_portals" {
   source      = "./modules/developer-portals"
   environment = var.environment
+  konnect_portal_oidc_client_id = var.konnect_portal_oidc_client_id
+  konnect_portal_oidc_client_secret = var.konnect_portal_oidc_client_secret
+  konnect_portal_oidc_issuer = var.konnect_portal_oidc_issuer
 }
