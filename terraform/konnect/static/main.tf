@@ -3,6 +3,10 @@ terraform {
     konnect = {
       source = "kong/konnect"
     }
+
+    konnect-beta = {
+      source = "kong/konnect-beta"
+    }
     vault = {
       source  = "hashicorp/vault"
       version = "4.4.0"

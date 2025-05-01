@@ -18,7 +18,7 @@ resource "konnect_portal" "portal" {
   description                          = "KongAir API Developer Portal"
   display_name                         = "KongAir API Developer Portal"
   labels = {
-    key = "value"
+    generated_by = "terraform"
   }
   name         = "KongAir API Developer Portal"
   rbac_enabled = true
@@ -39,9 +39,7 @@ resource "konnect_portal_auth" "portalauth" {
   oidc_client_secret = var.konnect_portal_oidc_client_secret
   oidc_issuer        = var.konnect_portal_oidc_issuer
   oidc_scopes = [
-    "openid",
-    "email",
-    "profile"
+    "openid"
   ]
   oidc_team_mapping_enabled = false
   portal_id                 = konnect_portal.portal.id
