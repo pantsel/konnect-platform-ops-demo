@@ -136,7 +136,7 @@ jobs:
           url: ${{ env.VAULT_ADDR }}
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            secret/data/system-accounts/${{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
+            secret/data/system-accounts/{{ env.SYSTEM_ACCOUNT }} token | SYSTEM_ACCOUNT_TOKEN ;
 
       # This step is only pertinent if you are using OAS Validation plugin
       - name: Read OAS into an environment variable
