@@ -1,0 +1,75 @@
+rules:
+  # info:
+  #   description: "Info Object should be present."
+  #   given: "$"
+  #   severity: error
+  #   then:
+  #     field: _info
+  #     function: defined
+  # select_tags:
+  #   description: "Select Tags should be present."
+  #   given: $._info
+  #   severity: error
+  #   then:
+  #     field: select_tags
+  #     function: defined
+  # select_tags_length:
+  #   description: "Select Tags should be present."
+  #   given: $._info
+  #   severity: error
+  #   then:
+  #     field: select_tags
+  #     function: schema
+  #     functionOptions:
+  #       schema:
+  #         type: "array"
+  #         minItems: 1
+  #         items:
+  #           type: "string"
+  no-global-entities-allowed:
+    description: "Ensure no global entities are used"
+    given: "$"
+    severity: error
+    then:
+      - field: plugins
+        function: undefined
+      - field: consumers
+        function: undefined
+      - field: certificates
+        function: undefined
+      - field: ca_certificates
+        function: undefined
+      - field: snis
+        function: undefined
+  protocols_set:
+    description: "Ensure route protocols are set"
+    given: $.routes[*]
+    severity: error
+    then:
+      field: protocols
+      function: "schema"
+      functionOptions:
+        schema:
+          type: "array"
+          minItems: 1
+          maxItems: 1
+          items:
+            type: "string"
+  allowed_plugins_service:
+    description: "Ensure only allowed plugins are used on service"
+    given: $.services[0].plugins[*]
+    severity: error
+    then:
+      field: name
+      function: "pattern"
+      functionOptions:
+        match: "^(openid-connect|oas-validation|request-transformer|request-transformer-advanced|response-transformer|response-transformer-advanced|correlation-id|cors|pre-function|post-function|route-transformer-advanced)$"
+  allowed_plugins_route:
+      description: "Ensure only allowed plugins are used on routes"
+      given: $.services[0].routes[*].plugins[*]
+      severity: error
+      then:
+        field: name
+        function: "pattern"
+        functionOptions:
+          match: "^(openid-connect|oas-validation|request-transformer|request-transformer-advanced|response-transformer|response-transformer-advanced|correlation-id|cors|pre-function|post-function|route-transformer-advanced)$"
