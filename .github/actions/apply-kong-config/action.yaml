@@ -16,6 +16,10 @@ inputs:
   client_secret:
     description: "OIDC Client Secret"
     required: true
+  insomnia_file_name:
+    description: "Name of the Insomnia file"
+    required: true
+    default: "insomnia.yaml"
 
 runs:
   using: "composite"
@@ -62,12 +66,12 @@ runs:
       shell: bash
       run: |
         # Extract the Spec ID from the Insomnia configuration
-        SPEC_ID=$(yq eval '.spec.meta.id' "${{ inputs.api_folder }}/insomnia.yaml")
+        SPEC_ID=$(yq eval '.spec.meta.id' "${{ inputs.api_folder }}/${{ inputs.insomnia_file_name}}")
         
         # Define build folder and export the OpenAPI spec
         build_folder="${{ github.workspace }}/.generated"
         mkdir -p "$build_folder"
-        inso export spec "$SPEC_ID" -w "${{ inputs.api_folder }}/insomnia.yaml" -o "$build_folder/oas.yaml"
+        inso export spec "$SPEC_ID" -w "${{ inputs.api_folder }}/${{ inputs.insomnia_file_name}}" -o "$build_folder/oas.yaml"
         
         # Extract API metadata from the OpenAPI spec
         api_name=$(yq eval '.info.title' "$build_folder/oas.yaml" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
