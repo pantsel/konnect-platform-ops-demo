@@ -66,9 +66,11 @@ runs:
         # Validate each resource type to be one of:
         # - konnect.control_plane
         # - konnect.api_product
-        invalid_resources=$(echo "$config_content" | jq '[.resources[] | select(.type != "konnect.control_plane" and .type != "konnect.api_product")]')
+        # - konnect.cloud_gateway_network
+        # - konnect.cloud_gateway_configuration
+        invalid_resources=$(echo "$config_content" | jq '[.resources[] | select(.type != "konnect.control_plane" and .type != "konnect.api_product" and .type != "konnect.cloud_gateway_network" and .type != "konnect.cloud_gateway_configuration" and .type != "konnect.application_auth_strategy" and .type != "konnect.developer_portal") ]')
         if [ "$invalid_resources" != "[]" ]; then
-          echo "Invalid resource types: $invalid_resources. Expected 'konnect.control_plane' or 'konnect.api_product'"
+          echo "Invalid resource types: $invalid_resources. Expected 'konnect.control_plane', 'konnect.api_product', 'konnect.cloud_gateway_network' or 'konnect.cloud_gateway_configuration'"
           exit 1
         fi
 
