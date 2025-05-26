@@ -62,3 +62,5 @@ docker/*.deb
 
 # Ignore .DS_Store files in mac
 .DS_Store
+
+demo_steps.txt
