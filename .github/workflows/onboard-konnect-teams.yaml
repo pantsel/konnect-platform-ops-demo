@@ -67,6 +67,8 @@ jobs:
         uses: ./.github/actions/load-config
         with:
           environment: ${{ inputs.environment }}
+        env:
+          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
       - name: Install MinIO Client
         uses: ./.github/actions/setup-minio-client
@@ -127,6 +129,8 @@ jobs:
         uses: ./.github/actions/load-config
         with:
           environment: ${{ inputs.environment }}
+        env:
+          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
       - name: Provision Konnect Teams
         uses: ./.github/actions/konnect-teams

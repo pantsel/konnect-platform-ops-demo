@@ -20,6 +20,7 @@ runs:
         ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       run: |
         echo "Reading configuration from $ENV_FILE"
+        echo "TF_VAR_konnect_personal_access_token=$KONNECT_PAT" >> $GITHUB_ENV
         COMMON_VARS_FILE=.github/env/.common/env.yaml
         CONFIG_VARS=$(yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1) | keys' $COMMON_VARS_FILE $ENV_FILE)
 
@@ -38,7 +39,6 @@ runs:
         # Extra configuration for Konnect and Terraform
         KONNECT_REGION=$(yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1) | .konnect_region' $COMMON_VARS_FILE $ENV_FILE)
         KONNECT_SERVER_URL="https://$KONNECT_REGION.api.konghq.com"
-        TF_VAR_KONNECT_PERSONAL_ACCESS_TOKEN=${{ secrets.KONNECT_PAT }}
         echo "KONNECT_SERVER_URL=$KONNECT_SERVER_URL" >> $GITHUB_ENV
         echo "TF_VAR_konnect_server_url=$KONNECT_SERVER_URL" >> $GITHUB_ENV
         echo "TF_VAR_environment=${{ inputs.environment }}" >> $GITHUB_ENV
