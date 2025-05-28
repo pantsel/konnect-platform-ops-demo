@@ -7,7 +7,7 @@ terraform {
 }
 
 resource "konnect_gateway_config_store" "this" {
-  name  = "${var.control_plane_name}-configstore"
+  name = "${var.control_plane_name}-configstore"
 
   control_plane_id = var.control_plane_id
 }

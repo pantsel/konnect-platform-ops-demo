@@ -23,3 +23,9 @@ variable "labels" {
   type        = map(string)
   default     = {}
 }
+
+variable "cloud_vendor" {
+  description = "The cloud provider for the network (e.g., AWS, Azure, GCP)"
+  type        = string
+  default     = "AWS"
+}

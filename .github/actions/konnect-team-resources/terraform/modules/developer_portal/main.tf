@@ -1,16 +1,16 @@
 terraform {
   required_providers {
-    konnect = {
-      source = "kong/konnect"
-    }
     konnect-beta = {
       source = "kong/konnect-beta"
-      version = "0.2.1"
+    }
+    konnect = {
+      source = "kong/konnect"
     }
   }
 }
 
 resource "konnect_portal" "this" {
+  provider                             = konnect-beta
   name                                 = var.name
   authentication_enabled               = var.authentication_enabled
   auto_approve_applications            = var.auto_approve_applications

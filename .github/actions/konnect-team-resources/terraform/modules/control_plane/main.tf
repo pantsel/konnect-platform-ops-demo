@@ -7,10 +7,11 @@ terraform {
 }
 
 resource "konnect_gateway_control_plane" "this" {
-  name         = var.name
-  description  = var.description
-  cluster_type = var.cluster_type
-  auth_type    = var.auth_type
+  name          = var.name
+  description   = var.description
+  cloud_gateway = var.cloud_gateway
+  cluster_type  = var.cluster_type
+  auth_type     = var.auth_type
   labels = merge(var.labels, {
     generated_by = "terraform"
   })

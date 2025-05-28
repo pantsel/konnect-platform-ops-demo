@@ -1,8 +1,8 @@
 variable "team" {
   description = "The team to assign the resources to"
-  type        = object({
-    id          = string
-    name        = string
+  type = object({
+    id   = string
+    name = string
   })
 }
 
