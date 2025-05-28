@@ -26,15 +26,22 @@ extraLabels:
 podAnnotations:
   kuma.io/gateway: enabled
   traffic.sidecar.istio.io/includeInboundPorts: ""
+  # Datadog related annotations (Observability stack: DataDog)
   ad.datadoghq.com/proxy.check_names: '["kong"]'
   ad.datadoghq.com/proxy.init_configs: '[{}]'
   ad.datadoghq.com/proxy.instances: '[{"openmetrics_endpoint": "http://%%host%%:8100/metrics"}]'
   ad.datadoghq.com/proxy.logs: '[{"source": "kong", "service": "kong-dp"}]'
+  # Dynatrace related annotations (Observability stack: Dynatrace)
   metrics.dynatrace.com/scrape: 'true'
   metrics.dynatrace.com/path: '/metrics'
   metrics.dynatrace.com/port: '8100'
   metrics.dynatrace.com/secure: 'false'
   sidecar.opentelemetry.io/inject: "true"
+  # Prometherus Operator annotations (Observability stack: Grafana/Prometheus)
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "8100"
+  prometheus.io/scheme: "http"
   
 env:
   log_level: "info"

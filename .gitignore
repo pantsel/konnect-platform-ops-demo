@@ -63,5 +63,7 @@ docker/*.deb
 # Ignore .DS_Store files in mac
 .DS_Store
 
+.cache
+
 demo_steps.txt
 .github/prompts/

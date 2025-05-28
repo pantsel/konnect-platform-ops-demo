@@ -133,7 +133,7 @@ jobs:
           KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
       - name: Provision Konnect Teams
-        uses: ./.github/actions/konnect-teams
+        uses: ./.github/actions/konnect-teams   
         with:
           action: ${{ inputs.action }}
           config: $( cat ${{ github.workspace }}/${{ inputs.config }} | jq -r . )
@@ -141,3 +141,4 @@ jobs:
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           vault_token: ${{ secrets.VAULT_TOKEN }}
           vault_address: ${{env.VAULT_ADDR}}
+          konnect_token: ${{ secrets.KONNECT_PAT }}

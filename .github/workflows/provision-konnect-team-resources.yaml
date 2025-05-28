@@ -31,13 +31,6 @@ jobs:
         env:
           KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
-      - name: Debug secrets
-        run: |
-          echo "VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}"
-          echo "KONNECT_PAT: ${{ secrets.KONNECT_PAT }}"
-          echo "S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}"
-          echo "S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}"
-
       - name: Provision Konnect Resources
         uses: ./.github/actions/konnect-team-resources
         with:
@@ -47,3 +40,4 @@ jobs:
           system_account_token: ${{ secrets.KONNECT_PAT }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          konnect_token: ${{ secrets.KONNECT_PAT }}
