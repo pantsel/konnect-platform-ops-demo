@@ -7,8 +7,8 @@ terraform {
 }
 
 resource "konnect_gateway_control_plane_membership" "this" {
-  id       = var.id
-  members  = var.members
+  id      = var.id
+  members = var.members
 }
 
 output "control_plane_membership" {

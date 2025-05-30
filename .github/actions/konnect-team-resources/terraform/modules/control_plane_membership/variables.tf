@@ -5,7 +5,7 @@ variable "id" {
 
 variable "members" {
   description = "CP Members"
-  type        = list(object({
+  type = list(object({
     id = string
   }))
 }

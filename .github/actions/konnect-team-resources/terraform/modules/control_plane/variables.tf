@@ -30,3 +30,8 @@ variable "cacert" {
   description = "The CA certificate to use for the control plane"
   type        = string
 }
+
+variable "cloud_gateway" {
+  description = "Indicates if the control plane is a cloud gateway"
+  type        = bool
+}

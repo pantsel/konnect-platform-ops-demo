@@ -66,12 +66,29 @@ runs:
           exit 1
         fi
 
-        # Validate each resource type to be one of:
-        # - konnect.control_plane
-        # - konnect.api_product
-        invalid_resources=$(echo "$config_content" | jq '[.resources[] | select(.type != "konnect.control_plane" and .type != "konnect.api_product")]')
+        allowed_types=(
+          "konnect.control_plane"
+          "konnect.api_product"
+          "konnect.api"
+          "konnect.api_document"
+          "konnect.api_specification"
+          "konnect.api_implementation"
+          "konnect.api_publication"
+          "konnect.cloud_gateway_network"
+          "konnect.cloud_gateway_configuration"
+          "konnect.application_auth_strategy"
+          "konnect.developer_portal"
+          "konnect.portal_auth"
+          "konnect.portal_custom_domain"
+          "konnect.portal_team"
+          "konnect.portal_customization"
+          "konnect.portal_page"
+          "konnect.portal_snippet"
+        )
+        allowed_types_jq=$(printf '"%s",' "${allowed_types[@]}" | sed 's/,$//')
+        invalid_resources=$(echo "$config_content" | jq "[.resources[] | select(.type as \$t | [${allowed_types_jq}] | index(\$t) | not)]")
         if [ "$invalid_resources" != "[]" ]; then
-          echo "Invalid resource types: $invalid_resources. Expected 'konnect.control_plane' or 'konnect.api_product'"
+          echo "Invalid resource types: $invalid_resources. Expected 'konnect.control_plane', 'konnect.api_product', 'konnect.cloud_gateway_network' or 'konnect.cloud_gateway_configuration'"
           exit 1
         fi
 

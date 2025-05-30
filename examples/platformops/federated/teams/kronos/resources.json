@@ -1,75 +1,487 @@
 {
-    "metadata": {
-        "format_version": "1.0.0",
-        "type": "konnect.team.resources",
-        "region": "eu",
-        "team": "Kronos",
-        "description": "Kronos team Konnect resources in the EU region"
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect.team.resources",
+    "region": "eu",
+    "team": "Kronos",
+    "description": "Kronos team Konnect resources in the EU region"
+  },
+  "resources": [
+    {
+      "type": "konnect.control_plane",
+      "name": "kronos-dev",
+      "description": "Kronos development control plane",
+      "labels": {
+        "env": "dev"
+      }
     },
-    "resources": [
+    {
+      "type": "konnect.control_plane",
+      "name": "kronos-dev-aws-eu",
+      "cloud_gateway": true,
+      "description": "Kronos development control plane on AWS in the EU region",
+      "labels": {
+        "env": "dev"
+      }
+    },
+    {
+      "type": "konnect.control_plane",
+      "name": "kronos-test",
+      "description": "Kronos test control plane",
+      "labels": {
+        "env": "tst"
+      }
+    },
+    {
+      "type": "konnect.control_plane",
+      "name": "kronos-acc",
+      "description": "Kronos acceptance control plane",
+      "labels": {
+        "env": "acc"
+      }
+    },
+    {
+      "type": "konnect.control_plane",
+      "name": "kronos-prd",
+      "description": "Kronos production control plane",
+      "labels": {
+        "env": "prd"
+      }
+    },
+    {
+      "type": "konnect.cloud_gateway_network",
+      "name": "kronos-aws-eu-network",
+      "cidr_block": "10.0.0.0/16",
+      "region": "eu-central-1",
+      "cloud_vendor": "aws",
+      "availability_zones": ["euc1-az1", "euc1-az2", "euc1-az3"],
+      "public_labels": {
+        "team": "kronos"
+      }
+    },
+    {
+      "type": "konnect.cloud_gateway_configuration",
+      "control_plane_geo": "eu",
+      "api_access": "private+public",
+      "control_plane_name": "kronos-dev-aws-eu",
+      "dataplane_groups": [
         {
-            "type": "konnect.control_plane",
-            "name": "Kronos Dev",
-            "description": "Kronos development control plane",
-            "labels": {
-                "env": "dev"
+          "provider": "aws",
+          "region": "eu-central-1",
+          "autoscale": {
+            "configuration_data_plane_group_autoscale_autopilot": {
+              "kind": "autopilot",
+              "base_rps": 10,
+              "max_rps": 100
             }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Test",
-            "description": "Kronos test control plane",
-            "labels": {
-                "env": "tst"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Acc",
-            "description": "Kronos acceptance control plane",
-            "labels": {
-                "env": "acc"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Prd",
-            "description": "Kronos production control plane",
-            "labels": {
-                "env": "prd"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Flights API",
-            "description": "API for managing flights",
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Routes API",
-            "description": "API for managing routes",
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Control Plane Group Kronos",
-            "description": "Sample Control Plane Group",
-            "cluster_type": "CLUSTER_TYPE_CONTROL_PLANE_GROUP",
-            "members": [
-                "Kronos Dev",
-                "Kronos Test"
-            ],
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
+          },
+          "cloud_gateway_network_name": "kronos-aws-eu-network"
         }
-    ]
+      ],
+      "version": "3.10"
+    },
+    {
+      "type": "konnect.application_auth_strategy",
+      "name": "kronos-api-auth-strategy",
+      "key_auth": {
+        "name": "kronos-application-key-auth-strategy",
+        "key_names": ["apikey"],
+        "display_name": "Kronos Application Auth Strategy",
+        "strategy_type": "key_auth",
+        "configs": {
+          "key_auth": {
+            "key_names": ["apikey"]
+          }
+        }
+      }
+    },
+    {
+      "type": "konnect.developer_portal",
+      "authentication_enabled": true,
+      "auto_approve_applications": false,
+      "auto_approve_developers": false,
+      "default_api_visibility": "public",
+      "default_application_auth_strategy_name": "kronos-api-auth-strategy",
+      "default_page_visibility": "private",
+      "description": "Kronos Digital API Team developer portal. Find APIs and documentation for the Kronos Digital API Team.",
+      "display_name": "Kronos Digital API Team Developer Portal",
+      "force_destroy": "false",
+      "labels": {
+        "scope": "internal"
+      },
+      "name": "kronos-api-dev-portal",
+      "rbac_enabled": true
+    },
+    {
+      "type": "konnect.portal_auth",
+      "basic_auth_enabled": true,
+      "idp_mapping_enabled": true,
+      "konnect_mapping_enabled": true,
+      "oidc_auth_enabled": true,
+      "oidc_claim_mappings": {
+        "email": "email",
+        "groups": "custom-group-claim",
+        "name": "name"
+      },
+      "oidc_client_id": "fake_oidc_client_id",
+      "oidc_client_secret": "fake_oidc_client_secret",
+      "oidc_issuer": "https://accounts.google.com/",
+      "oidc_scopes": ["openid"],
+      "oidc_team_mapping_enabled": true,
+      "portal_name": "kronos-api-dev-portal",
+      "saml_auth_enabled": false
+    },
+    {
+      "type": "konnect.portal_custom_domain",
+      "portal_name": "kronos-api-dev-portal",
+      "enabled": true,
+      "hostname": "api-portal.kronos.some-random-domain-347t783t5q53.com",
+      "ssl": {
+        "domain_verification_method": "http"
+      }
+    },
+    {
+      "type": "konnect.portal_team",
+      "portal_name": "kronos-api-dev-portal",
+      "name": "Kronos API Developers",
+      "description": "Team for Kronos API developers and consumers"
+    },
+    {
+      "type": "konnect.portal_customization",
+      "portal_name": "kronos-api-dev-portal",
+      "css": ".api-card { border: 2px solid #1f2937; border-radius: 8px; } .header { background: linear-gradient(90deg, #1f2937, #374151); }",
+      "js": {
+        "custom": "console.log('Kronos Portal initialized'); window.kronosPortal = { version: '1.0.0' };",
+        "scripts": [
+          "https://cdn.jsdelivr.net/npm/chart.js",
+          "https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+        ]
+      },
+      "layout": "<!DOCTYPE html><html><head><title>{{title}}</title></head><body><header>{{header}}</header><main>{{content}}</main><footer>{{footer}}</footer></body></html>",
+      "menu": {
+        "footer_bottom": [
+          {
+            "external": false,
+            "path": "/support",
+            "title": "Support",
+            "visibility": "public"
+          },
+          {
+            "external": false,
+            "path": "/about",
+            "title": "About Kronos",
+            "visibility": "public"
+          }
+        ],
+        "footer_sections": [
+          {
+            "items": [
+              {
+                "external": true,
+                "path": "https://kronos.company/docs",
+                "title": "Documentation",
+                "visibility": "public"
+              },
+              {
+                "external": true,
+                "path": "https://kronos.company/github",
+                "title": "GitHub",
+                "visibility": "public"
+              }
+            ],
+            "title": "Resources"
+          },
+          {
+            "items": [
+              {
+                "external": false,
+                "path": "/contact",
+                "title": "Contact Us",
+                "visibility": "public"
+              },
+              {
+                "external": false,
+                "path": "/terms",
+                "title": "Terms of Service",
+                "visibility": "public"
+              }
+            ],
+            "title": "Legal"
+          }
+        ],
+        "main": [
+          {
+            "external": false,
+            "path": "/apis",
+            "title": "APIs",
+            "visibility": "public"
+          },
+          {
+            "external": false,
+            "path": "/documentation",
+            "title": "Documentation",
+            "visibility": "public"
+          },
+          {
+            "external": false,
+            "path": "/community",
+            "title": "Community",
+            "visibility": "private"
+          }
+        ]
+      },
+      "robots": "User-agent: *\nDisallow: /admin/\nDisallow: /internal/\nAllow: /apis/\nAllow: /docs/\nSitemap: https://api-portal.kronos.some-random-domain-347t783t5q53.com/sitemap.xml",
+      "spec_renderer": {
+        "infinite_scroll": true,
+        "show_schemas": true,
+        "try_it_insomnia": true,
+        "try_it_ui": true
+      },
+      "theme": {
+        "colors": {
+          "primary": "#1f2937",
+          "secondary": "#374151",
+          "accent": "#3b82f6",
+          "background": "#f9fafb",
+          "text": "#111827"
+        },
+        "mode": "light",
+        "name": "Kronos Corporate Theme"
+      }
+    },
+    {
+      "type": "konnect.portal_page",
+      "portal_name": "kronos-api-dev-portal",
+      "slug": "/getting-started",
+      "title": "Getting Started with Kronos APIs",
+      "description": "A comprehensive guide to get started with Kronos Digital API Team's APIs",
+      "content": "# Getting Started with Kronos APIs\n\nWelcome to the Kronos Digital API Team Developer Portal! This guide will help you get started with our APIs.\n\n## Prerequisites\n\nBefore you begin, make sure you have:\n\n- A valid API key\n- Basic understanding of REST APIs\n- Your favorite HTTP client (curl, Postman, etc.)\n\n## Quick Start\n\n1. **Obtain an API Key**: Register for an account to get your API key\n2. **Explore APIs**: Browse our available APIs in the portal\n3. **Make your first request**: Use the interactive documentation to test API calls\n\n## Authentication\n\nAll API requests require authentication using an API key. Include your key in the request header:\n\n```bash\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" https://api.kronos.example.com/v1/users\n```\n\n## Rate Limiting\n\nOur APIs implement rate limiting to ensure fair usage:\n\n- **Free tier**: 1000 requests per hour\n- **Premium tier**: 10000 requests per hour\n\n## Support\n\nIf you need help:\n\n- Check our [FAQ](/faq)\n- Visit our [Documentation](/docs)\n- Contact support at api-support@kronos.com\n\nHappy coding! 🚀",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_page",
+      "portal_name": "kronos-api-dev-portal",
+      "slug": "/faq",
+      "title": "Frequently Asked Questions",
+      "description": "Common questions and answers about Kronos APIs",
+      "content": "# Frequently Asked Questions\n\n## General Questions\n\n### What is the Kronos API?\n\nThe Kronos API is a comprehensive set of REST APIs that provide access to our digital banking services, user management, and transaction processing capabilities.\n\n### How do I get started?\n\n1. Register for a developer account\n2. Obtain your API credentials\n3. Review our [Getting Started](/getting-started) guide\n4. Start building!\n\n## Authentication\n\n### How do I authenticate my requests?\n\nAll API requests require an API key passed in the Authorization header:\n\n```\nAuthorization: Bearer YOUR_API_KEY\n```\n\n### What happens if my API key expires?\n\nAPI keys are valid for 1 year. You'll receive email notifications 30 days before expiration.\n\n## Rate Limiting\n\n### What are the rate limits?\n\n- Free tier: 1000 requests/hour\n- Premium tier: 10000 requests/hour\n- Enterprise: Custom limits available\n\n### What happens when I exceed the rate limit?\n\nYou'll receive a 429 HTTP status code. Wait before making additional requests.\n\n## Support\n\n### How can I get help?\n\n- Email: api-support@kronos.com\n- Documentation: Available in this portal\n- Status page: https://status.kronos.com\n\n### Do you offer SLA guarantees?\n\nYes, our Enterprise tier includes 99.9% uptime SLA with 24/7 support.",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_snippet",
+      "portal_name": "kronos-api-dev-portal",
+      "name": "auth-code-example",
+      "title": "Authentication Code Example",
+      "description": "Reusable code snippet showing how to authenticate with Kronos APIs",
+      "content": "```javascript\n// Kronos API Authentication Example\nconst API_KEY = 'your-api-key-here';\nconst BASE_URL = 'https://api.kronos.example.com/v1';\n\n// Function to make authenticated requests\nasync function authenticatedRequest(endpoint, options = {}) {\n  const headers = {\n    'Authorization': `Bearer ${API_KEY}`,\n    'Content-Type': 'application/json',\n    ...options.headers\n  };\n\n  try {\n    const response = await fetch(`${BASE_URL}${endpoint}`, {\n      ...options,\n      headers\n    });\n\n    if (!response.ok) {\n      throw new Error(`HTTP error! status: ${response.status}`);\n    }\n\n    return await response.json();\n  } catch (error) {\n    console.error('API request failed:', error);\n    throw error;\n  }\n}\n\n// Example usage\nauthenticatedRequest('/users')\n  .then(data => console.log('Users:', data))\n  .catch(error => console.error('Error:', error));\n```",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_snippet",
+      "portal_name": "kronos-api-dev-portal",
+      "name": "error-handling",
+      "title": "Error Handling Best Practices",
+      "description": "Code snippet demonstrating proper error handling for Kronos API calls",
+      "content": "```python\nimport requests\nimport json\nfrom typing import Dict, Any, Optional\n\nclass KronosAPIError(Exception):\n    \"\"\"Custom exception for Kronos API errors\"\"\"\n    def __init__(self, status_code: int, message: str, details: Optional[Dict] = None):\n        self.status_code = status_code\n        self.message = message\n        self.details = details or {}\n        super().__init__(f\"API Error {status_code}: {message}\")\n\nclass KronosAPIClient:\n    def __init__(self, api_key: str, base_url: str = \"https://api.kronos.example.com/v1\"):\n        self.api_key = api_key\n        self.base_url = base_url\n        self.session = requests.Session()\n        self.session.headers.update({\n            'Authorization': f'Bearer {api_key}',\n            'Content-Type': 'application/json'\n        })\n    \n    def _handle_response(self, response: requests.Response) -> Dict[str, Any]:\n        \"\"\"Handle API response with proper error handling\"\"\"\n        try:\n            data = response.json()\n        except json.JSONDecodeError:\n            data = {\"message\": response.text}\n        \n        if response.status_code == 200:\n            return data\n        elif response.status_code == 400:\n            raise KronosAPIError(400, \"Bad Request\", data)\n        elif response.status_code == 401:\n            raise KronosAPIError(401, \"Unauthorized - Check your API key\", data)\n        elif response.status_code == 403:\n            raise KronosAPIError(403, \"Forbidden - Insufficient permissions\", data)\n        elif response.status_code == 404:\n            raise KronosAPIError(404, \"Resource not found\", data)\n        elif response.status_code == 429:\n            raise KronosAPIError(429, \"Rate limit exceeded\", data)\n        elif response.status_code >= 500:\n            raise KronosAPIError(response.status_code, \"Server error\", data)\n        else:\n            raise KronosAPIError(response.status_code, \"Unknown error\", data)\n    \n    def get_users(self) -> Dict[str, Any]:\n        \"\"\"Get users with proper error handling\"\"\"\n        try:\n            response = self.session.get(f\"{self.base_url}/users\")\n            return self._handle_response(response)\n        except requests.RequestException as e:\n            raise KronosAPIError(0, f\"Network error: {str(e)}\")\n\n# Example usage\ntry:\n    client = KronosAPIClient(\"your-api-key-here\")\n    users = client.get_users()\n    print(\"Success:\", users)\nexcept KronosAPIError as e:\n    print(f\"API Error: {e}\")\n    print(f\"Details: {e.details}\")\nexcept Exception as e:\n    print(f\"Unexpected error: {e}\")\n```",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_snippet",
+      "portal_name": "kronos-api-dev-portal",
+      "name": "rate-limit-example",
+      "title": "Rate Limiting with Retry Logic",
+      "description": "Example showing how to handle rate limits with exponential backoff",
+      "content": "```bash\n#!/bin/bash\n\n# Kronos API Rate Limiting Example with Retry Logic\n\nAPI_KEY=\"your-api-key-here\"\nBASE_URL=\"https://api.kronos.example.com/v1\"\nMAX_RETRIES=3\nINITIAL_DELAY=1\n\n# Function to make API request with retry logic\nmake_api_request() {\n    local endpoint=\"$1\"\n    local method=\"${2:-GET}\"\n    local data=\"$3\"\n    local retry_count=0\n    local delay=$INITIAL_DELAY\n    \n    while [ $retry_count -lt $MAX_RETRIES ]; do\n        echo \"Attempt $((retry_count + 1)) for $endpoint\"\n        \n        # Make the API request\n        if [ \"$method\" = \"GET\" ]; then\n            response=$(curl -s -w \"\\n%{http_code}\" \\\n                -H \"Authorization: Bearer $API_KEY\" \\\n                -H \"Content-Type: application/json\" \\\n                \"$BASE_URL$endpoint\")\n        else\n            response=$(curl -s -w \"\\n%{http_code}\" \\\n                -X \"$method\" \\\n                -H \"Authorization: Bearer $API_KEY\" \\\n                -H \"Content-Type: application/json\" \\\n                -d \"$data\" \\\n                \"$BASE_URL$endpoint\")\n        fi\n        \n        # Extract HTTP status code (last line) and response body\n        http_code=$(echo \"$response\" | tail -n1)\n        response_body=$(echo \"$response\" | head -n -1)\n        \n        case $http_code in\n            200|201|204)\n                echo \"Success: $response_body\"\n                return 0\n                ;;\n            429)\n                echo \"Rate limit exceeded. Waiting ${delay}s before retry...\"\n                sleep $delay\n                delay=$((delay * 2))  # Exponential backoff\n                retry_count=$((retry_count + 1))\n                ;;\n            401)\n                echo \"Error: Unauthorized. Please check your API key.\"\n                return 1\n                ;;\n            403)\n                echo \"Error: Forbidden. Insufficient permissions.\"\n                return 1\n                ;;\n            404)\n                echo \"Error: Resource not found.\"\n                return 1\n                ;;\n            *)\n                echo \"Error: HTTP $http_code - $response_body\"\n                return 1\n                ;;\n        esac\n    done\n    \n    echo \"Failed after $MAX_RETRIES attempts\"\n    return 1\n}\n\n# Example usage\necho \"Fetching users...\"\nmake_api_request \"/users\"\n\necho \"\\nCreating a new user...\"\nuser_data='{\"name\": \"John Doe\", \"email\": \"john.doe@example.com\"}'\nmake_api_request \"/users\" \"POST\" \"$user_data\"\n```",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.api",
+      "name": "Kronos Banking API",
+      "version": "v1",
+      "description": "Core banking API for account management, transactions, and customer services",
+      "deprecated": false,
+      "labels": {
+        "domain": "banking",
+        "team": "kronos",
+        "criticality": "high"
+      },
+      "slug": "kronos-banking-api-v1",
+      "spec_content": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Kronos Banking API\",\n    \"description\": \"Core banking API for account management, transactions, and customer services\",\n    \"version\": \"1.0.0\",\n    \"contact\": {\n      \"name\": \"Kronos API Team\",\n      \"email\": \"api-support@kronos.com\",\n      \"url\": \"https://api.kronos.com/support\"\n    },\n    \"license\": {\n      \"name\": \"Proprietary\",\n      \"url\": \"https://kronos.com/license\"\n    }\n  },\n  \"servers\": [\n    {\n      \"url\": \"https://api.kronos.example.com/v1\",\n      \"description\": \"Production server\"\n    },\n    {\n      \"url\": \"https://api-staging.kronos.example.com/v1\",\n      \"description\": \"Staging server\"\n    }\n  ],\n  \"paths\": {\n    \"/accounts\": {\n      \"get\": {\n        \"summary\": \"List customer accounts\",\n        \"description\": \"Retrieve a list of accounts for the authenticated customer\",\n        \"operationId\": \"listAccounts\",\n        \"tags\": [\"Accounts\"],\n        \"security\": [{ \"bearerAuth\": [] }],\n        \"responses\": {\n          \"200\": {\n            \"description\": \"List of accounts\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"type\": \"object\",\n                  \"properties\": {\n                    \"accounts\": {\n                      \"type\": \"array\",\n                      \"items\": { \"$ref\": \"#/components/schemas/Account\" }\n                    }\n                  }\n                }\n              }\n            }\n          },\n          \"401\": { \"$ref\": \"#/components/responses/Unauthorized\" },\n          \"429\": { \"$ref\": \"#/components/responses/RateLimited\" }\n        }\n      }\n    },\n    \"/accounts/{accountId}/balance\": {\n      \"get\": {\n        \"summary\": \"Get account balance\",\n        \"description\": \"Retrieve the current balance for a specific account\",\n        \"operationId\": \"getAccountBalance\",\n        \"tags\": [\"Accounts\"],\n        \"security\": [{ \"bearerAuth\": [] }],\n        \"parameters\": [\n          {\n            \"name\": \"accountId\",\n            \"in\": \"path\",\n            \"required\": true,\n            \"schema\": { \"type\": \"string\" },\n            \"description\": \"Unique account identifier\"\n          }\n        ],\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Account balance\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": { \"$ref\": \"#/components/schemas/Balance\" }\n              }\n            }\n          },\n          \"404\": { \"$ref\": \"#/components/responses/NotFound\" }\n        }\n      }\n    }\n  },\n  \"components\": {\n    \"schemas\": {\n      \"Account\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": { \"type\": \"string\" },\n          \"name\": { \"type\": \"string\" },\n          \"type\": { \"type\": \"string\", \"enum\": [\"checking\", \"savings\", \"credit\"] },\n          \"currency\": { \"type\": \"string\" }\n        }\n      },\n      \"Balance\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"available\": { \"type\": \"number\" },\n          \"current\": { \"type\": \"number\" },\n          \"currency\": { \"type\": \"string\" }\n        }\n      }\n    },\n    \"responses\": {\n      \"Unauthorized\": {\n        \"description\": \"Authentication required\"\n      },\n      \"NotFound\": {\n        \"description\": \"Resource not found\"\n      },\n      \"RateLimited\": {\n        \"description\": \"Rate limit exceeded\"\n      }\n    },\n    \"securitySchemes\": {\n      \"bearerAuth\": {\n        \"type\": \"http\",\n        \"scheme\": \"bearer\",\n        \"bearerFormat\": \"JWT\"\n      }\n    }\n  }\n}"
+    },
+    {
+      "type": "konnect.api",
+      "name": "Kronos User Management API",
+      "version": "v2",
+      "description": "User authentication, profile management, and access control API",
+      "deprecated": false,
+      "labels": {
+        "domain": "identity",
+        "team": "kronos",
+        "criticality": "high"
+      },
+      "slug": "kronos-user-mgmt-api-v2",
+      "spec_content": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Kronos User Management API\",\n    \"description\": \"User authentication, profile management, and access control API\",\n    \"version\": \"2.0.0\"\n  },\n  \"servers\": [\n    {\n      \"url\": \"https://api.kronos.example.com/v2/users\",\n      \"description\": \"Production server\"\n    }\n  ],\n  \"paths\": {\n    \"/profile\": {\n      \"get\": {\n        \"summary\": \"Get user profile\",\n        \"operationId\": \"getUserProfile\",\n        \"tags\": [\"Profile\"],\n        \"security\": [{ \"bearerAuth\": [] }],\n        \"responses\": {\n          \"200\": {\n            \"description\": \"User profile\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": { \"$ref\": \"#/components/schemas/UserProfile\" }\n              }\n            }\n          }\n        }\n      },\n      \"put\": {\n        \"summary\": \"Update user profile\",\n        \"operationId\": \"updateUserProfile\",\n        \"tags\": [\"Profile\"],\n        \"security\": [{ \"bearerAuth\": [] }],\n        \"requestBody\": {\n          \"required\": true,\n          \"content\": {\n            \"application/json\": {\n              \"schema\": { \"$ref\": \"#/components/schemas/UserProfileUpdate\" }\n            }\n          }\n        },\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Profile updated\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": { \"$ref\": \"#/components/schemas/UserProfile\" }\n              }\n            }\n          }\n        }\n      }\n    }\n  },\n  \"components\": {\n    \"schemas\": {\n      \"UserProfile\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": { \"type\": \"string\" },\n          \"email\": { \"type\": \"string\", \"format\": \"email\" },\n          \"firstName\": { \"type\": \"string\" },\n          \"lastName\": { \"type\": \"string\" },\n          \"phone\": { \"type\": \"string\" },\n          \"createdAt\": { \"type\": \"string\", \"format\": \"date-time\" }\n        }\n      },\n      \"UserProfileUpdate\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"firstName\": { \"type\": \"string\" },\n          \"lastName\": { \"type\": \"string\" },\n          \"phone\": { \"type\": \"string\" }\n        }\n      }\n    },\n    \"securitySchemes\": {\n      \"bearerAuth\": {\n        \"type\": \"http\",\n        \"scheme\": \"bearer\"\n      }\n    }\n  }\n}"
+    },
+    {
+      "type": "konnect.api",
+      "name": "Kronos Analytics API",
+      "version": "v1-beta",
+      "description": "Analytics and reporting API for business intelligence and metrics",
+      "deprecated": false,
+      "labels": {
+        "domain": "analytics",
+        "team": "kronos",
+        "criticality": "medium",
+        "stage": "beta"
+      },
+      "slug": "kronos-analytics-api-v1-beta"
+    },
+    {
+      "type": "konnect.api_document",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "slug": "getting-started",
+      "title": "Getting Started with Kronos Banking API",
+      "content": "# Getting Started with Kronos Banking API\n\nWelcome to the Kronos Banking API! This comprehensive guide will help you integrate with our banking services.\n\n## Introduction\n\nThe Kronos Banking API provides secure access to account information, transaction processing, and balance inquiries. Our API follows REST principles and uses industry-standard authentication methods.\n\n## Prerequisites\n\nBefore you begin, ensure you have:\n\n- A valid API key from Kronos Digital\n- Basic understanding of REST APIs\n- HTTPS-enabled client application\n- Compliance with banking regulations in your jurisdiction\n\n## Quick Start\n\n### 1. Authentication\n\nAll API requests require authentication using an API key in the Authorization header:\n\n```bash\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  https://api.kronos.example.com/v1/accounts\n```\n\n### 2. Making Your First Request\n\nStart by retrieving account information:\n\n```bash\ncurl -X GET \\\n  https://api.kronos.example.com/v1/accounts/12345 \\\n  -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\"\n```\n\n### 3. Error Handling\n\nOur API returns standard HTTP status codes. Always check the response status and handle errors appropriately:\n\n- `200 OK` - Request successful\n- `400 Bad Request` - Invalid request parameters\n- `401 Unauthorized` - Invalid or missing API key\n- `403 Forbidden` - Insufficient permissions\n- `404 Not Found` - Resource not found\n- `429 Too Many Requests` - Rate limit exceeded\n- `500 Internal Server Error` - Server error\n\n## Rate Limiting\n\nThe API implements rate limiting to ensure fair usage:\n\n- **Production**: 1000 requests per hour\n- **Sandbox**: 10000 requests per hour\n\nRate limit headers are included in all responses:\n\n```\nX-RateLimit-Limit: 1000\nX-RateLimit-Remaining: 999\nX-RateLimit-Reset: 1640995200\n```\n\n## Security Considerations\n\n- Always use HTTPS for API requests\n- Store API keys securely and never expose them in client-side code\n- Implement proper error handling and logging\n- Follow PCI DSS compliance requirements for payment data\n\n## Next Steps\n\n- Explore the [API Reference](/api-reference) for detailed endpoint documentation\n- Review [Security Guidelines](/security) for best practices\n- Check out [Code Examples](/examples) for implementation samples\n\nFor support, contact our API team at api-support@kronos.com.",
+      "status": "published",
+      "labels": {
+        "type": "guide",
+        "level": "beginner",
+        "category": "getting-started"
+      }
+    },
+    {
+      "type": "konnect.api_document",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "slug": "api-reference",
+      "title": "API Reference",
+      "content": "# Kronos Banking API Reference\n\n## Base URL\n\n```\nhttps://api.kronos.example.com/v1\n```\n\n## Authentication\n\nAll endpoints require Bearer token authentication:\n\n```\nAuthorization: Bearer {your-api-key}\n```\n\n## Endpoints\n\n### Accounts\n\n#### GET /accounts\n\nRetrieve a list of accounts associated with the authenticated user.\n\n**Parameters:**\n- `limit` (optional): Number of results to return (default: 20, max: 100)\n- `offset` (optional): Number of results to skip (default: 0)\n\n**Response:**\n\n```json\n{\n  \"accounts\": [\n    {\n      \"id\": \"acc_123456\",\n      \"account_number\": \"1234567890\",\n      \"account_type\": \"checking\",\n      \"balance\": {\n        \"amount\": 1234.56,\n        \"currency\": \"USD\"\n      },\n      \"status\": \"active\",\n      \"created_at\": \"2023-01-15T10:30:00Z\"\n    }\n  ],\n  \"total_count\": 1,\n  \"has_more\": false\n}\n```\n\n#### GET /accounts/{account_id}\n\nRetrieve details for a specific account.\n\n**Path Parameters:**\n- `account_id` (required): The unique identifier for the account\n\n**Response:**\n\n```json\n{\n  \"id\": \"acc_123456\",\n  \"account_number\": \"1234567890\",\n  \"account_type\": \"checking\",\n  \"balance\": {\n    \"amount\": 1234.56,\n    \"currency\": \"USD\"\n  },\n  \"status\": \"active\",\n  \"created_at\": \"2023-01-15T10:30:00Z\",\n  \"updated_at\": \"2023-01-15T10:30:00Z\"\n}\n```\n\n#### GET /accounts/{account_id}/balance\n\nRetrieve the current balance for a specific account.\n\n**Path Parameters:**\n- `account_id` (required): The unique identifier for the account\n\n**Response:**\n\n```json\n{\n  \"account_id\": \"acc_123456\",\n  \"balance\": {\n    \"amount\": 1234.56,\n    \"currency\": \"USD\"\n  },\n  \"available_balance\": {\n    \"amount\": 1200.00,\n    \"currency\": \"USD\"\n  },\n  \"last_updated\": \"2023-01-15T15:45:30Z\"\n}\n```\n\n### Transactions\n\n#### GET /accounts/{account_id}/transactions\n\nRetrieve transaction history for a specific account.\n\n**Path Parameters:**\n- `account_id` (required): The unique identifier for the account\n\n**Query Parameters:**\n- `limit` (optional): Number of results to return (default: 20, max: 100)\n- `offset` (optional): Number of results to skip (default: 0)\n- `start_date` (optional): Filter transactions from this date (ISO 8601 format)\n- `end_date` (optional): Filter transactions to this date (ISO 8601 format)\n- `type` (optional): Filter by transaction type (debit, credit)\n\n**Response:**\n\n```json\n{\n  \"transactions\": [\n    {\n      \"id\": \"txn_789012\",\n      \"account_id\": \"acc_123456\",\n      \"amount\": {\n        \"amount\": -50.00,\n        \"currency\": \"USD\"\n      },\n      \"type\": \"debit\",\n      \"description\": \"Online purchase\",\n      \"merchant\": \"Example Store\",\n      \"category\": \"retail\",\n      \"status\": \"completed\",\n      \"processed_at\": \"2023-01-15T14:20:15Z\"\n    }\n  ],\n  \"total_count\": 1,\n  \"has_more\": false\n}\n```\n\n## Error Responses\n\nAll error responses follow a consistent format:\n\n```json\n{\n  \"error\": {\n    \"type\": \"invalid_request_error\",\n    \"code\": \"missing_parameter\",\n    \"message\": \"Missing required parameter: account_id\",\n    \"param\": \"account_id\"\n  }\n}\n```\n\n## Rate Limits\n\n- Production: 1000 requests per hour\n- Sandbox: 10000 requests per hour\n\nRate limit information is included in response headers:\n\n- `X-RateLimit-Limit`: Maximum requests per hour\n- `X-RateLimit-Remaining`: Remaining requests in current window\n- `X-RateLimit-Reset`: Unix timestamp when the rate limit resets",
+      "status": "published",
+      "labels": {
+        "type": "reference",
+        "category": "documentation"
+      }
+    },
+    {
+      "type": "konnect.api_document",
+      "api_name": "Kronos User Management API",
+      "api_version": "v2",
+      "slug": "user-guide",
+      "title": "User Management Guide",
+      "content": "# Kronos User Management API Guide\n\nThe Kronos User Management API provides comprehensive user profile and preference management capabilities.\n\n## Overview\n\nThis API allows you to:\n\n- Create and manage user profiles\n- Update user preferences and settings\n- Handle user authentication flows\n- Manage user permissions and roles\n\n## User Profile Management\n\n### Creating User Profiles\n\nUser profiles contain essential information about your application users:\n\n```json\n{\n  \"user_id\": \"usr_123456\",\n  \"email\": \"user@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1-555-0123\",\n  \"preferences\": {\n    \"language\": \"en\",\n    \"timezone\": \"America/New_York\",\n    \"notifications\": {\n      \"email\": true,\n      \"sms\": false,\n      \"push\": true\n    }\n  }\n}\n```\n\n### Updating Preferences\n\nUsers can customize their experience through various preferences:\n\n- **Language Settings**: Support for multiple languages\n- **Notification Preferences**: Email, SMS, and push notification controls\n- **Privacy Settings**: Data sharing and visibility controls\n- **Security Settings**: Two-factor authentication and login preferences\n\n## Authentication Flow\n\nThe API supports multiple authentication methods:\n\n1. **OAuth 2.0**: For third-party integrations\n2. **API Keys**: For server-to-server communication\n3. **JWT Tokens**: For session-based authentication\n\n### OAuth 2.0 Flow\n\n1. Redirect user to authorization endpoint\n2. User grants permission\n3. Receive authorization code\n4. Exchange code for access token\n5. Use access token for API requests\n\n## User Roles and Permissions\n\nThe system supports role-based access control (RBAC):\n\n- **Admin**: Full system access\n- **Manager**: User management and reporting\n- **User**: Basic profile management\n- **Guest**: Read-only access\n\n## Data Privacy and Security\n\n- All personal data is encrypted at rest and in transit\n- GDPR compliance for EU users\n- Regular security audits and penetration testing\n- Data retention policies and user data deletion\n\n## Best Practices\n\n1. **Data Minimization**: Only collect necessary user data\n2. **Consent Management**: Implement proper consent workflows\n3. **Regular Updates**: Keep user profiles current\n4. **Security**: Implement proper authentication and authorization\n5. **Monitoring**: Log and monitor API usage for security\n\nFor more details, see the complete API documentation.",
+      "status": "published",
+      "labels": {
+        "type": "guide",
+        "category": "user-management"
+      }
+    },
+    {
+      "type": "konnect.api_specification",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "spec_type": "oas3",
+      "content": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Kronos Banking API\",\"description\":\"Comprehensive banking services API for account management, transactions, and financial operations\",\"version\":\"1.0.0\",\"contact\":{\"name\":\"Kronos API Support\",\"email\":\"api-support@kronos.example.com\"},\"license\":{\"name\":\"MIT\",\"url\":\"https://opensource.org/licenses/MIT\"}},\"servers\":[{\"url\":\"https://api.kronos.example.com/v1\",\"description\":\"Production server\"},{\"url\":\"https://api-staging.kronos.example.com/v1\",\"description\":\"Staging server\"}],\"paths\":{\"/accounts\":{\"get\":{\"summary\":\"List accounts\",\"description\":\"Retrieve a list of accounts associated with the authenticated user\",\"operationId\":\"listAccounts\",\"tags\":[\"Accounts\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"limit\",\"in\":\"query\",\"description\":\"Number of results to return\",\"required\":false,\"schema\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":100,\"default\":20}},{\"name\":\"offset\",\"in\":\"query\",\"description\":\"Number of results to skip\",\"required\":false,\"schema\":{\"type\":\"integer\",\"minimum\":0,\"default\":0}}],\"responses\":{\"200\":{\"description\":\"List of accounts\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"accounts\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/Account\"}},\"total_count\":{\"type\":\"integer\"},\"has_more\":{\"type\":\"boolean\"}}}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"},\"500\":{\"$ref\":\"#/components/responses/InternalError\"}}}},\"/accounts/{account_id}\":{\"get\":{\"summary\":\"Get account details\",\"description\":\"Retrieve details for a specific account\",\"operationId\":\"getAccount\",\"tags\":[\"Accounts\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"account_id\",\"in\":\"path\",\"required\":true,\"description\":\"The unique identifier for the account\",\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"Account details\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Account\"}}}},\"404\":{\"$ref\":\"#/components/responses/NotFound\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/accounts/{account_id}/balance\":{\"get\":{\"summary\":\"Get account balance\",\"description\":\"Retrieve the current balance for a specific account\",\"operationId\":\"getAccountBalance\",\"tags\":[\"Accounts\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"account_id\",\"in\":\"path\",\"required\":true,\"description\":\"The unique identifier for the account\",\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"Account balance\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Balance\"}}}},\"404\":{\"$ref\":\"#/components/responses/NotFound\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/accounts/{account_id}/transactions\":{\"get\":{\"summary\":\"List transactions\",\"description\":\"Retrieve transaction history for a specific account\",\"operationId\":\"listTransactions\",\"tags\":[\"Transactions\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"account_id\",\"in\":\"path\",\"required\":true,\"description\":\"The unique identifier for the account\",\"schema\":{\"type\":\"string\"}},{\"name\":\"limit\",\"in\":\"query\",\"description\":\"Number of results to return\",\"required\":false,\"schema\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":100,\"default\":20}},{\"name\":\"start_date\",\"in\":\"query\",\"description\":\"Filter transactions from this date\",\"required\":false,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"end_date\",\"in\":\"query\",\"description\":\"Filter transactions to this date\",\"required\":false,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"type\",\"in\":\"query\",\"description\":\"Filter by transaction type\",\"required\":false,\"schema\":{\"type\":\"string\",\"enum\":[\"debit\",\"credit\"]}}],\"responses\":{\"200\":{\"description\":\"List of transactions\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"transactions\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/Transaction\"}},\"total_count\":{\"type\":\"integer\"},\"has_more\":{\"type\":\"boolean\"}}}}}},\"404\":{\"$ref\":\"#/components/responses/NotFound\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}}},\"components\":{\"schemas\":{\"Account\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"description\":\"Unique account identifier\"},\"account_number\":{\"type\":\"string\",\"description\":\"Account number\"},\"account_type\":{\"type\":\"string\",\"enum\":[\"checking\",\"savings\",\"credit\"],\"description\":\"Type of account\"},\"balance\":{\"$ref\":\"#/components/schemas/Amount\"},\"status\":{\"type\":\"string\",\"enum\":[\"active\",\"inactive\",\"closed\"],\"description\":\"Account status\"},\"created_at\":{\"type\":\"string\",\"format\":\"date-time\"},\"updated_at\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"Amount\":{\"type\":\"object\",\"properties\":{\"amount\":{\"type\":\"number\",\"format\":\"double\",\"description\":\"The amount value\"},\"currency\":{\"type\":\"string\",\"description\":\"ISO 4217 currency code\",\"example\":\"USD\"}}},\"Balance\":{\"type\":\"object\",\"properties\":{\"account_id\":{\"type\":\"string\"},\"balance\":{\"$ref\":\"#/components/schemas/Amount\"},\"available_balance\":{\"$ref\":\"#/components/schemas/Amount\"},\"last_updated\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"Transaction\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"description\":\"Unique transaction identifier\"},\"account_id\":{\"type\":\"string\",\"description\":\"Associated account ID\"},\"amount\":{\"$ref\":\"#/components/schemas/Amount\"},\"type\":{\"type\":\"string\",\"enum\":[\"debit\",\"credit\"],\"description\":\"Transaction type\"},\"description\":{\"type\":\"string\",\"description\":\"Transaction description\"},\"merchant\":{\"type\":\"string\",\"description\":\"Merchant name\"},\"category\":{\"type\":\"string\",\"description\":\"Transaction category\"},\"status\":{\"type\":\"string\",\"enum\":[\"pending\",\"completed\",\"failed\"],\"description\":\"Transaction status\"},\"processed_at\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"Error\":{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"description\":\"Error type\"},\"code\":{\"type\":\"string\",\"description\":\"Error code\"},\"message\":{\"type\":\"string\",\"description\":\"Error message\"},\"param\":{\"type\":\"string\",\"description\":\"Parameter that caused the error\"}}}},\"responses\":{\"Unauthorized\":{\"description\":\"Authentication failed\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"NotFound\":{\"description\":\"Resource not found\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"InternalError\":{\"description\":\"Internal server error\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}}},\"securitySchemes\":{\"bearerAuth\":{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}}}}"
+    },
+    {
+      "type": "konnect.api_specification",
+      "api_name": "Kronos User Management API",
+      "api_version": "v2",
+      "spec_type": "oas3",
+      "content": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Kronos User Management API\",\"description\":\"User authentication, profile management, and access control API\",\"version\":\"2.0.0\",\"contact\":{\"name\":\"Kronos API Support\",\"email\":\"api-support@kronos.example.com\"}},\"servers\":[{\"url\":\"https://api.kronos.example.com/v2/users\",\"description\":\"Production server\"},{\"url\":\"https://api-staging.kronos.example.com/v2/users\",\"description\":\"Staging server\"}],\"paths\":{\"/profile\":{\"get\":{\"summary\":\"Get user profile\",\"description\":\"Retrieve the authenticated user's profile information\",\"operationId\":\"getUserProfile\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"User profile\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserProfile\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}},\"put\":{\"summary\":\"Update user profile\",\"description\":\"Update the authenticated user's profile information\",\"operationId\":\"updateUserProfile\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"requestBody\":{\"required\":true,\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserProfileUpdate\"}}}},\"responses\":{\"200\":{\"description\":\"Profile updated successfully\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserProfile\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/profile/preferences\":{\"get\":{\"summary\":\"Get user preferences\",\"description\":\"Retrieve user preferences and settings\",\"operationId\":\"getUserPreferences\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"User preferences\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserPreferences\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}},\"patch\":{\"summary\":\"Update user preferences\",\"description\":\"Update specific user preferences\",\"operationId\":\"updateUserPreferences\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"requestBody\":{\"required\":true,\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserPreferencesUpdate\"}}}},\"responses\":{\"200\":{\"description\":\"Preferences updated successfully\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserPreferences\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/auth/login\":{\"post\":{\"summary\":\"User login\",\"description\":\"Authenticate user and return access token\",\"operationId\":\"loginUser\",\"tags\":[\"Authentication\"],\"requestBody\":{\"required\":true,\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/LoginRequest\"}}}},\"responses\":{\"200\":{\"description\":\"Login successful\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/LoginResponse\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"}}}},\"/auth/logout\":{\"post\":{\"summary\":\"User logout\",\"description\":\"Invalidate the current session\",\"operationId\":\"logoutUser\",\"tags\":[\"Authentication\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"Logout successful\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}}},\"components\":{\"schemas\":{\"UserProfile\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"description\":\"Unique user identifier\"},\"email\":{\"type\":\"string\",\"format\":\"email\",\"description\":\"User email address\"},\"firstName\":{\"type\":\"string\",\"description\":\"User first name\"},\"lastName\":{\"type\":\"string\",\"description\":\"User last name\"},\"phone\":{\"type\":\"string\",\"description\":\"User phone number\"},\"role\":{\"type\":\"string\",\"enum\":[\"admin\",\"manager\",\"user\",\"guest\"],\"description\":\"User role\"},\"status\":{\"type\":\"string\",\"enum\":[\"active\",\"inactive\",\"suspended\"],\"description\":\"Account status\"},\"createdAt\":{\"type\":\"string\",\"format\":\"date-time\"},\"updatedAt\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"UserProfileUpdate\":{\"type\":\"object\",\"properties\":{\"firstName\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":50},\"lastName\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":50},\"phone\":{\"type\":\"string\",\"pattern\":\"^\\\\+?[1-9]\\\\d{1,14}$\"}}},\"UserPreferences\":{\"type\":\"object\",\"properties\":{\"language\":{\"type\":\"string\",\"enum\":[\"en\",\"es\",\"fr\",\"de\"],\"description\":\"Preferred language\"},\"timezone\":{\"type\":\"string\",\"description\":\"User timezone\"},\"notifications\":{\"type\":\"object\",\"properties\":{\"email\":{\"type\":\"boolean\"},\"sms\":{\"type\":\"boolean\"},\"push\":{\"type\":\"boolean\"}}},\"privacy\":{\"type\":\"object\",\"properties\":{\"profileVisible\":{\"type\":\"boolean\"},\"shareData\":{\"type\":\"boolean\"}}}}},\"UserPreferencesUpdate\":{\"type\":\"object\",\"properties\":{\"language\":{\"type\":\"string\",\"enum\":[\"en\",\"es\",\"fr\",\"de\"]},\"timezone\":{\"type\":\"string\"},\"notifications\":{\"type\":\"object\",\"properties\":{\"email\":{\"type\":\"boolean\"},\"sms\":{\"type\":\"boolean\"},\"push\":{\"type\":\"boolean\"}}},\"privacy\":{\"type\":\"object\",\"properties\":{\"profileVisible\":{\"type\":\"boolean\"},\"shareData\":{\"type\":\"boolean\"}}}}},\"LoginRequest\":{\"type\":\"object\",\"required\":[\"email\",\"password\"],\"properties\":{\"email\":{\"type\":\"string\",\"format\":\"email\"},\"password\":{\"type\":\"string\",\"minLength\":8}}},\"LoginResponse\":{\"type\":\"object\",\"properties\":{\"accessToken\":{\"type\":\"string\",\"description\":\"JWT access token\"},\"refreshToken\":{\"type\":\"string\",\"description\":\"Refresh token\"},\"expiresIn\":{\"type\":\"integer\",\"description\":\"Token expiration time in seconds\"},\"user\":{\"$ref\":\"#/components/schemas/UserProfile\"}}},\"Error\":{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\"},\"code\":{\"type\":\"string\"},\"message\":{\"type\":\"string\"},\"param\":{\"type\":\"string\"}}}},\"responses\":{\"BadRequest\":{\"description\":\"Bad request\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"Unauthorized\":{\"description\":\"Authentication failed\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}}},\"securitySchemes\":{\"bearerAuth\":{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}}}}"
+    },
+    {
+      "type": "konnect.api_specification",
+      "api_name": "Kronos Analytics API",
+      "api_version": "v1-beta",
+      "spec_type": "oas3",
+      "content": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Kronos Analytics API\",\"description\":\"Analytics and reporting API for business intelligence and data insights\",\"version\":\"1.0.0-beta\",\"contact\":{\"name\":\"Kronos API Support\",\"email\":\"api-support@kronos.example.com\"}},\"servers\":[{\"url\":\"https://api.kronos.example.com/v1-beta/analytics\",\"description\":\"Production server\"},{\"url\":\"https://api-staging.kronos.example.com/v1-beta/analytics\",\"description\":\"Staging server\"}],\"paths\":{\"/reports/usage\":{\"get\":{\"summary\":\"Get usage analytics\",\"description\":\"Retrieve usage statistics and metrics\",\"operationId\":\"getUsageAnalytics\",\"tags\":[\"Reports\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"start_date\",\"in\":\"query\",\"required\":true,\"description\":\"Start date for the report\",\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"end_date\",\"in\":\"query\",\"required\":true,\"description\":\"End date for the report\",\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"granularity\",\"in\":\"query\",\"description\":\"Data granularity\",\"schema\":{\"type\":\"string\",\"enum\":[\"hour\",\"day\",\"week\",\"month\"],\"default\":\"day\"}}],\"responses\":{\"200\":{\"description\":\"Usage analytics data\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UsageReport\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/reports/performance\":{\"get\":{\"summary\":\"Get performance metrics\",\"description\":\"Retrieve API performance statistics\",\"operationId\":\"getPerformanceMetrics\",\"tags\":[\"Reports\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"start_date\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"end_date\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"metric_type\",\"in\":\"query\",\"description\":\"Type of performance metric\",\"schema\":{\"type\":\"string\",\"enum\":[\"latency\",\"throughput\",\"errors\",\"all\"],\"default\":\"all\"}}],\"responses\":{\"200\":{\"description\":\"Performance metrics\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/PerformanceReport\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/dashboard\":{\"get\":{\"summary\":\"Get dashboard data\",\"description\":\"Retrieve real-time dashboard metrics\",\"operationId\":\"getDashboardData\",\"tags\":[\"Dashboard\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"Dashboard data\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/DashboardData\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}}},\"components\":{\"schemas\":{\"UsageReport\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"object\",\"properties\":{\"start_date\":{\"type\":\"string\",\"format\":\"date\"},\"end_date\":{\"type\":\"string\",\"format\":\"date\"},\"granularity\":{\"type\":\"string\"}}},\"total_requests\":{\"type\":\"integer\"},\"unique_users\":{\"type\":\"integer\"},\"data_points\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/DataPoint\"}}}},\"PerformanceReport\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"object\",\"properties\":{\"start_date\":{\"type\":\"string\",\"format\":\"date\"},\"end_date\":{\"type\":\"string\",\"format\":\"date\"}}},\"average_latency\":{\"type\":\"number\",\"description\":\"Average response time in milliseconds\"},\"throughput\":{\"type\":\"number\",\"description\":\"Requests per second\"},\"error_rate\":{\"type\":\"number\",\"description\":\"Error rate percentage\"},\"data_points\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/PerformanceDataPoint\"}}}},\"DashboardData\":{\"type\":\"object\",\"properties\":{\"current_stats\":{\"type\":\"object\",\"properties\":{\"active_users\":{\"type\":\"integer\"},\"requests_per_minute\":{\"type\":\"number\"},\"average_response_time\":{\"type\":\"number\"},\"error_count\":{\"type\":\"integer\"}}},\"trends\":{\"type\":\"object\",\"properties\":{\"usage_trend\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"stable\"]},\"performance_trend\":{\"type\":\"string\",\"enum\":[\"improving\",\"degrading\",\"stable\"]}}}}},\"DataPoint\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":\"string\",\"format\":\"date-time\"},\"requests\":{\"type\":\"integer\"},\"unique_users\":{\"type\":\"integer\"}}},\"PerformanceDataPoint\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":\"string\",\"format\":\"date-time\"},\"latency\":{\"type\":\"number\"},\"throughput\":{\"type\":\"number\"},\"error_rate\":{\"type\":\"number\"}}},\"Error\":{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\"},\"code\":{\"type\":\"string\"},\"message\":{\"type\":\"string\"}}}},\"responses\":{\"BadRequest\":{\"description\":\"Bad request\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"Unauthorized\":{\"description\":\"Authentication failed\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}}},\"securitySchemes\":{\"bearerAuth\":{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}}}}"
+    },
+    {
+      "type": "konnect.api_implementation",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "service": {
+        "control_plane_name": "kronos-dev",
+        "id": "7710d5c4-d902-410b-992f-18b814155b53"
+      }
+    },
+    {
+      "type": "konnect.api_implementation",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "service": {
+        "control_plane_name": "kronos-test",
+        "id": "8821e6d5-ea03-521c-aa3f-29c925266c64"
+      }
+    },
+    {
+      "type": "konnect.api_implementation",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "service": {
+        "control_plane_name": "kronos-prd",
+        "id": "9932f7e6-fb14-632d-bb4a-3ad036377d75"
+      }
+    },
+    {
+      "type": "konnect.api_implementation",
+      "api_name": "Kronos User Management API",
+      "api_version": "v2",
+      "service": {
+        "control_plane_name": "kronos-dev",
+        "id": "aa43a8f7-ac25-743e-bc5b-4be147488e86"
+      }
+    },
+    {
+      "type": "konnect.api_implementation",
+      "api_name": "Kronos User Management API",
+      "api_version": "v2",
+      "service": {
+        "control_plane_name": "kronos-prd",
+        "id": "bb54b9a8-bd36-854f-cd6c-5cf258599f97"
+      }
+    },
+    {
+      "type": "konnect.api_implementation",
+      "api_name": "Kronos Analytics API",
+      "api_version": "v1-beta",
+      "service": {
+        "control_plane_name": "kronos-dev",
+        "id": "cc65c0b9-ce47-965f-ee7d-6da3696aa008"
+      }
+    },
+    {
+      "type": "konnect.api_publication",
+      "api_name": "Kronos Banking API",
+      "api_version": "v1",
+      "portal_name": "kronos-api-dev-portal",
+      "visibility": "public",
+      "auto_approve_registrations": true,
+      "auth_strategy_ids": ["kronos-api-auth-strategy"]
+    },
+    {
+      "type": "konnect.api_publication",
+      "api_name": "Kronos User Management API",
+      "api_version": "v2",
+      "portal_name": "kronos-api-dev-portal",
+      "visibility": "private",
+      "auto_approve_registrations": false,
+      "auth_strategy_ids": ["kronos-api-auth-strategy"]
+    },
+    {
+      "type": "konnect.api_publication",
+      "api_name": "Kronos Analytics API",
+      "api_version": "v1-beta",
+      "portal_name": "kronos-api-dev-portal",
+      "visibility": "private",
+      "auto_approve_registrations": false,
+      "auth_strategy_ids": ["kronos-api-auth-strategy"]
+    }
+  ]
 }

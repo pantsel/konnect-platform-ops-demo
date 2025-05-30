@@ -20,6 +20,7 @@ runs:
         ENV_FILE: .github/env/${{ inputs.environment }}.yaml
       run: |
         echo "Reading configuration from $ENV_FILE"
+        echo "TF_VAR_konnect_personal_access_token=$KONNECT_PAT" >> $GITHUB_ENV
         COMMON_VARS_FILE=.github/env/.common/env.yaml
         CONFIG_VARS=$(yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1) | keys' $COMMON_VARS_FILE $ENV_FILE)
 
@@ -28,7 +29,7 @@ runs:
           UPPER_VAR=${VAR^^}
           echo "${UPPER_VAR}=${VALUE}" >> $GITHUB_ENV
           case $VAR in
-            vault_addr|vault_token|konnect_region|konnect_personal_access_token|env_name)
+            vault_addr|vault_token|konnect_region|env_name)
               TF_VAR_NAME="TF_VAR_${VAR}"
               echo "${TF_VAR_NAME}=${VALUE}" >> $GITHUB_ENV
               ;;

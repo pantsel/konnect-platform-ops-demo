@@ -49,6 +49,8 @@ jobs:
         uses: ./.github/actions/load-config
         with:
           environment: ${{ inputs.environment }}
+        env:
+          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

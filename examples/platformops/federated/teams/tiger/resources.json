@@ -7,46 +7,96 @@
         "description": "Tiger team is building the EU Observability platform"
     },
     "resources": [
-        {
-            "type": "konnect.control_plane",
-            "name": "tiger_cp_dev",
-            "description": "Control plane 1",
-            "labels": {
-                "env": "dev"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "tiger_cp_tst",
-            "description": "Control plane 1",
-            "labels": {
-                "env": "tst"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "tiger_cp_acc",
-            "description": "Control plane 1",
-            "labels": {
-                "env": "acc"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "tiger_cp_prd",
-            "description": "Control plane 1",
-            "labels": {
-                "env": "prd"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Tiger API",
-            "description": "API for managing tigers",
-            "labels": {},
-            "public_labels": {
-                "team": "tiger"
-            }
+      {
+        "type": "konnect.control_plane",
+        "name": "tiger_cp_dev",
+        "description": "Control plane 1",
+        "labels": {
+          "env": "dev"
         }
+      },
+      {
+        "type": "konnect.control_plane",
+        "name": "tiger_cp_tst",
+        "description": "Control plane 1",
+        "labels": {
+          "env": "tst"
+        }
+      },
+      {
+        "type": "konnect.control_plane",
+        "name": "tiger_cp_acc",
+        "description": "Control plane 1",
+        "labels": {
+          "env": "acc"
+        }
+      },
+      {
+        "type": "konnect.control_plane",
+        "name": "tiger_cp_prd",
+        "description": "Control plane 1",
+        "labels": {
+          "env": "prd"
+        }
+      },
+      {
+        "type": "konnect.api_product",
+        "name": "Tiger API",
+        "description": "API for managing tigers",
+        "labels": {},
+        "public_labels": {
+          "team": "tiger"
+        }
+      },
+      {
+        "type": "konnect.cloud_gateway_network",
+        "name": "tiger-azure-eu-network",
+        "cidr_block": "10.0.0.0/16",
+        "region": "germanywestcentral",
+        "availability_zones": [
+          "germanywestcentral-az1",
+          "germanywestcentral-az2",
+          "germanywestcentral-az3"
+        ],
+        "public_labels": {
+          "team": "digital"
+        }
+      },
+      {
+        "type": "konnect.cloud_gateway_configuration",
+        "control_plane_geo": "eu",
+        "api_access": "private+public",
+        "control_plane_name": "tiger-dev-azure-eu",
+        "dataplane_groups": [
+          {
+            "provider": "azure",
+            "region": "germanywestcentral",
+            "autoscale": {
+              "configuration_data_plane_group_autoscale_autopilot": {
+                "kind": "autopilot",
+                "base_rps": 10,
+                "max_rps": 100
+              }
+            },
+            "cloud_gateway_network_name": "tiger-azure-eu-network"
+          }
+        ],
+        "version": "3.10"
+      },
+      {
+        "type": "konnect.application_auth_strategy",
+        "name": "tiger-digital-api-auth-strategy",
+        "key_auth": {
+          "name": "tiger-application-key-auth-strategy",
+          "key_names": ["apikey"],
+          "display_name": "tiger Application Auth Strategy",
+          "strategy_type": "key_auth",
+          "configs": {
+            "key_auth": {
+              "key_names": ["apikey"]
+            }
+          }
+        }
+      }
     ]
 }

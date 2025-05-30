@@ -7,10 +7,10 @@ terraform {
 }
 
 resource "konnect_system_account" "this" {
-  name             = var.name
-  description      = var.description
+  name        = var.name
+  description = var.description
 
-  konnect_managed  = false
+  konnect_managed = false
 }
 
 resource "konnect_system_account_role" "this" {
@@ -20,7 +20,7 @@ resource "konnect_system_account_role" "this" {
   entity_region    = var.region
   entity_type_name = var.entity_type_name
   role_name        = var.role_name
-  account_id = konnect_system_account.this.id
+  account_id       = konnect_system_account.this.id
 
 }
 

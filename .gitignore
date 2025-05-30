@@ -64,3 +64,6 @@ docker/*.deb
 .DS_Store
 
 .cache
+
+demo_steps.txt
+.github/prompts/
