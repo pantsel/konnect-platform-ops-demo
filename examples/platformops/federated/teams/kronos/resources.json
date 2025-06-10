@@ -17,9 +17,9 @@
     },
     {
       "type": "konnect.control_plane",
-      "name": "kronos-dev-aws-eu",
+      "name": "kronos-dev-azure-eu",
       "cloud_gateway": true,
-      "description": "Kronos development control plane on AWS in the EU region",
+      "description": "Kronos development control plane on Azure in the EU region",
       "labels": {
         "env": "dev"
       }
@@ -50,11 +50,11 @@
     },
     {
       "type": "konnect.cloud_gateway_network",
-      "name": "kronos-aws-eu-network",
+      "name": "kronos-azure-eu-network",
       "cidr_block": "10.0.0.0/16",
-      "region": "eu-central-1",
-      "cloud_vendor": "aws",
-      "availability_zones": ["euc1-az1", "euc1-az2", "euc1-az3"],
+      "region": "germanywestcentral",
+      "cloud_vendor": "azure",
+      "availability_zones": ["germanywestcentral-az1", "germanywestcentral-az2", "germanywestcentral-az3"],
       "public_labels": {
         "team": "kronos"
       }
@@ -63,11 +63,11 @@
       "type": "konnect.cloud_gateway_configuration",
       "control_plane_geo": "eu",
       "api_access": "private+public",
-      "control_plane_name": "kronos-dev-aws-eu",
+      "control_plane_name": "kronos-dev-azure-eu",
       "dataplane_groups": [
         {
-          "provider": "aws",
-          "region": "eu-central-1",
+          "provider": "azure",
+          "region": "germanywestcentral",
           "autoscale": {
             "configuration_data_plane_group_autoscale_autopilot": {
               "kind": "autopilot",
@@ -75,7 +75,7 @@
               "max_rps": 100
             }
           },
-          "cloud_gateway_network_name": "kronos-aws-eu-network"
+          "cloud_gateway_network_name": "kronos-azure-eu-network"
         }
       ],
       "version": "3.10"
@@ -379,81 +379,6 @@
       "labels": {
         "type": "guide",
         "category": "user-management"
-      }
-    },
-    {
-      "type": "konnect.api_specification",
-      "api_name": "Kronos Banking API",
-      "api_version": "v1",
-      "spec_type": "oas3",
-      "content": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Kronos Banking API\",\"description\":\"Comprehensive banking services API for account management, transactions, and financial operations\",\"version\":\"1.0.0\",\"contact\":{\"name\":\"Kronos API Support\",\"email\":\"api-support@kronos.example.com\"},\"license\":{\"name\":\"MIT\",\"url\":\"https://opensource.org/licenses/MIT\"}},\"servers\":[{\"url\":\"https://api.kronos.example.com/v1\",\"description\":\"Production server\"},{\"url\":\"https://api-staging.kronos.example.com/v1\",\"description\":\"Staging server\"}],\"paths\":{\"/accounts\":{\"get\":{\"summary\":\"List accounts\",\"description\":\"Retrieve a list of accounts associated with the authenticated user\",\"operationId\":\"listAccounts\",\"tags\":[\"Accounts\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"limit\",\"in\":\"query\",\"description\":\"Number of results to return\",\"required\":false,\"schema\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":100,\"default\":20}},{\"name\":\"offset\",\"in\":\"query\",\"description\":\"Number of results to skip\",\"required\":false,\"schema\":{\"type\":\"integer\",\"minimum\":0,\"default\":0}}],\"responses\":{\"200\":{\"description\":\"List of accounts\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"accounts\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/Account\"}},\"total_count\":{\"type\":\"integer\"},\"has_more\":{\"type\":\"boolean\"}}}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"},\"500\":{\"$ref\":\"#/components/responses/InternalError\"}}}},\"/accounts/{account_id}\":{\"get\":{\"summary\":\"Get account details\",\"description\":\"Retrieve details for a specific account\",\"operationId\":\"getAccount\",\"tags\":[\"Accounts\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"account_id\",\"in\":\"path\",\"required\":true,\"description\":\"The unique identifier for the account\",\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"Account details\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Account\"}}}},\"404\":{\"$ref\":\"#/components/responses/NotFound\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/accounts/{account_id}/balance\":{\"get\":{\"summary\":\"Get account balance\",\"description\":\"Retrieve the current balance for a specific account\",\"operationId\":\"getAccountBalance\",\"tags\":[\"Accounts\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"account_id\",\"in\":\"path\",\"required\":true,\"description\":\"The unique identifier for the account\",\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"Account balance\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Balance\"}}}},\"404\":{\"$ref\":\"#/components/responses/NotFound\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/accounts/{account_id}/transactions\":{\"get\":{\"summary\":\"List transactions\",\"description\":\"Retrieve transaction history for a specific account\",\"operationId\":\"listTransactions\",\"tags\":[\"Transactions\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"account_id\",\"in\":\"path\",\"required\":true,\"description\":\"The unique identifier for the account\",\"schema\":{\"type\":\"string\"}},{\"name\":\"limit\",\"in\":\"query\",\"description\":\"Number of results to return\",\"required\":false,\"schema\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":100,\"default\":20}},{\"name\":\"start_date\",\"in\":\"query\",\"description\":\"Filter transactions from this date\",\"required\":false,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"end_date\",\"in\":\"query\",\"description\":\"Filter transactions to this date\",\"required\":false,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"type\",\"in\":\"query\",\"description\":\"Filter by transaction type\",\"required\":false,\"schema\":{\"type\":\"string\",\"enum\":[\"debit\",\"credit\"]}}],\"responses\":{\"200\":{\"description\":\"List of transactions\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"transactions\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/Transaction\"}},\"total_count\":{\"type\":\"integer\"},\"has_more\":{\"type\":\"boolean\"}}}}}},\"404\":{\"$ref\":\"#/components/responses/NotFound\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}}},\"components\":{\"schemas\":{\"Account\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"description\":\"Unique account identifier\"},\"account_number\":{\"type\":\"string\",\"description\":\"Account number\"},\"account_type\":{\"type\":\"string\",\"enum\":[\"checking\",\"savings\",\"credit\"],\"description\":\"Type of account\"},\"balance\":{\"$ref\":\"#/components/schemas/Amount\"},\"status\":{\"type\":\"string\",\"enum\":[\"active\",\"inactive\",\"closed\"],\"description\":\"Account status\"},\"created_at\":{\"type\":\"string\",\"format\":\"date-time\"},\"updated_at\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"Amount\":{\"type\":\"object\",\"properties\":{\"amount\":{\"type\":\"number\",\"format\":\"double\",\"description\":\"The amount value\"},\"currency\":{\"type\":\"string\",\"description\":\"ISO 4217 currency code\",\"example\":\"USD\"}}},\"Balance\":{\"type\":\"object\",\"properties\":{\"account_id\":{\"type\":\"string\"},\"balance\":{\"$ref\":\"#/components/schemas/Amount\"},\"available_balance\":{\"$ref\":\"#/components/schemas/Amount\"},\"last_updated\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"Transaction\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"description\":\"Unique transaction identifier\"},\"account_id\":{\"type\":\"string\",\"description\":\"Associated account ID\"},\"amount\":{\"$ref\":\"#/components/schemas/Amount\"},\"type\":{\"type\":\"string\",\"enum\":[\"debit\",\"credit\"],\"description\":\"Transaction type\"},\"description\":{\"type\":\"string\",\"description\":\"Transaction description\"},\"merchant\":{\"type\":\"string\",\"description\":\"Merchant name\"},\"category\":{\"type\":\"string\",\"description\":\"Transaction category\"},\"status\":{\"type\":\"string\",\"enum\":[\"pending\",\"completed\",\"failed\"],\"description\":\"Transaction status\"},\"processed_at\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"Error\":{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"description\":\"Error type\"},\"code\":{\"type\":\"string\",\"description\":\"Error code\"},\"message\":{\"type\":\"string\",\"description\":\"Error message\"},\"param\":{\"type\":\"string\",\"description\":\"Parameter that caused the error\"}}}},\"responses\":{\"Unauthorized\":{\"description\":\"Authentication failed\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"NotFound\":{\"description\":\"Resource not found\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"InternalError\":{\"description\":\"Internal server error\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}}},\"securitySchemes\":{\"bearerAuth\":{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}}}}"
-    },
-    {
-      "type": "konnect.api_specification",
-      "api_name": "Kronos User Management API",
-      "api_version": "v2",
-      "spec_type": "oas3",
-      "content": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Kronos User Management API\",\"description\":\"User authentication, profile management, and access control API\",\"version\":\"2.0.0\",\"contact\":{\"name\":\"Kronos API Support\",\"email\":\"api-support@kronos.example.com\"}},\"servers\":[{\"url\":\"https://api.kronos.example.com/v2/users\",\"description\":\"Production server\"},{\"url\":\"https://api-staging.kronos.example.com/v2/users\",\"description\":\"Staging server\"}],\"paths\":{\"/profile\":{\"get\":{\"summary\":\"Get user profile\",\"description\":\"Retrieve the authenticated user's profile information\",\"operationId\":\"getUserProfile\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"User profile\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserProfile\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}},\"put\":{\"summary\":\"Update user profile\",\"description\":\"Update the authenticated user's profile information\",\"operationId\":\"updateUserProfile\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"requestBody\":{\"required\":true,\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserProfileUpdate\"}}}},\"responses\":{\"200\":{\"description\":\"Profile updated successfully\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserProfile\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/profile/preferences\":{\"get\":{\"summary\":\"Get user preferences\",\"description\":\"Retrieve user preferences and settings\",\"operationId\":\"getUserPreferences\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"User preferences\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserPreferences\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}},\"patch\":{\"summary\":\"Update user preferences\",\"description\":\"Update specific user preferences\",\"operationId\":\"updateUserPreferences\",\"tags\":[\"Profile\"],\"security\":[{\"bearerAuth\":[]}],\"requestBody\":{\"required\":true,\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserPreferencesUpdate\"}}}},\"responses\":{\"200\":{\"description\":\"Preferences updated successfully\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UserPreferences\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/auth/login\":{\"post\":{\"summary\":\"User login\",\"description\":\"Authenticate user and return access token\",\"operationId\":\"loginUser\",\"tags\":[\"Authentication\"],\"requestBody\":{\"required\":true,\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/LoginRequest\"}}}},\"responses\":{\"200\":{\"description\":\"Login successful\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/LoginResponse\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"}}}},\"/auth/logout\":{\"post\":{\"summary\":\"User logout\",\"description\":\"Invalidate the current session\",\"operationId\":\"logoutUser\",\"tags\":[\"Authentication\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"Logout successful\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}}},\"components\":{\"schemas\":{\"UserProfile\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"description\":\"Unique user identifier\"},\"email\":{\"type\":\"string\",\"format\":\"email\",\"description\":\"User email address\"},\"firstName\":{\"type\":\"string\",\"description\":\"User first name\"},\"lastName\":{\"type\":\"string\",\"description\":\"User last name\"},\"phone\":{\"type\":\"string\",\"description\":\"User phone number\"},\"role\":{\"type\":\"string\",\"enum\":[\"admin\",\"manager\",\"user\",\"guest\"],\"description\":\"User role\"},\"status\":{\"type\":\"string\",\"enum\":[\"active\",\"inactive\",\"suspended\"],\"description\":\"Account status\"},\"createdAt\":{\"type\":\"string\",\"format\":\"date-time\"},\"updatedAt\":{\"type\":\"string\",\"format\":\"date-time\"}}},\"UserProfileUpdate\":{\"type\":\"object\",\"properties\":{\"firstName\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":50},\"lastName\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":50},\"phone\":{\"type\":\"string\",\"pattern\":\"^\\\\+?[1-9]\\\\d{1,14}$\"}}},\"UserPreferences\":{\"type\":\"object\",\"properties\":{\"language\":{\"type\":\"string\",\"enum\":[\"en\",\"es\",\"fr\",\"de\"],\"description\":\"Preferred language\"},\"timezone\":{\"type\":\"string\",\"description\":\"User timezone\"},\"notifications\":{\"type\":\"object\",\"properties\":{\"email\":{\"type\":\"boolean\"},\"sms\":{\"type\":\"boolean\"},\"push\":{\"type\":\"boolean\"}}},\"privacy\":{\"type\":\"object\",\"properties\":{\"profileVisible\":{\"type\":\"boolean\"},\"shareData\":{\"type\":\"boolean\"}}}}},\"UserPreferencesUpdate\":{\"type\":\"object\",\"properties\":{\"language\":{\"type\":\"string\",\"enum\":[\"en\",\"es\",\"fr\",\"de\"]},\"timezone\":{\"type\":\"string\"},\"notifications\":{\"type\":\"object\",\"properties\":{\"email\":{\"type\":\"boolean\"},\"sms\":{\"type\":\"boolean\"},\"push\":{\"type\":\"boolean\"}}},\"privacy\":{\"type\":\"object\",\"properties\":{\"profileVisible\":{\"type\":\"boolean\"},\"shareData\":{\"type\":\"boolean\"}}}}},\"LoginRequest\":{\"type\":\"object\",\"required\":[\"email\",\"password\"],\"properties\":{\"email\":{\"type\":\"string\",\"format\":\"email\"},\"password\":{\"type\":\"string\",\"minLength\":8}}},\"LoginResponse\":{\"type\":\"object\",\"properties\":{\"accessToken\":{\"type\":\"string\",\"description\":\"JWT access token\"},\"refreshToken\":{\"type\":\"string\",\"description\":\"Refresh token\"},\"expiresIn\":{\"type\":\"integer\",\"description\":\"Token expiration time in seconds\"},\"user\":{\"$ref\":\"#/components/schemas/UserProfile\"}}},\"Error\":{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\"},\"code\":{\"type\":\"string\"},\"message\":{\"type\":\"string\"},\"param\":{\"type\":\"string\"}}}},\"responses\":{\"BadRequest\":{\"description\":\"Bad request\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"Unauthorized\":{\"description\":\"Authentication failed\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}}},\"securitySchemes\":{\"bearerAuth\":{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}}}}"
-    },
-    {
-      "type": "konnect.api_specification",
-      "api_name": "Kronos Analytics API",
-      "api_version": "v1-beta",
-      "spec_type": "oas3",
-      "content": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Kronos Analytics API\",\"description\":\"Analytics and reporting API for business intelligence and data insights\",\"version\":\"1.0.0-beta\",\"contact\":{\"name\":\"Kronos API Support\",\"email\":\"api-support@kronos.example.com\"}},\"servers\":[{\"url\":\"https://api.kronos.example.com/v1-beta/analytics\",\"description\":\"Production server\"},{\"url\":\"https://api-staging.kronos.example.com/v1-beta/analytics\",\"description\":\"Staging server\"}],\"paths\":{\"/reports/usage\":{\"get\":{\"summary\":\"Get usage analytics\",\"description\":\"Retrieve usage statistics and metrics\",\"operationId\":\"getUsageAnalytics\",\"tags\":[\"Reports\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"start_date\",\"in\":\"query\",\"required\":true,\"description\":\"Start date for the report\",\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"end_date\",\"in\":\"query\",\"required\":true,\"description\":\"End date for the report\",\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"granularity\",\"in\":\"query\",\"description\":\"Data granularity\",\"schema\":{\"type\":\"string\",\"enum\":[\"hour\",\"day\",\"week\",\"month\"],\"default\":\"day\"}}],\"responses\":{\"200\":{\"description\":\"Usage analytics data\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/UsageReport\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/reports/performance\":{\"get\":{\"summary\":\"Get performance metrics\",\"description\":\"Retrieve API performance statistics\",\"operationId\":\"getPerformanceMetrics\",\"tags\":[\"Reports\"],\"security\":[{\"bearerAuth\":[]}],\"parameters\":[{\"name\":\"start_date\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"end_date\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"format\":\"date\"}},{\"name\":\"metric_type\",\"in\":\"query\",\"description\":\"Type of performance metric\",\"schema\":{\"type\":\"string\",\"enum\":[\"latency\",\"throughput\",\"errors\",\"all\"],\"default\":\"all\"}}],\"responses\":{\"200\":{\"description\":\"Performance metrics\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/PerformanceReport\"}}}},\"400\":{\"$ref\":\"#/components/responses/BadRequest\"},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}},\"/dashboard\":{\"get\":{\"summary\":\"Get dashboard data\",\"description\":\"Retrieve real-time dashboard metrics\",\"operationId\":\"getDashboardData\",\"tags\":[\"Dashboard\"],\"security\":[{\"bearerAuth\":[]}],\"responses\":{\"200\":{\"description\":\"Dashboard data\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/DashboardData\"}}}},\"401\":{\"$ref\":\"#/components/responses/Unauthorized\"}}}}},\"components\":{\"schemas\":{\"UsageReport\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"object\",\"properties\":{\"start_date\":{\"type\":\"string\",\"format\":\"date\"},\"end_date\":{\"type\":\"string\",\"format\":\"date\"},\"granularity\":{\"type\":\"string\"}}},\"total_requests\":{\"type\":\"integer\"},\"unique_users\":{\"type\":\"integer\"},\"data_points\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/DataPoint\"}}}},\"PerformanceReport\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"object\",\"properties\":{\"start_date\":{\"type\":\"string\",\"format\":\"date\"},\"end_date\":{\"type\":\"string\",\"format\":\"date\"}}},\"average_latency\":{\"type\":\"number\",\"description\":\"Average response time in milliseconds\"},\"throughput\":{\"type\":\"number\",\"description\":\"Requests per second\"},\"error_rate\":{\"type\":\"number\",\"description\":\"Error rate percentage\"},\"data_points\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/components/schemas/PerformanceDataPoint\"}}}},\"DashboardData\":{\"type\":\"object\",\"properties\":{\"current_stats\":{\"type\":\"object\",\"properties\":{\"active_users\":{\"type\":\"integer\"},\"requests_per_minute\":{\"type\":\"number\"},\"average_response_time\":{\"type\":\"number\"},\"error_count\":{\"type\":\"integer\"}}},\"trends\":{\"type\":\"object\",\"properties\":{\"usage_trend\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"stable\"]},\"performance_trend\":{\"type\":\"string\",\"enum\":[\"improving\",\"degrading\",\"stable\"]}}}}},\"DataPoint\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":\"string\",\"format\":\"date-time\"},\"requests\":{\"type\":\"integer\"},\"unique_users\":{\"type\":\"integer\"}}},\"PerformanceDataPoint\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":\"string\",\"format\":\"date-time\"},\"latency\":{\"type\":\"number\"},\"throughput\":{\"type\":\"number\"},\"error_rate\":{\"type\":\"number\"}}},\"Error\":{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\"},\"code\":{\"type\":\"string\"},\"message\":{\"type\":\"string\"}}}},\"responses\":{\"BadRequest\":{\"description\":\"Bad request\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}},\"Unauthorized\":{\"description\":\"Authentication failed\",\"content\":{\"application/json\":{\"schema\":{\"$ref\":\"#/components/schemas/Error\"}}}}},\"securitySchemes\":{\"bearerAuth\":{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}}}}"
-    },
-    {
-      "type": "konnect.api_implementation",
-      "api_name": "Kronos Banking API",
-      "api_version": "v1",
-      "service": {
-        "control_plane_name": "kronos-dev",
-        "id": "7710d5c4-d902-410b-992f-18b814155b53"
-      }
-    },
-    {
-      "type": "konnect.api_implementation",
-      "api_name": "Kronos Banking API",
-      "api_version": "v1",
-      "service": {
-        "control_plane_name": "kronos-test",
-        "id": "8821e6d5-ea03-521c-aa3f-29c925266c64"
-      }
-    },
-    {
-      "type": "konnect.api_implementation",
-      "api_name": "Kronos Banking API",
-      "api_version": "v1",
-      "service": {
-        "control_plane_name": "kronos-prd",
-        "id": "9932f7e6-fb14-632d-bb4a-3ad036377d75"
-      }
-    },
-    {
-      "type": "konnect.api_implementation",
-      "api_name": "Kronos User Management API",
-      "api_version": "v2",
-      "service": {
-        "control_plane_name": "kronos-dev",
-        "id": "aa43a8f7-ac25-743e-bc5b-4be147488e86"
-      }
-    },
-    {
-      "type": "konnect.api_implementation",
-      "api_name": "Kronos User Management API",
-      "api_version": "v2",
-      "service": {
-        "control_plane_name": "kronos-prd",
-        "id": "bb54b9a8-bd36-854f-cd6c-5cf258599f97"
-      }
-    },
-    {
-      "type": "konnect.api_implementation",
-      "api_name": "Kronos Analytics API",
-      "api_version": "v1-beta",
-      "service": {
-        "control_plane_name": "kronos-dev",
-        "id": "cc65c0b9-ce47-965f-ee7d-6da3696aa008"
       }
     },
     {

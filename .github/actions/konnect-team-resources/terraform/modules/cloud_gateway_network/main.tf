@@ -10,13 +10,12 @@ locals {
   cloud_vendor_map = {
     "AWS"   = 0
     "AZURE" = 1
-    "GCP"   = 2
   }
 }
 
 data "konnect_cloud_gateway_provider_account_list" "this" {
   page_number = 1
-  page_size   = 3
+  page_size   = 2
 }
 
 // This module creates a Konnect Cloud Gateway Network in Azure (Azure is index 1 in the provider account list)
