@@ -17,7 +17,7 @@ variable "control_planes" {
   type        = list(any)
 }
 
-variable "api_products" {
-  description = "List of API products"
-  type        = list(any)
-}
+# variable "api_products" {
+#   description = "List of API products"
+#   type        = list(any)
+# }
