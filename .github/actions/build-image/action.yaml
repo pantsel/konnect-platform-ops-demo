@@ -20,12 +20,44 @@ inputs:
   continue_on_scan_failure:
     description: 'Continue on Trivy scan failure'
     default: "true"
+  environment:
+    description: 'Deployment environment'
+    required: true
 
 runs:
   using: "composite"
   steps:
     - name: Checkout code
       uses: actions/checkout@v3
+    
+    - name: Source environment variables
+      id: source-env
+      shell: bash
+      run: |
+        echo "::group::Sourcing environment variable files"
+
+        files=(
+          "${{ github.action_path }}/env/common.sh"
+          "${{ github.action_path }}/env/${{ inputs.environment }}.sh"
+        )
+
+        for file in "${files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "Sourcing $file"
+            set -a
+            source "$file"
+            set +a
+          else
+            echo "No environment file found for $file. Skipping."
+          fi
+        done
+
+        # Export final values of DECK_ variables to GITHUB_ENV
+        while IFS='=' read -r key value; do
+          echo "$key=$value" >> "$GITHUB_ENV"
+        done < <(env)
+
+        echo "::endgroup::"
 
     - uses: grafana/setup-k6-action@v1
 

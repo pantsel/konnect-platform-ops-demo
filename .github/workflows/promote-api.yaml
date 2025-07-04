@@ -39,13 +39,6 @@ jobs:
 
       - uses: kong/setup-deck@v1
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
-
       - name: Install extra rulesets for Spectral
         run: |
           npm install --save -D @stoplight/spectral-owasp-ruleset@^2.0

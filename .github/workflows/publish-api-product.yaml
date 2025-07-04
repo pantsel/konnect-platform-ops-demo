@@ -10,7 +10,7 @@ on:
       environment:
         description: 'Environment to provision'
         type: string
-        default: 'local'
+        required: true
       konnect_region:
         description: 'Konnect region where the API Product will be published'
         type: string
@@ -105,7 +105,7 @@ jobs:
           terraform init \
             -backend-config=config.s3.tfbackend \
             -backend-config="bucket=${{ steps.tfvars.outputs.planid }}.tfstate" \
-            -backend-config="key=konnect.tfstate" \
+            -backend-config="key=${{ inputs.environment }}.tfstate" \
             -backend-config="region=main" \
             -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
             -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}"

@@ -24,13 +24,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
-
       - name: Provision Konnect Resources
         uses: ./.github/actions/konnect-team-resources
         with:

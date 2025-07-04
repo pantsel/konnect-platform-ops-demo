@@ -45,13 +45,6 @@ jobs:
         id: setup-bats
         uses: bats-core/bats-action@3.0.0
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:

@@ -21,6 +21,9 @@ inputs:
   s3_secret_key:
     description: 'S3 secret key'
     required: true
+  environment:
+    description: 'Environment to provision'
+    required: true
 
 runs:
   using: 'composite'
@@ -35,6 +38,35 @@ runs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: 'latest'
+    
+    - name: Source environment variables
+      id: source-env
+      shell: bash
+      run: |
+        echo "::group::Sourcing environment variable files"
+
+        files=(
+          "${{ github.action_path }}/env/common.sh"
+          "${{ github.action_path }}/env/${{ inputs.environment }}.sh"
+        )
+
+        for file in "${files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "Sourcing $file"
+            set -a
+            source "$file"
+            set +a
+          else
+            echo "No environment file found for $file. Skipping."
+          fi
+        done
+
+        # Export final values of DECK_ variables to GITHUB_ENV
+        while IFS='=' read -r key value; do
+          echo "$key=$value" >> "$GITHUB_ENV"
+        done < <(env)
+
+        echo "::endgroup::"
 
     - name: Validate config
       run: |
@@ -84,7 +116,7 @@ runs:
         terraform init -upgrade \
           -backend-config=config.s3.tfbackend \
           -backend-config="bucket=$RESOURCE_TYPE.$RESOURCE_NAME" \
-          -backend-config="key=tfstate" \
+          -backend-config="key=${{ inputs.environment }}.tfstate" \
           -backend-config="region=main" \
           -backend-config="access_key=${{ inputs.s3_access_key }}" \
           -backend-config="secret_key=${{ inputs.s3_secret_key }}"

@@ -78,13 +78,6 @@ jobs:
 
       - uses: eLco/setup-vault@v1
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
-
       - name: Issue clustering certificates
         if: ${{ inputs.action == 'deploy' }}
         id: issue-clustering-certs
@@ -275,5 +268,5 @@ jobs:
             helm uninstall kong-config-exporter-$CONTROL_PLANE_NAME -n $NAMESPACE
             kubectl delete secret kong-cluster-cert -n $NAMESPACE
             kubectl delete secret kong-proxy-cert -n $NAMESPACE
-            kubeclt delete namespace $NAMESPACE
+            kubectl delete namespace $NAMESPACE
           fi
