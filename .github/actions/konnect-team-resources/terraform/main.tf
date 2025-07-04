@@ -317,7 +317,7 @@ module "team_role" {
   }
   region         = lookup(local.metadata, "region", "")
   control_planes = [for k, v in module.control_planes : v.control_plane]
-  api_products   = [for k, v in module.api_products : v.api_product]
+  //api_products   = [for k, v in module.api_products : v.api_product]
 }
 
 module "system_accounts" {
@@ -327,12 +327,12 @@ module "system_accounts" {
     { for k, v in module.control_planes : v.control_plane.name => {
       name = v.control_plane.name, id = v.control_plane.id
       type = "Control Planes"
-    } },
-
-    { for k, v in module.api_products : v.api_product.name => {
-      name = v.api_product.name, id = v.api_product.id
-      type = "API Products"
     } }
+
+    # { for k, v in module.api_products : v.api_product.name => {
+    #   name = v.api_product.name, id = v.api_product.id
+    #   type = "API Products"
+    # } }
   )
 
   name             = lower(replace("sa-${each.value.name}-${local.short_names[each.value.type]}-admin", " ", "-"))
