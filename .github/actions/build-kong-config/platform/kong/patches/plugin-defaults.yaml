@@ -1,0 +1,21 @@
+---
+_format_version: '3.0'
+patches:
+- selectors:
+  - "$"
+  values:
+    _plugin_configs:
+      default-openid-connect:
+        cache_tokens_salt: "Z3Rr1vuPbdJcLkHXWu8liYWVzmC803Cr"
+- selectors:
+  - "$..plugins[*][?(@.name == 'openid-connect')]"
+  values:
+    _config: default-openid-connect
+- selectors:
+  - "$..services[*].plugins[?(@.name == 'openid-connect')]"
+  values:
+    _config: default-openid-connect
+- selectors:
+  - "$..services[*].routes[*].plugins[?(@.name == 'openid-connect')]"
+  values:
+    _config: default-openid-connect
