@@ -5,30 +5,29 @@
         "description": "Teams onboarded to the Konnect APIM platform"
     },
     "resources": [
-        {
-            "type": "konnect.team",
-            "name": "Kronos",
-            "description": "Kronos team is building IaC services",
-            "labels": {
-                "TID": "KTEAM_00001"
-            }
-        },
-        {
-            "type": "konnect.team",
-            "name": "Tiger",
-            "description": "Tiger team is building the Global Observability Platform",
-            "labels": {
-                "TID": "KTEAM_00002"
-            }
-        },
-        {
-            "type": "konnect.team",
-            "name": "Gorillaz",
-            "offboarded": true,
-            "description": "Gorillaz team is building the legacy services",
-            "labels": {
-                "TID": "KTEAM_00003"
-            }
+      {
+        "type": "konnect.team",
+        "name": "platform",
+        "description": "Kong Air Platform team responsible for platform management.",
+        "labels": {
+          "TID": "KTEAM_00000"
         }
+      },
+      {
+        "type": "konnect.team",
+        "name": "flight-data",
+        "description": "Kong Air Flight Data team responsible for flights and route data management.",
+        "labels": {
+          "TID": "KTEAM_00001"
+        }
+      },
+      {
+        "type": "konnect.team",
+        "name": "sales",
+        "description": "Kong Air Sales team responsible for bookings and customer data.",
+        "labels": {
+          "TID": "KTEAM_00002"
+        }
+      }
     ]
 }
