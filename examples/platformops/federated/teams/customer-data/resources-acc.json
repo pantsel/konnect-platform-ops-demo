@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect.team.resources",
+    "region": "eu",
+    "team": "customer-data",
+    "description": "customer-data team Konnect resources in the EU region"
+  },
+  "resources": [
+    {
+      "type": "konnect.control_plane",
+      "name": "customer-data-acc",
+      "description": "customer-data acceptance control plane",
+      "labels": {
+        "env": "acc"
+      }
+    }
+  ]
+}

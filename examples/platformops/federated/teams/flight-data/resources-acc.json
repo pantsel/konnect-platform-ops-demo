@@ -3,14 +3,14 @@
     "format_version": "1.0.0",
     "type": "konnect.team.resources",
     "region": "eu",
-    "team": "Kronos",
-    "description": "Kronos team Konnect resources in the EU region"
+    "team": "flight-data",
+    "description": "flight-data team Konnect resources in the EU region"
   },
   "resources": [
     {
       "type": "konnect.control_plane",
-      "name": "kronos-acc",
-      "description": "Kronos acceptance control plane",
+      "name": "flight-data-acc",
+      "description": "flight-data acceptance control plane",
       "labels": {
         "env": "acc"
       }

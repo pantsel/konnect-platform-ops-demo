@@ -3,14 +3,14 @@
     "format_version": "1.0.0",
     "type": "konnect.team.resources",
     "region": "eu",
-    "team": "Kronos",
-    "description": "Kronos team Konnect resources in the EU region"
+    "team": "flight-data",
+    "description": "flight-data team Konnect resources in the EU region"
   },
   "resources": [
     {
       "type": "konnect.control_plane",
-      "name": "kronos-test",
-      "description": "Kronos test control plane",
+      "name": "flight-data-tst",
+      "description": "flight-data testing control plane",
       "labels": {
         "env": "tst"
       }
