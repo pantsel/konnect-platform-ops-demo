@@ -6,7 +6,6 @@ on:
       environment:
         description: "Environment to deploy to"
         type: choice
-        default: "dev"
         options:
           - "dev"
           - "tst"

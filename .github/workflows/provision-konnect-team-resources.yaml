@@ -17,8 +17,12 @@ on:
           - 'destroy'
       environment:
         description: 'Environment to provision'
-        type: string
-        default: 'dev'
+        type: choice
+        options:
+          - 'dev'
+          - 'tst'
+          - 'acc'
+          - 'prd'
 
 jobs:
   provision-konnect:
@@ -38,3 +42,4 @@ jobs:
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           konnect_token: ${{ secrets.KONNECT_PAT }}
+          environment: ${{ inputs.environment }}

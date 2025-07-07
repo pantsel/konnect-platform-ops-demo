@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment (dev, staging, prod)'
-        type: string
-        default: dev
+        description: 'Environment to provision'
+        type: choice
+        options:
+          - 'dev'
+          - 'tst'
+          - 'acc'
+          - 'prd'
       docker_registry:
         description: 'Docker registry'
         type: string
