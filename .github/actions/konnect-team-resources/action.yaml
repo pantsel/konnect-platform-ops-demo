@@ -45,33 +45,10 @@ runs:
         terraform_version: 'latest'
 
     - name: Source environment variables
-      id: source-env
-      shell: bash
-      run: |
-        echo "::group::Sourcing environment variable files"
-
-        files=(
-          "${{ github.action_path }}/env/common.sh"
-          "${{ github.action_path }}/env/${{ inputs.environment }}.sh"
-        )
-
-        for file in "${files[@]}"; do
-          if [ -f "$file" ]; then
-            echo "Sourcing $file"
-            set -a
-            source "$file"
-            set +a
-          else
-            echo "No environment file found for $file. Skipping."
-          fi
-        done
-
-        # Export final values of DECK_ variables to GITHUB_ENV
-        while IFS='=' read -r key value; do
-          echo "$key=$value" >> "$GITHUB_ENV"
-        done < <(env)
-
-        echo "::endgroup::"
+      uses: ./.github/actions/load-env-config
+      with:
+        action_root: ${{ github.action_path }}
+        environment: ${{ inputs.environment }}
 
     - name: Validate config
       run: |

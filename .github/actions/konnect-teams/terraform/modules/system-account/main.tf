@@ -31,7 +31,7 @@ resource "konnect_system_account_team" "this" {
 resource "konnect_system_account_role" "cp_creators" {
 
   entity_id = "*"
-  entity_region    = "eu" # Hardcoded for now
+  entity_region    = var.konnect_region
   entity_type_name = "Control Planes"
   role_name        = "Creator"
   account_id = konnect_system_account.this.id
@@ -40,7 +40,7 @@ resource "konnect_system_account_role" "cp_creators" {
 ### Add the apis creator role to every team system account
 resource "konnect_system_account_role" "apis_creators" {
   entity_id = "*"
-  entity_region    = "eu" # Hardcoded for now
+  entity_region    = var.konnect_region
   entity_type_name = "APIs"
   role_name        = "Creator"
   account_id = konnect_system_account.this.id
