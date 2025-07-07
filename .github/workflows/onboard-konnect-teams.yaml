@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/setup-minio-client
 
       - name: Install vault cli
-        uses: eLco/setup-vault@v1
+        uses: ./.github/actions/setup-vault-client
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -128,3 +128,4 @@ jobs:
           vault_token: ${{ secrets.VAULT_TOKEN }}
           vault_address: ${{env.VAULT_ADDR}}
           konnect_token: ${{ secrets.KONNECT_PAT }}
+          environment: ${{ inputs.environment }}

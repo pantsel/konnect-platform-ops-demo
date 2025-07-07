@@ -3,13 +3,20 @@
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
 > Additionally, note that the demo environment has only been tested on macOS and may not function properly on Windows.
 
-A local demo showcasing the utilization of [Terraform](https://www.terraform.io/) and [Helm](https://helm.sh/) for the provisioning of Konnect Resources and deployment of Kong Data Planes (DPs) within Kubernetes (K8s) environments.
+This repository is the Platform Team’s opinionated, federated APIOps toolkit for Kong Konnect. It presumes a model where your Platform Team owns and operates the API-delivery infrastructure and exposes it “as-a-service” to the broader developer community.
 
-The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
+Out of the box, it provides end-to-end workflows to:
 
-In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow. [Keycloak](https://www.keycloak.org/) is utilized as an IDP for the example APIs OIDC configuration.
+- Build a “golden” Kong Gateway Docker image
+- Onboard API teams in Konnect (create Teams, System Accounts, and assign roles)
+- Provision Konnect resources on behalf of those teams (Control-Planes and Developer Portals)
+- Bootstrap a local Kubernetes cluster with an observability stack
+- Deploy Kong Gateway into that Kubernetes cluster
+- In addition, this repo includes GitHub Actions your API teams can invoke to validate OpenAPI specs and publish their Kong Gateway configurations to Konnect.
 
-The Continuous Integration/Continuous Deployment (CI/CD) process employs the execution of [GitHub Actions](https://github.com/features/actions) locally through the utilization of [Act](https://github.com/nektos/act).
+This repository is built to run entirely on your local machine by leveraging [GitHub Actions](https://github.com/features/actions) workflows with the [Act](https://github.com/nektos/act) tool. Instead of pushing every change to GitHub, you can invoke the same CI/CD pipelines locally, inspect logs in real time, and iterate faster.
+
+Under the hood, we use the official [Kong Terraform provider](https://registry.terraform.io/providers/Kong/konnect/latest) to define and manage all Konnect resources as code. A local [MinIO](https://min.io/) instance acts as an S3-compatible Terraform backend, so state is persisted reliably without needing an external cloud account. All sensitive values—API tokens, Vault credentials, certificate private keys—are stored and retrieved securely from a local [HashiCorp Vault](https://www.vaultproject.io/) instance, ensuring that secrets never land in plaintext files or logs.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -43,14 +50,51 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 ## Useful links
 
 - [Kong Konnect Terraform Provider](https://github.com/Kong/terraform-provider-konnect)
-- [Kong GO APIOps](https://github.com/Kong/go-apiops)
 - [Deck Commands](https://docs.konghq.com/deck/latest/#deck-commands)
 
 ## Prerequisites
+⚠️ This demo has only been tested on macOS; other platforms may require additional setup or tweaks.
 
-- [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- [Kind](https://kind.sigs.k8s.io/) or [Orbstack](https://orbstack.dev) - Tools for managing local Kubernetes clusters.
-- [Act](https://github.com/nektos/act) - Run your GitHub Actions locally!
+Before you begin, install the following tools on your machine:
+
+- [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/). Container runtime and orchestration engine for building/running Kong Gateway images, spinning up MinIO, Vault, Keycloak, etc.
+- [Kind](https://kind.sigs.k8s.io/) or [Orbstack](https://orbstack.dev). Creates and manages a local Kubernetes cluster where Kong Data-Planes and the observability stack will run.
+- [Act](https://github.com/nektos/act). Executes the same GitHub Actions workflows locally so you can iterate on CI/CD pipelines without pushing every change to GitHub.
+- [Terraform](https://learn.hashicorp.com/terraform/getting-started/install.html). Applies terraform resource.
+- [Github CLI](https://cli.github.com/)
+
+## Prepare the demo environment
+
+Download the minio client for the target runner platform architecture (e.g. [linux amd64](https://dl.min.io/client/mc/release/linux-amd64/)), place it into a folder (e.g. mc-binary) and export the path like this:
+```bash
+export MINIOCLIENT_PATH="/path-to/mc-binary"
+```
+
+Download the vault client for the target runner platform architecture (e.g. [linux amd64](https://releases.hashicorp.com/vault/1.20.0/vault_1.20.0_linux_amd64.zip)), place it into a folder (e.g. vault-binary) and export the path like this:
+```bash
+export VAULTCLIENT_PATH="/path-to/vault-binary"
+```
+
+To spin-up and prepare your local environment, execute: 
+
+```bash
+$ make prepare
+```
+
+When preparing the demo environment for the first time, you will be prompted
+to provide your `konnect access token`, `s3 access key` and `s3 access secret`.
+
+To get your `konnect access token`, login to your Konnect organization, navigate to the `Personal Access Tokens` page and click `Generate Token`.
+
+![Konnect](./images/konnect_pat.png)
+
+To create your `s3 access key` and `s3 access secret`: 
+1. Open `Minio Console` at http://localhost:9000. 
+2. Login using `minio-root-user`, `minio-root-password` as username and password.
+3. Go to `Access Keys`
+4. `Create Access Key`
+
+![Minio Console](./images/minio.png)
 
 ## Components
 
@@ -96,33 +140,7 @@ graph TD;
   E -.-> F
 ```
 
-## Prepare the demo environment
 
-Download the minio client for the target runner platform architecture (e.g. linux amd64), place it into a folder (e.g. mc-binary) and export the path like this:
-```bash
-export MINIOCLIENT_PATH="/path-to/mc-binary"
-```
-
-To spin-up and prepare your local environment, execute: 
-
-```bash
-$ make prepare
-```
-
-When preparing the demo environment for the first time, you will be prompted
-to provide your `konnect access token`, `s3 access key` and `s3 access secret`.
-
-To get your `konnect access token`, login to your Konnect organization, navigate to the `Personal Access Tokens` page and click `Generate Token`.
-
-![Konnect](./images/konnect_pat.png)
-
-To create your `s3 access key` and `s3 access secret`: 
-1. Open `Minio Console` at http://localhost:9000. 
-2. Login using `minio-root-user`, `minio-root-password` as username and password.
-3. Go to `Access Keys`
-4. `Create Access Key`
-
-![Minio Console](./images/minio.png)
 
 
 ## Build Kong Golden Image

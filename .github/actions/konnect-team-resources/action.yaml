@@ -37,7 +37,7 @@ runs:
       uses: ./.github/actions/setup-minio-client
 
     - name: Install vault cli
-      uses: eLco/setup-vault@v1
+      uses: ./.github/actions/setup-vault-client
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3

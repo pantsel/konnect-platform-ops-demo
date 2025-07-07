@@ -76,7 +76,8 @@ jobs:
       - name: Install MinIO Client
         uses: ./.github/actions/setup-minio-client
 
-      - uses: eLco/setup-vault@v1
+      - name: Install Vault CLI
+        uses: ./.github/actions/setup-vault-client
 
       - name: Issue clustering certificates
         if: ${{ inputs.action == 'deploy' }}
