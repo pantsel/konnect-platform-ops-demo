@@ -1,7 +1,7 @@
 name: Provision Konnect Team resources
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       config:
         description: 'Path to the provisioning config file'
@@ -9,8 +9,12 @@ on:
         required: true
       action:
         description: 'Action to perform'
-        type: string
+        required: true
+        type: choice
         default: 'provision'
+        options:
+          - 'provision'
+          - 'destroy'
       environment:
         description: 'Environment to provision'
         type: string

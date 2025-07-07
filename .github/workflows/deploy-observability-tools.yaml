@@ -1,6 +1,6 @@
 name: Deploy Observability Tools
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       namespace:
         description: 'Kubernetes namespace'
@@ -17,8 +17,11 @@ on:
       action:
         description: 'Action to perform'
         required: true
-        type: string
-        default: 'deploy' # 'deploy' or 'destroy'
+        type: choice
+        default: 'provision'
+        options:
+          - 'provision'
+          - 'destroy'
       # Observability stack to deploy
       # Supported values: datadog, grafana, dynatrace
       # Grafana stack includes Loki, Tempo, Prometheus, Fluent Bit
