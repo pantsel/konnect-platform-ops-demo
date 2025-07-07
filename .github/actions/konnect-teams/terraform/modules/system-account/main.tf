@@ -37,11 +37,11 @@ resource "konnect_system_account_role" "cp_creators" {
   account_id = konnect_system_account.this.id
 }
 
-### Add the api product creator role to every team system account
-resource "konnect_system_account_role" "ap_creators" {
+### Add the apis creator role to every team system account
+resource "konnect_system_account_role" "apis_creators" {
   entity_id = "*"
   entity_region    = "eu" # Hardcoded for now
-  entity_type_name = "API Products"
+  entity_type_name = "APIs"
   role_name        = "Creator"
   account_id = konnect_system_account.this.id
 }

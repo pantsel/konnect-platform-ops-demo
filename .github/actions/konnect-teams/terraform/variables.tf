@@ -1,10 +1,5 @@
 // variables.tf
 
-variable "environment" {
-  description = "The environment resources will be associated with"
-  type        = string
-}
-
 variable "konnect_personal_access_token" {
   description = "The Konnect Personal Access Token to use for API requests"
   type        = string
