@@ -23,9 +23,6 @@ inputs:
   konnect_token:  
     description: "Konnect token"
     required: true
-  environment:
-    description: "Environment to provision"
-    required: true
 
 runs:
   using: "composite"
@@ -45,7 +42,7 @@ runs:
       uses: ./.github/actions/load-env-config
       with:
         action_root: ${{ github.action_path }}
-        environment: ${{ inputs.environment }}
+        environment: "dev" # Assume teams as cross environment entities, so we use a default environment.
 
     - name: Validate config
       run: |
