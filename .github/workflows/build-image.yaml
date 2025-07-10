@@ -25,7 +25,7 @@ on:
       kong_version:
         description: 'Kong Gateway version'
         type: string
-        default: "3.9.0.1"
+        default: "3.11.0.0"
       continue_on_scan_failure:
         description: 'Continue on Trivy scan failure'
         default: true
@@ -36,14 +36,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Build Image
         uses: ./.github/actions/build-image
         with:
-          image_push_registry: ${{ inputs.docker_registry }}
+          docker_registry: ${{ inputs.docker_registry }}
           image_push_repo: ${{ inputs.image_repo }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          vault_token: ${{ secrets.VAULT_TOKEN }}
           image_tag: ${{ inputs.image_tag }}
+          image_repo: ${{ inputs.image_repo }}
           kong_version: ${{ inputs.kong_version }}
           continue_on_scan_failure: ${{ inputs.continue_on_scan_failure }}
           environment: ${{ inputs.environment }}

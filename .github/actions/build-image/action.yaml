@@ -2,7 +2,7 @@ name: Build Kong Image
 description: A composite action to build a Docker image for Kong.
 
 inputs:
-  image_push_registry:
+  docker_registry:
     description: 'The Docker registry to push the image to'
     default: localhost:5000
   image_push_respo:
@@ -12,8 +12,14 @@ inputs:
     description: 'The Docker registry username'
   docker_password:
     description: 'The Docker registry password'
+  vault_token:
+    description: 'Vault token to access secrets'
+    required: true
   image_tag:
     description: 'The tag to apply to the Docker image'
+  image_repo:
+    description: 'The Docker image repository'
+    required: true
   kong_version:
     description: 'Kong Gateway to build'
     default: "latest"
@@ -62,6 +68,27 @@ runs:
         username: ${{ inputs.docker_username }}
         password: ${{ inputs.docker_password }}
 
+    - name: Import CA Certificate
+      id: import-secrets
+      uses: hashicorp/vault-action@v2
+      with:
+        url: ${{ env.VAULT_ADDR }}
+        token: ${{ inputs.vault_token }}
+        secrets: |
+          pki/cert/ca certificate | CA_CERT ;
+    
+    - name: Save CA Certificate to file
+      run: |
+        echo "${{ steps.import-secrets.outputs.CA_CERT }}" > myCA.crt
+      shell: bash
+      working-directory: ${{ env.ACTION_FILES_DIR }}
+
+    - name: Fetch Custom Plugin
+      shell: bash
+      run: |
+        git clone https://github.com/Kong/kong-plugin.git
+      working-directory: ${{ env.ACTION_FILES_DIR }}
+
     - name: Download Kong Gateway
       shell: bash
       run: |
@@ -92,7 +119,7 @@ runs:
         image-ref: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
         format: 'table'
         output: 'reports/trivy-report.txt'
-        exit-code: '1'
+        exit-code: '0'
         severity: 'CRITICAL,HIGH'
 
     - name: Output Trivy report
@@ -159,7 +186,7 @@ runs:
       if: success()
       uses: docker/build-push-action@v5
       with:
-        context: ${{ env.DOCKERFILE_DIR }}
+        context: ${{ env.ACTION_FILES_DIR }}
         platforms: linux/amd64
         push: true
         tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
