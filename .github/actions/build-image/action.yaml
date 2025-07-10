@@ -136,3 +136,41 @@ runs:
       run: |
         bats kong-smoke-tests.bats | tee ${{ github.workspace }}/reports/smoke_test_report.log
       working-directory: ${{ github.workspace }}/scripts
+    
+    - name: Run Load tests
+      uses: grafana/run-k6-action@v1
+      env:
+        K6_TEST_URL: http://localhost:8000
+      with:
+        path: |
+          examples/image-build/k6/load.js
+        flags: --vus 50 --duration 10s
+        working-directory: ${{ github.workspace }}
+
+    - name: Stop and remove Docker container and network
+      if: always()
+      shell: bash
+      run: |
+        docker stop kong-gateway
+        docker rm kong-gateway
+        docker network rm kong-net-${{ github.run_id }}
+
+    - name: Push Docker image
+      if: success()
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ env.DOCKERFILE_DIR }}
+        platforms: linux/amd64
+        push: true
+        tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+    - name: Inspect
+      shell: bash
+      run: |
+        docker buildx imagetools inspect ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+    - name: Upload Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: reports
+        path: reports/*
