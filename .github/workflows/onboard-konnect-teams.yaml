@@ -18,6 +18,7 @@ on:
       environment:
         description: 'Environment to provision'
         type: choice
+        default: 'dev'
         options:
           - 'dev'
           - 'tst'
