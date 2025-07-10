@@ -5,9 +5,6 @@ inputs:
   docker_registry:
     description: 'The Docker registry to push the image to'
     default: localhost:5000
-  image_push_respo:
-    description: 'The Docker image repository to push the image to'
-    default: myrepo/kong
   docker_username:
     description: 'The Docker registry username'
   docker_password:

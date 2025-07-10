@@ -11,6 +11,7 @@ on:
           - 'tst'
           - 'acc'
           - 'prd'
+        default: 'dev'
       docker_registry:
         description: 'Docker registry'
         type: string
@@ -43,7 +44,6 @@ jobs:
         uses: ./.github/actions/build-image
         with:
           docker_registry: ${{ inputs.docker_registry }}
-          image_push_repo: ${{ inputs.image_repo }}
           docker_username: ${{ secrets.DOCKER_USERNAME }}
           docker_password: ${{ secrets.DOCKER_PASSWORD }}
           vault_token: ${{ secrets.VAULT_TOKEN }}

@@ -12,7 +12,7 @@ Out of the box, it provides end-to-end workflows to:
 - Provision Konnect resources on behalf of those teams (Control-Planes and Developer Portals)
 - Bootstrap a local Kubernetes cluster with an observability stack
 - Deploy Kong Gateway into that Kubernetes cluster
-- In addition, this repo includes GitHub Actions your API teams can invoke to validate OpenAPI specs and publish their Kong Gateway configurations to Konnect.
+- In addition, this repo includes GitHub Actions your API teams can invoke from their own repositories to validate OpenAPI specs and publish their Kong Gateway configurations to Konnect.
 
 This repository is built to run entirely on your local machine by leveraging [GitHub Actions](https://github.com/features/actions) workflows with the [Act](https://github.com/nektos/act) tool. Instead of pushing every change to GitHub, you can invoke the same CI/CD pipelines locally, inspect logs in real time, and iterate faster.
 
@@ -228,13 +228,14 @@ $ act -W .github/workflows/build-image.yaml
 ```
 
 ***Input parameters***
-| Name                     | Description                                                             | Required | Default        |
-| ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |
-| docker_registry          | The Docker registry where the image will be pushed                      | No       | localhost:5000 |
-| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | myrepo/kong              |
-| image_tag                | The tag to assign to the Docker image                                   | No      | -              |
-| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.11.0.0        |
-| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           |
+| Name                     | Description                                                             | Required | Default        | Possible values|
+| ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |----------------|
+| environment              | The environment in which this golden image will be deployed             | No       | dev            |dev,tst,acc,prd |
+| docker_registry          | The Docker registry where the image will be pushed                      | No       | localhost:5000 | N/A            |
+| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | myrepo/kong    | N/A            |
+| image_tag                | The tag to assign to the Docker image                                   | No       | -              | N/A            |
+| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.11.0.0       | valid kong version|
+| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           | true,false.    |
 
 ## Provision Konnect resources
 
