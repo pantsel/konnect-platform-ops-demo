@@ -145,7 +145,70 @@ graph TD;
 
 ## Build Kong Golden Image
 
-### Flow
+A Kong Golden Image is a pre-built, standardized Docker image of the Kong Gateway Enterprise Edition that includes:
+
+- Kong binaries at a specific version.
+- Custom plugins (optional) that your organization needs.
+- Certificates (optional) for secure communication.
+- Security scans and testing already performed.
+- Ready for deployment to your infrastructure or registry.
+
+The term "golden image" refers to a trusted, reproducible base image that can be used to quickly spin up consistent environments. In this context, it ensures all deployments of Kong Gateway are identical, secure, and include any required customizations.
+
+This process is especially useful for organizations that need to enforce compliance, security, and operational consistency across multiple environments.
+
+## Golden Kong Gateway Image Build Flow
+
+This automated flow builds and validates a “golden” Kong Gateway Docker image, then pushes it to your registry. It is composed of two parts:
+
+1. **Workflow Definition** (build-image.yaml)  
+2. **Composite Action** (action.yaml)
+
+### 1. Workflow Definition
+
+- **Trigger**: Manual dispatch (`workflow_dispatch`) via the GitHub UI or API.  
+
+- **Job**:  
+  1. **Checkout** your repository.  
+  2. **Invoke** the `build-image` composite action, passing in all inputs and necessary secrets (`DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VAULT_TOKEN`).
+
+### 2. Composite Action Steps
+
+The `build-image` action orchestrates each build stage:
+
+1. **Source Environment**  
+   Loads shared variables and environment-specific files (via `load-env-config`).  
+2. **Install Test Tools**  
+   - Sets up [Bats](https://github.com/bats-core/bats-core) for shell smoke tests  
+   - Configures [k6](https://k6.io/) for simple load tests  
+3. **Prepare Buildx**  
+   Initializes Docker Buildx with host networking for multi-platform builds.  
+4. **Fetch Secrets & Certificates**  
+   - Logs in to Vault (using `vault_token`)  
+   - Retrieves TLS CA certificate for secure downloads  
+5. **Fetch Custom Plugin & Kong Package**  
+   - Clones a custom Kong plugin repository  
+   - Downloads the Kong Enterprise `.deb` for the requested version  
+6. **Build & Load Image**  
+   Uses `docker/build-push-action` to build the image locally (`load: true`), targeting `linux/amd64`.  
+7. **Security Scan**  
+   Runs [Trivy](https://github.com/aquasecurity/trivy) against the newly built image at the specified severity (`CRITICAL,HIGH`), writing a report.  
+8. **Smoke Tests**  
+   - Spins up the image in a temporary Docker network  
+   - Waits for health checks  
+   - Runs Bats-based smoke tests  
+9. **Load Tests**  
+   Executes a short k6 script against the local container to validate basic traffic handling.  
+10. **Cleanup**  
+    Stops/removes the container and network.  
+11. **Push & Inspect**  
+    Pushes the final image to `${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}` and runs `docker buildx imagetools inspect` to verify manifests.  
+12. **Upload Reports**  
+    Archives vulnerability and smoke-test logs as GitHub Action artifacts.
+
+---
+
+By splitting configuration (build-image.yaml) from implementation (action.yaml), this flow lets you customize inputs while reusing a well-tested, composite build routine—ensuring consistent, secure, and repeatable “golden” Kong Gateway images.
 
 ```mermaid
 graph LR;
@@ -168,9 +231,9 @@ $ act -W .github/workflows/build-image.yaml
 | Name                     | Description                                                             | Required | Default        |
 | ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |
 | docker_registry          | The Docker registry where the image will be pushed                      | No       | localhost:5000 |
-| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | -              |
-| image_tag                | The tag to assign to the Docker image                                   | Yes      | -              |
-| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.9.0.1        |
+| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | myrepo/kong              |
+| image_tag                | The tag to assign to the Docker image                                   | No      | -              |
+| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.11.0.0        |
 | continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           |
 
 ## Provision Konnect resources
