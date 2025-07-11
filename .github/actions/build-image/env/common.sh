@@ -1,0 +1,9 @@
+export DECK_CONFIG_OIDC_ISSUER="http://192.168.178.42:8080/realms/demo/.well-known/openid-configuration"
+export KONNECT_SERVER_URL="https://eu.api.konghq.com"
+export VAULT_ADDR="http://localhost:8300"
+export KONNECT_REGION="eu"
+export TF_VAR_konnect_server_url="$KONNECT_SERVER_URL"
+export VAULT_ADDR="http://localhost:8300"
+export TF_VAR_konnect_region="$KONNECT_REGION"
+# Resource Governor
+export KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX="konnect-team-resources"

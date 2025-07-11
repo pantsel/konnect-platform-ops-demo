@@ -8,4 +8,4 @@ KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}
 # Strip "/config" from KUBECONFIG if defined
 KUBECONFIG=${KUBECONFIG%/config}
 
-sed -e "s|__KUBECONFIG_PATH__|$KUBECONFIG|g" -e "s|__MINIOCLIENT_PATH__|$MINIOCLIENT_PATH|g"  .actrc.tpl > .actrc
+sed -e "s|__KUBECONFIG_PATH__|$KUBECONFIG|g" -e "s|__MINIOCLIENT_PATH__|$MINIOCLIENT_PATH|g" -e "s|__VAULTCLIENT_PATH__|$VAULTCLIENT_PATH|g"  .actrc.tpl > .actrc

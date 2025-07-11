@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect.team.resources",
+    "region": "eu",
+    "team": "flight-data",
+    "description": "flight-data team Konnect resources in the EU region"
+  },
+  "resources": [
+    {
+      "type": "konnect.control_plane",
+      "name": "flight-data-tst",
+      "description": "flight-data testing control plane",
+      "labels": {
+        "env": "tst"
+      }
+    }
+  ]
+}

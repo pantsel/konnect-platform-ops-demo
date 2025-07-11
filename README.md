@@ -3,13 +3,20 @@
 > Warning! This project is currently under active development, and all aspects are subject to change. Use at your own risk!
 > Additionally, note that the demo environment has only been tested on macOS and may not function properly on Windows.
 
-A local demo showcasing the utilization of [Terraform](https://www.terraform.io/) and [Helm](https://helm.sh/) for the provisioning of Konnect Resources and deployment of Kong Data Planes (DPs) within Kubernetes (K8s) environments.
+This repository is the Platform Team’s opinionated, federated APIOps toolkit for Kong Konnect. It presumes a model where your Platform Team owns and operates the API-delivery infrastructure and exposes it “as-a-service” to the broader developer community.
 
-The demo environment is configured with [MinIO](https://min.io/) serving as a Terraform backend, and [HashiCorp Vault](https://www.vaultproject.io/) utilized for the secure storage of credentials and sensitive information.
+Out of the box, it provides end-to-end workflows to:
 
-In addition, the demo environment includes an example of Kong State file management, as part of an APIOps workflow. [Keycloak](https://www.keycloak.org/) is utilized as an IDP for the example APIs OIDC configuration.
+- Build a “golden” Kong Gateway Docker image
+- Onboard API teams in Konnect (create Teams, System Accounts, and assign roles)
+- Provision Konnect resources on behalf of those teams (Control-Planes and Developer Portals)
+- Bootstrap a local Kubernetes cluster with an observability stack
+- Deploy Kong Gateway into that Kubernetes cluster
+- In addition, this repo includes GitHub Actions your API teams can invoke from their own repositories to validate OpenAPI specs and publish their Kong Gateway configurations to Konnect.
 
-The Continuous Integration/Continuous Deployment (CI/CD) process employs the execution of [GitHub Actions](https://github.com/features/actions) locally through the utilization of [Act](https://github.com/nektos/act).
+This repository is built to run entirely on your local machine by leveraging [GitHub Actions](https://github.com/features/actions) workflows with the [Act](https://github.com/nektos/act) tool. Instead of pushing every change to GitHub, you can invoke the same CI/CD pipelines locally, inspect logs in real time, and iterate faster.
+
+Under the hood, we use the official [Kong Terraform provider](https://registry.terraform.io/providers/Kong/konnect/latest) to define and manage all Konnect resources as code. A local [MinIO](https://min.io/) instance acts as an S3-compatible Terraform backend, so state is persisted reliably without needing an external cloud account. All sensitive values—API tokens, Vault credentials, certificate private keys—are stored and retrieved securely from a local [HashiCorp Vault](https://www.vaultproject.io/) instance, ensuring that secrets never land in plaintext files or logs.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -43,14 +50,84 @@ The Continuous Integration/Continuous Deployment (CI/CD) process employs the exe
 ## Useful links
 
 - [Kong Konnect Terraform Provider](https://github.com/Kong/terraform-provider-konnect)
-- [Kong GO APIOps](https://github.com/Kong/go-apiops)
 - [Deck Commands](https://docs.konghq.com/deck/latest/#deck-commands)
 
 ## Prerequisites
+⚠️ This demo has only been tested on macOS; other platforms may require additional setup or tweaks.
 
-- [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/)
-- [Kind](https://kind.sigs.k8s.io/) or [Orbstack](https://orbstack.dev) - Tools for managing local Kubernetes clusters.
-- [Act](https://github.com/nektos/act) - Run your GitHub Actions locally!
+Before you begin, install the following tools on your machine:
+
+- [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/). Container runtime and orchestration engine for building/running Kong Gateway images, spinning up MinIO, Vault, Keycloak, etc.
+- [Kind](https://kind.sigs.k8s.io/) or [Orbstack](https://orbstack.dev). Creates and manages a local Kubernetes cluster where Kong Data-Planes and the observability stack will run.
+- [Act](https://github.com/nektos/act). Executes the same GitHub Actions workflows locally so you can iterate on CI/CD pipelines without pushing every change to GitHub.
+- [Terraform](https://learn.hashicorp.com/terraform/getting-started/install.html). Applies terraform resource.
+- [Github CLI](https://cli.github.com/)
+
+## Prepare the demo environment
+
+Download the minio client for the target runner platform architecture (e.g. [linux amd64](https://dl.min.io/client/mc/release/linux-amd64/)), place it into a folder (e.g. mc-binary) and export the path like this:
+```bash
+export MINIOCLIENT_PATH="/path-to/mc-binary"
+```
+
+Download the vault client for the target runner platform architecture (e.g. [linux amd64](https://releases.hashicorp.com/vault/1.20.0/vault_1.20.0_linux_amd64.zip)), place it into a folder (e.g. vault-binary) and export the path like this:
+```bash
+export VAULTCLIENT_PATH="/path-to/vault-binary"
+```
+
+To spin-up and prepare your local environment, execute: 
+
+```bash
+$ make prepare
+```
+
+When preparing the demo environment for the first time, you will be prompted
+to provide your `konnect access token`, `s3 access key` and `s3 access secret`.
+
+To get your `konnect access token`, login to your Konnect organization, navigate to the `Personal Access Tokens` page and click `Generate Token`.
+
+![Konnect](./images/konnect_pat.png)
+
+To create your `s3 access key` and `s3 access secret`: 
+1. Open `Minio Console` at http://localhost:9000. 
+2. Login using `minio-root-user`, `minio-root-password` as username and password.
+3. Go to `Access Keys`
+4. `Create Access Key`
+
+![Minio Console](./images/minio.png)
+
+Running `make prepare` bootstraps your entire local demo environment from zero—here’s what happens, step by step:
+
+1. **check-deps**  
+   check-deps.sh verifies you have Docker, Terraform, the GitHub CLI, and either Kind or Orbstack installed (exiting with an error if anything is missing).
+
+2. **gencerts**  
+   generate-certs.sh creates a local Certificate Authority (ca.key & ca.crt) and then issues two client certificates (`cluster-tls.*` and `proxy-tls.*`) for use by Vault and the Kong data plane.
+
+3. **actrc**  
+   prep-actrc.sh fills in .actrc (from .actrc.tpl) with your local `KUBECONFIG`, Vault and MinIO client paths—so the [Act](https://github.com/nektos/act) tool can mimic GitHub Actions locally.
+
+4. **docker**  
+   `docker-compose up -d` launches Vault, MinIO, Keycloak, and any other demo services defined in docker-compose.yaml so you have all the backend services running.
+
+5. **prep-act-secrets**  
+   prep-act-secrets.sh interactively collects—or pulls from your GitHub CLI login—sensitive values (Vault token, Konnect PAT, S3 and Docker credentials, OIDC issuer, etc.) and writes them into act.secrets for Act to consume.
+
+6. **kind**  
+   The Makefile checks your chosen `KUBE_CONTEXT`. If you’re using Kind, it creates (or reuses) a cluster named `konnect-platform-ops-demo`; if you’re on Orbstack, it skips cluster creation.
+
+7. **vault-pki**  
+   Finally, check-vault.sh waits for Vault to be healthy, then vault-pki-setup.sh runs *inside* the Vault container to enable the PKI secrets engine, generate a root certificate, configure URLs, create an issuing role, and (optionally) enable GitHub auth for your organization.
+
+Once `make prepare` completes, you’ll have:  
+• All required binaries installed and verified  
+• A local CA and client certificates on disk  
+• Act configured to use your local kubeconfig and secrets  
+• Vault, MinIO, Keycloak, etc., running in Docker  
+• A Kubernetes cluster ready for Kong  
+• Vault’s PKI engine primed and GitHub auth enabled  
+
+You’re now ready to run the demo workflows (via Act or GitHub Actions) end to end.
 
 ## Components
 
@@ -96,38 +173,149 @@ graph TD;
   E -.-> F
 ```
 
-## Prepare the demo environment
+## Environment Variables Organization and Loading
 
-Download the minio client for the target runner platform architecture (e.g. linux amd64), place it into a folder (e.g. mc-binary) and export the path like this:
-```bash
-export MINIOCLIENT_PATH="/path-to/mc-binary"
+Each custom action in actions follows a consistent pattern for defining and loading environment-specific variables:
+
+### 1. Directory Layout
+
+Under every action directory that needs configuration, you’ll find an `env/` folder:
+
+```
+.github/actions/<action-name>/env/
+├── common.sh      # Defaults for all environments
+├── dev.sh         # Overrides for “dev”
+├── tst.sh         # Overrides for “tst”
+├── acc.sh         # Overrides for “acc”
+├── prd.sh         # Overrides for “prd”
+└── local.sh       # Overrides for a local-only setup
 ```
 
-To spin-up and prepare your local environment, execute: 
+- **common.sh**  
+  Exports all the base variables shared across environments.
+- **<environment>.sh**  
+  Exports or overrides only the variables that differ in that environment.
 
-```bash
-$ make prepare
+Each `*.sh` file should consist of plain shell `export VAR=value` lines.
+
+### 2. The Loader Action
+
+The composite action at action.yaml automates sourcing these files and exporting their contents into the workflow’s environment:
+
+1. **Inputs**  
+   - `action_root`: the filesystem path where the caller action lives  
+   - `environment`: one of `dev`, `tst`, `acc`, `prd`, or `local`  
+
+2. **Processing Steps**  
+   - Build a list:  
+     ```bash
+     files=(
+       "$ACTION_ROOT/env/common.sh"
+       "$ACTION_ROOT/env/${ENVIRONMENT}.sh"
+     )
+     ```
+   - For each file found, run:
+     ```bash
+     set -a           # mark variables for export
+     source "$file"
+     set +a
+     ```
+   - Dump **all** shell variables into `$GITHUB_ENV` by reading `env`.
+
+Once complete, every `export VAR=…` from `common.sh` and your chosen `<environment>.sh` is available to **all subsequent steps**.
+
+### 3. Invoking the Loader in Workflows
+
+At the start of any workflow or composite action that needs these variables, add:
+
+```yaml
+- name: Load environment configuration
+  uses: ./.github/actions/load-env-config
+  with:
+    action_root: ${{ github.action_path }}
+    environment: ${{ inputs.environment }}
 ```
 
-When preparing the demo environment for the first time, you will be prompted
-to provide your `konnect access token`, `s3 access key` and `s3 access secret`.
+- `${{ github.action_path }}` automatically resolves to the path of the **calling** action directory, so the loader can find its sibling `env/` folder.
+- `${{ inputs.environment }}` comes from your workflow’s `workflow_dispatch` or composite-action inputs.
 
-To get your `konnect access token`, login to your Konnect organization, navigate to the `Personal Access Tokens` page and click `Generate Token`.
+After this step completes, you can freely reference any of your defined variables via `${{ env.MY_VAR }}` or in later shell steps.
 
-![Konnect](./images/konnect_pat.png)
+---
 
-To create your `s3 access key` and `s3 access secret`: 
-1. Open `Minio Console` at http://localhost:9000. 
-2. Login using `minio-root-user`, `minio-root-password` as username and password.
-3. Go to `Access Keys`
-4. `Create Access Key`
+By centralizing defaults in `common.sh` and environment overrides in separate scripts, you gain:
 
-![Minio Console](./images/minio.png)
+- **Clarity**: exactly which variables apply where  
+- **Reuse**: one loader action handles every environment  
+- **Safety**: no hard-coded values in your workflow YAML files
 
 
 ## Build Kong Golden Image
 
-### Flow
+A Kong Golden Image is a pre-built, standardized Docker image of the Kong Gateway Enterprise Edition that includes:
+
+- Kong binaries at a specific version.
+- Custom plugins (optional) that your organization needs.
+- Certificates (optional) for secure communication.
+- Security scans and testing already performed.
+- Ready for deployment to your infrastructure or registry.
+
+The term "golden image" refers to a trusted, reproducible base image that can be used to quickly spin up consistent environments. In this context, it ensures all deployments of Kong Gateway are identical, secure, and include any required customizations.
+
+This process is especially useful for organizations that need to enforce compliance, security, and operational consistency across multiple environments.
+
+## Golden Kong Gateway Image Build Flow
+
+This automated flow builds and validates a “golden” Kong Gateway Docker image, then pushes it to your registry. It is composed of two parts:
+
+1. **Workflow Definition** (build-image.yaml)  
+2. **Composite Action** (action.yaml)
+
+### 1. Workflow Definition
+
+- **Trigger**: Manual dispatch (`workflow_dispatch`) via the GitHub UI or API.  
+
+- **Job**:  
+  1. **Checkout** your repository.  
+  2. **Invoke** the `build-image` composite action, passing in all inputs and necessary secrets (`DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VAULT_TOKEN`).
+
+### 2. Composite Action Steps
+
+The `build-image` action orchestrates each build stage:
+
+1. **Source Environment**  
+   Loads shared variables and environment-specific files (via `load-env-config`).  
+2. **Install Test Tools**  
+   - Sets up [Bats](https://github.com/bats-core/bats-core) for shell smoke tests  
+   - Configures [k6](https://k6.io/) for simple load tests  
+3. **Prepare Buildx**  
+   Initializes Docker Buildx with host networking for multi-platform builds.  
+4. **Fetch Secrets & Certificates**  
+   - Logs in to Vault (using `vault_token`)  
+   - Retrieves TLS CA certificate for secure downloads  
+5. **Fetch Custom Plugin & Kong Package**  
+   - Clones a custom Kong plugin repository  
+   - Downloads the Kong Enterprise `.deb` for the requested version  
+6. **Build & Load Image**  
+   Uses `docker/build-push-action` to build the image locally (`load: true`), targeting `linux/amd64`.  
+7. **Security Scan**  
+   Runs [Trivy](https://github.com/aquasecurity/trivy) against the newly built image at the specified severity (`CRITICAL,HIGH`), writing a report.  
+8. **Smoke Tests**  
+   - Spins up the image in a temporary Docker network  
+   - Waits for health checks  
+   - Runs Bats-based smoke tests  
+9. **Load Tests**  
+   Executes a short k6 script against the local container to validate basic traffic handling.  
+10. **Cleanup**  
+    Stops/removes the container and network.  
+11. **Push & Inspect**  
+    Pushes the final image to `${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}` and runs `docker buildx imagetools inspect` to verify manifests.  
+12. **Upload Reports**  
+    Archives vulnerability and smoke-test logs as GitHub Action artifacts.
+
+---
+
+By splitting configuration (build-image.yaml) from implementation (action.yaml), this flow lets you customize inputs while reusing a well-tested, composite build routine—ensuring consistent, secure, and repeatable “golden” Kong Gateway images.
 
 ```mermaid
 graph LR;
@@ -147,87 +335,16 @@ $ act -W .github/workflows/build-image.yaml
 ```
 
 ***Input parameters***
-| Name                     | Description                                                             | Required | Default        |
-| ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |
-| docker_registry          | The Docker registry where the image will be pushed                      | No       | localhost:5000 |
-| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | -              |
-| image_tag                | The tag to assign to the Docker image                                   | Yes      | -              |
-| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.9.0.1        |
-| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           |
+| Name                     | Description                                                             | Required | Default        | Possible values|
+| ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |----------------|
+| environment              | The environment in which this golden image will be deployed             | No       | dev            |dev,tst,acc,prd |
+| docker_registry          | The Docker registry where the image will be pushed                      | No       | localhost:5000 | N/A            |
+| image_repo               | The repository to which the Docker image will be pushed                 | Yes      | myrepo/kong    | N/A            |
+| image_tag                | The tag to assign to the Docker image                                   | No       | -              | N/A            |
+| kong_version             | The version of Kong Gateway Enterprise Edition to use as the base image | No       | 3.11.0.0       | valid kong version|
+| continue_on_scan_failure | Whether to continue the workflow even if the security scan fails        | No       | true           | true,false.    |
 
 ## Provision Konnect resources
-
-In this demo, there are two documented approaches for provisioning resources in Konnect.
-
-1. **Static**: A straightforward approach where all Konnect resources are statically defined
-2. **Federated**: Every team manages their own Konnect resources
-
-### Static approach
-
-Terraform project: `./terraform/konnect/static`
-
-Provisioning will result in the following high level setup:
-
-```mermaid
-graph TD;
-  subgraph Konnect
-        direction TB; 
-        subgraph Applications
-            J[Developer Portal]
-        end
-
-        subgraph Teams and System Accounts
-            subgraph Individual
-                A[Demo CP Viewers]
-                B[System Account<br>demo_cp_admin]
-            end
-            subgraph Platform
-                C[System Account<br>global_cp_admin]
-            end
-        end
-
-        subgraph Control Planes
-            D[Demo_CP]
-            E[Global_CP<br>Preconfigured with Terraform]
-        end
-
-        subgraph Control Plane Groups
-            F[CP_Group]
-        end
-    end
-
-    subgraph Managed Cluster
-      direction RL
-        P[Kong DP Nodes]
-    end
-    
-    A -.-> |Read-Only| D
-    B --> |Admin| D
-
-    C -.-> |Admin| E
-
-    D --> |API Configurations| F 
-    E --> |Global Policies| F
-
-    F --> |API Configurations & Global Policies| P
-```
-
-
-#### Run the Provisioning workflow
-
-To provision the Konnect resources, execute the following command: 
-
-```bash
-$ act -W .github/workflows/provision-konnect-static.yaml 
-```
-
-***Input Parameters***
-
-| Name        | Description                                            | Required | Default     |
-| ----------- | ------------------------------------------------------ | -------- | ----------- |
-| action      | The action to perform. Either `provision` or `destroy` | No       | `provision` |
-| environment | The environment to provision                           | No       | `dev`       |
-
 
 ### Federated approach (Teams onboarding + Resource Governor)
 
@@ -235,7 +352,25 @@ In a federated scenario, a central Platform team is responsible for managing the
 
 Individual Teams can onboard to the Platform and manage their own resources using the tools provided by the Platform team.
 
-#### Onboarding process
+### Onboard Konnect Teams Workflow
+
+**File:** onboard-konnect-teams.yaml   
+
+**What it achieves:**  
+This workflow codifies your Platform Team’s ownership of Konnect team lifecycles. Given a simple JSON manifest:
+
+1. It automatically tears down any teams marked with `offboarded: true`.  
+2. It then creates or updates each remaining team in Kong Konnect, complete with:  
+   - A dedicated “system account” and API token  
+   - Vault KV mounts and RBAC policies to secure that token  
+   - Registration in your S3-style backend (MinIO) for Terraform state  
+
+Under the hood it leverages:  
+- **`setup-minio-client`** to install the MinIO CLI (mc) for bucket checks  
+- **`setup-vault-client`** to install the Vault CLI for secret management  
+- **`konnect-teams`** composite action, which invokes Terraform modules in terraform to create the actual resources (teams, system-accounts, Vault mounts, policies, and state bucket)  
+
+By driving everything from a single `teams.json`, you get a fully declarative, repeatable process for onboarding and offboarding teams—no imperative scripts, no manual clicks.
 
 Prerequisite:
 
@@ -251,31 +386,30 @@ e.g. `examples/platformops/federated/teams/teams.json`
         "description": "Teams onboarded to the Konnect APIM platform"
     },
     "resources": [
-        {
-            "type": "konnect.team",
-            "name": "Kronos",
-            "description": "Kronos team is building IaC services",
-            "labels": {
-                "TID": "KTEAM_00001"
-            }
-        },
-        {
-            "type": "konnect.team",
-            "name": "Tiger",
-            "description": "Tiger team is building the Global Observability Platform",
-            "labels": {
-                "TID": "KTEAM_00002"
-            }
-        },
-        {
-            "type": "konnect.team",
-            "name": "Gorillaz",
-            "offboarded": true,
-            "description": "Gorillaz team is building the legagy services",
-            "labels": {
-                "TID": "KTEAM_00003"
-            }
+      {
+        "type": "konnect.team",
+        "name": "platform",
+        "description": "Kong Air Platform team responsible for platform management.",
+        "labels": {
+          "TID": "KTEAM_00001"
         }
+      },
+      {
+        "type": "konnect.team",
+        "name": "flight-data",
+        "description": "Kong Air Flight Data team responsible for flights and route data management.",
+        "labels": {
+          "TID": "KTEAM_00002"
+        }
+      },
+      {
+        "type": "konnect.team",
+        "name": "customer-data",
+        "description": "Kong Air Customer Data team responsible for bookings and customer data.",
+        "labels": {
+          "TID": "KTEAM_00003"
+        }
+      }
     ]
 }
 ```
@@ -287,14 +421,6 @@ Onboarding flow:
   - **Creating a pull request**: The team submits a pull request to the Platform team's repository with the necessary details.
 
 2. The Platform team reviews the request. Upon approval, the team is added to the repository's teams list.
-3. Once the list is updated, the onboarding workflow is triggered. This workflow will:
-   1. Provision the team in Konnect.
-   2. Provision a dedicated mount in HashiCorp Vault for the team.
-   3. Create the base System Account for the team.
-   4. Assign the `Control Plane` and `API Product` `Creator` role to the system account.
-   5. Create token for the system account and store it securely in the teams Vault mount.
-   6. Provision a **Konnect Resource Governor** Repository (ex: MyTeam_KRG) for the team. This repository will be used by the team to manage their Konnect Resources.
-   7. Any other use-case specific provisioning can be added to this workflow.
 
 ```mermaid
 graph LR;
@@ -316,9 +442,12 @@ act --input config=examples/platformops/federated/teams/teams.json -W .github/wo
 
 ***Input Parameters***
 
-| Name        | Description                                            | Required | Default                                      | Options                        |
-| ----------- | ------------------------------------------------------ | -------- | -------------------------------------------- | ------------------------------ |
-| config      | Path to the provisioning config file                   | No       | examples/platformops/federated/teams/teams.json | -                              |
+| Name                     | Description                                                             | Required | Default        | Possible values|
+| ------------------------ | ----------------------------------------------------------------------- | -------- | -------------- |----------------|
+| environment              | The environment in which to create the teams. This defines what environment variables will be used | No       | dev            |dev,tst,acc,prd |
+| config                   | Path to the provisioning config file                                    | Yes      | - | -                              |
+| action                   | Whether to provision the teams or remove them                           | No       | provision | provision, destroy                       |
+
 
 > To offboard teams, you can update your `teams.json` file by adding the `offboarded: true` flag to the teams you want to offboard and run the same workflow.
 
@@ -339,81 +468,40 @@ TeamName_KRG
 └── .gitignore
 ```
 
-Example konnect resourses files can be found at `examples/platformops/federated/teams/kronos/resources.json` & `examples/platformops/federated/teams/tiger/resources.json`
+Example konnect resourses files can be found at `examples/platformops/federated/teams/flight-data/`, `examples/platformops/federated/teams/customer-data/`, `examples/platformops/federated/teams/platform/`
 
-Example Kronos team `resources.json` file:
+Example flight-data team `resources-dev.json` file:
 
 ```json
 {
-    "metadata": {
-        "format_version": "1.0.0",
-        "type": "konnect.team.resources",
-        "region": "eu",
-        "team": "Kronos",
-        "description": "Kronos team Konnect resources in the EU region"
-    },
-    "resources": [
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Dev",
-            "description": "Kronos development control plane",
-            "labels": {
-                "env": "dev"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Test",
-            "description": "Kronos test control plane",
-            "labels": {
-                "env": "tst"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Acc",
-            "description": "Kronos acceptance control plane",
-            "labels": {
-                "env": "acc"
-            }
-        },
-        {
-            "type": "konnect.control_plane",
-            "name": "Kronos Prd",
-            "description": "Kronos production control plane",
-            "labels": {
-                "env": "prd"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Flights API",
-            "description": "API for managing flights",
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
-        },
-        {
-            "type": "konnect.api_product",
-            "name": "Routes API",
-            "description": "API for managing routes",
-            "labels": {},
-            "public_labels": {
-                "team": "kronos"
-            }
-        }
-    ]
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect.team.resources",
+    "region": "eu",
+    "team": "flight-data",
+    "description": "flight-data team Konnect resources in the EU region"
+  },
+  "resources": [
+    {
+      "type": "konnect.control_plane",
+      "name": "flight-data-dev",
+      "description": "flight-data development control plane",
+      "labels": {
+        "env": "dev"
+      }
+    }
+  ]
 }
+
 ```
 
-#### Run the example Team Kronos Resources workflow
+#### Run the example Team Flight Data Resources workflow
 
 To provision the above resources, run the following command:
 
 ```bash
-# Team Kronos resources
-act --input config=examples/platformops/federated/teams/kronos/resources.json -W .github/workflows/provision-konnect-team-resources.yaml
+# Team flight data dev resources
+act --input config=examples/platformops/federated/teams/flight-data/resources-dev.json -W .github/workflows/provision-konnect-team-resources.yaml
 ```
 
 For every requested resource type, the workflow will:

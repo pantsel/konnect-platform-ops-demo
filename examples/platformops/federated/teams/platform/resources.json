@@ -1,0 +1,221 @@
+{
+  "metadata": {
+    "format_version": "1.0.0",
+    "type": "konnect.team.resources",
+    "region": "eu",
+    "team": "platform",
+    "description": "platform team Konnect resources in the EU region"
+  },
+  "resources": [
+    {
+      "type": "konnect.application_auth_strategy",
+      "name": "kongair-api-auth-strategy",
+      "key_auth": {
+        "name": "kongair-application-key-auth-strategy",
+        "key_names": ["apikey"],
+        "display_name": "kongair Application Auth Strategy",
+        "strategy_type": "key_auth",
+        "configs": {
+          "key_auth": {
+            "key_names": ["apikey"]
+          }
+        }
+      }
+    },
+    {
+      "type": "konnect.developer_portal",
+      "authentication_enabled": false,
+      "auto_approve_applications": false,
+      "auto_approve_developers": false,
+      "default_api_visibility": "public",
+      "default_application_auth_strategy_name": "kongair-api-auth-strategy",
+      "default_page_visibility": "public",
+      "description": "KongAir developer portal. Find APIs and documentation for the KongAir airline.",
+      "display_name": "KongAir Developer Portal",
+      "force_destroy": "false",
+      "labels": {
+        "scope": "internal"
+      },
+      "name": "kongair-api-dev-portal",
+      "rbac_enabled": true
+    },
+    {
+      "type": "konnect.portal_auth",
+      "basic_auth_enabled": true,
+      "idp_mapping_enabled": true,
+      "konnect_mapping_enabled": true,
+      "oidc_auth_enabled": true,
+      "oidc_claim_mappings": {
+        "email": "email",
+        "groups": "custom-group-claim",
+        "name": "name"
+      },
+      "oidc_client_id": "fake_oidc_client_id",
+      "oidc_client_secret": "fake_oidc_client_secret",
+      "oidc_issuer": "https://accounts.google.com/",
+      "oidc_scopes": ["openid"],
+      "oidc_team_mapping_enabled": true,
+      "portal_name": "kongair-api-dev-portal",
+      "saml_auth_enabled": false
+    },
+    {
+      "type": "konnect.portal_team",
+      "portal_name": "kongair-api-dev-portal",
+      "name": "kongair API Developers",
+      "description": "Team for kongair API developers and consumers"
+    },
+    {
+      "type": "konnect.portal_customization",
+      "portal_name": "kongair-api-dev-portal",
+      "css": ".api-card { border: 2px solid #1f2937; border-radius: 8px; } .header { background: linear-gradient(90deg, #1f2937, #374151); }",
+      "js": {
+        "custom": "console.log('kongair Portal initialized'); window.kongairPortal = { version: '1.0.0' };",
+        "scripts": [
+          "https://cdn.jsdelivr.net/npm/chart.js",
+          "https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+        ]
+      },
+      "layout": "<!DOCTYPE html><html><head><title>{{title}}</title></head><body><header>{{header}}</header><main>{{content}}</main><footer>{{footer}}</footer></body></html>",
+      "menu": {
+        "footer_bottom": [
+          {
+            "external": false,
+            "path": "/support",
+            "title": "Support",
+            "visibility": "public"
+          },
+          {
+            "external": false,
+            "path": "/about",
+            "title": "About KongAir",
+            "visibility": "public"
+          }
+        ],
+        "footer_sections": [
+          {
+            "items": [
+              {
+                "external": true,
+                "path": "https://kongair.company/docs",
+                "title": "Documentation",
+                "visibility": "public"
+              },
+              {
+                "external": true,
+                "path": "https://kongair.company/github",
+                "title": "GitHub",
+                "visibility": "public"
+              }
+            ],
+            "title": "Resources"
+          },
+          {
+            "items": [
+              {
+                "external": false,
+                "path": "/contact",
+                "title": "Contact Us",
+                "visibility": "public"
+              },
+              {
+                "external": false,
+                "path": "/terms",
+                "title": "Terms of Service",
+                "visibility": "public"
+              }
+            ],
+            "title": "Legal"
+          }
+        ],
+        "main": [
+          {
+            "external": false,
+            "path": "/apis",
+            "title": "APIs",
+            "visibility": "public"
+          },
+          {
+            "external": false,
+            "path": "/documentation",
+            "title": "Documentation",
+            "visibility": "public"
+          },
+          {
+            "external": false,
+            "path": "/community",
+            "title": "Community",
+            "visibility": "private"
+          }
+        ]
+      },
+      "robots": "User-agent: *\nDisallow: /admin/\nDisallow: /internal/\nAllow: /apis/\nAllow: /docs/\nSitemap: https://api-portal.kongair.some-random-domain-347t783t5q53.com/sitemap.xml",
+      "spec_renderer": {
+        "infinite_scroll": true,
+        "show_schemas": true,
+        "try_it_insomnia": true,
+        "try_it_ui": true
+      },
+      "theme": {
+        "colors": {
+          "primary": "#1f2937",
+          "secondary": "#374151",
+          "accent": "#3b82f6",
+          "background": "#f9fafb",
+          "text": "#111827"
+        },
+        "mode": "light",
+        "name": "KongAir Corporate Theme"
+      }
+    },
+    {
+      "type": "konnect.portal_page",
+      "portal_name": "kongair-api-dev-portal",
+      "slug": "/documentation",
+      "title": "Getting Started with KongAir APIs",
+      "description": "A comprehensive guide to get started with KongAir APIs",
+      "content": "# Getting Started with KongAir APIs\n\nWelcome to the KongAir Developer Portal! This guide will help you get started with our APIs.\n\n## Prerequisites\n\nBefore you begin, make sure you have:\n\n- A valid API key\n- Basic understanding of REST APIs\n- Your favorite HTTP client (curl, Postman, etc.)\n\n## Quick Start\n\n1. **Obtain an API Key**: Register for an account to get your API key\n2. **Explore APIs**: Browse our available APIs in the portal\n3. **Make your first request**: Use the interactive documentation to test API calls\n\n## Authentication\n\nAll API requests require authentication using an API key. Include your key in the request header:\n\n```bash\ncurl -H \"Authorization: Bearer YOUR_API_KEY\" https://api.kongair.example.com/v1/users\n```\n\n## Rate Limiting\n\nOur APIs implement rate limiting to ensure fair usage:\n\n- **Free tier**: 1000 requests per hour\n- **Premium tier**: 10000 requests per hour\n\n## Support\n\nIf you need help:\n\n- Check our [FAQ](/faq)\n- Visit our [Documentation](/docs)\n- Contact support at api-support@kongair.com\n\nHappy coding! 🚀",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_page",
+      "portal_name": "kongair-api-dev-portal",
+      "slug": "/faq",
+      "title": "Frequently Asked Questions",
+      "description": "Common questions and answers about kongair APIs",
+      "content": "# Frequently Asked Questions\n\n## General Questions\n\n### What is the kongair API?\n\nThe kongair API is a comprehensive set of REST APIs that provide access to our digital banking services, user management, and transaction processing capabilities.\n\n### How do I get started?\n\n1. Register for a developer account\n2. Obtain your API credentials\n3. Review our [Getting Started](/getting-started) guide\n4. Start building!\n\n## Authentication\n\n### How do I authenticate my requests?\n\nAll API requests require an API key passed in the Authorization header:\n\n```\nAuthorization: Bearer YOUR_API_KEY\n```\n\n### What happens if my API key expires?\n\nAPI keys are valid for 1 year. You'll receive email notifications 30 days before expiration.\n\n## Rate Limiting\n\n### What are the rate limits?\n\n- Free tier: 1000 requests/hour\n- Premium tier: 10000 requests/hour\n- Enterprise: Custom limits available\n\n### What happens when I exceed the rate limit?\n\nYou'll receive a 429 HTTP status code. Wait before making additional requests.\n\n## Support\n\n### How can I get help?\n\n- Email: api-support@kongair.com\n- Documentation: Available in this portal\n- Status page: https://status.kongair.com\n\n### Do you offer SLA guarantees?\n\nYes, our Enterprise tier includes 99.9% uptime SLA with 24/7 support.",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_snippet",
+      "portal_name": "kongair-api-dev-portal",
+      "name": "auth-code-example",
+      "title": "Authentication Code Example",
+      "description": "Reusable code snippet showing how to authenticate with kongair APIs",
+      "content": "```javascript\n// kongair API Authentication Example\nconst API_KEY = 'your-api-key-here';\nconst BASE_URL = 'https://api.kongair.example.com/v1';\n\n// Function to make authenticated requests\nasync function authenticatedRequest(endpoint, options = {}) {\n  const headers = {\n    'Authorization': `Bearer ${API_KEY}`,\n    'Content-Type': 'application/json',\n    ...options.headers\n  };\n\n  try {\n    const response = await fetch(`${BASE_URL}${endpoint}`, {\n      ...options,\n      headers\n    });\n\n    if (!response.ok) {\n      throw new Error(`HTTP error! status: ${response.status}`);\n    }\n\n    return await response.json();\n  } catch (error) {\n    console.error('API request failed:', error);\n    throw error;\n  }\n}\n\n// Example usage\nauthenticatedRequest('/users')\n  .then(data => console.log('Users:', data))\n  .catch(error => console.error('Error:', error));\n```",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_snippet",
+      "portal_name": "kongair-api-dev-portal",
+      "name": "error-handling",
+      "title": "Error Handling Best Practices",
+      "description": "Code snippet demonstrating proper error handling for kongair API calls",
+      "content": "```python\nimport requests\nimport json\nfrom typing import Dict, Any, Optional\n\nclass kongairAPIError(Exception):\n    \"\"\"Custom exception for kongair API errors\"\"\"\n    def __init__(self, status_code: int, message: str, details: Optional[Dict] = None):\n        self.status_code = status_code\n        self.message = message\n        self.details = details or {}\n        super().__init__(f\"API Error {status_code}: {message}\")\n\nclass kongairAPIClient:\n    def __init__(self, api_key: str, base_url: str = \"https://api.kongair.example.com/v1\"):\n        self.api_key = api_key\n        self.base_url = base_url\n        self.session = requests.Session()\n        self.session.headers.update({\n            'Authorization': f'Bearer {api_key}',\n            'Content-Type': 'application/json'\n        })\n    \n    def _handle_response(self, response: requests.Response) -> Dict[str, Any]:\n        \"\"\"Handle API response with proper error handling\"\"\"\n        try:\n            data = response.json()\n        except json.JSONDecodeError:\n            data = {\"message\": response.text}\n        \n        if response.status_code == 200:\n            return data\n        elif response.status_code == 400:\n            raise kongairAPIError(400, \"Bad Request\", data)\n        elif response.status_code == 401:\n            raise kongairAPIError(401, \"Unauthorized - Check your API key\", data)\n        elif response.status_code == 403:\n            raise kongairAPIError(403, \"Forbidden - Insufficient permissions\", data)\n        elif response.status_code == 404:\n            raise kongairAPIError(404, \"Resource not found\", data)\n        elif response.status_code == 429:\n            raise kongairAPIError(429, \"Rate limit exceeded\", data)\n        elif response.status_code >= 500:\n            raise kongairAPIError(response.status_code, \"Server error\", data)\n        else:\n            raise kongairAPIError(response.status_code, \"Unknown error\", data)\n    \n    def get_users(self) -> Dict[str, Any]:\n        \"\"\"Get users with proper error handling\"\"\"\n        try:\n            response = self.session.get(f\"{self.base_url}/users\")\n            return self._handle_response(response)\n        except requests.RequestException as e:\n            raise kongairAPIError(0, f\"Network error: {str(e)}\")\n\n# Example usage\ntry:\n    client = kongairAPIClient(\"your-api-key-here\")\n    users = client.get_users()\n    print(\"Success:\", users)\nexcept kongairAPIError as e:\n    print(f\"API Error: {e}\")\n    print(f\"Details: {e.details}\")\nexcept Exception as e:\n    print(f\"Unexpected error: {e}\")\n```",
+      "status": "published",
+      "visibility": "public"
+    },
+    {
+      "type": "konnect.portal_snippet",
+      "portal_name": "kongair-api-dev-portal",
+      "name": "rate-limit-example",
+      "title": "Rate Limiting with Retry Logic",
+      "description": "Example showing how to handle rate limits with exponential backoff",
+      "content": "```bash\n#!/bin/bash\n\n# kongair API Rate Limiting Example with Retry Logic\n\nAPI_KEY=\"your-api-key-here\"\nBASE_URL=\"https://api.kongair.example.com/v1\"\nMAX_RETRIES=3\nINITIAL_DELAY=1\n\n# Function to make API request with retry logic\nmake_api_request() {\n    local endpoint=\"$1\"\n    local method=\"${2:-GET}\"\n    local data=\"$3\"\n    local retry_count=0\n    local delay=$INITIAL_DELAY\n    \n    while [ $retry_count -lt $MAX_RETRIES ]; do\n        echo \"Attempt $((retry_count + 1)) for $endpoint\"\n        \n        # Make the API request\n        if [ \"$method\" = \"GET\" ]; then\n            response=$(curl -s -w \"\\n%{http_code}\" \\\n                -H \"Authorization: Bearer $API_KEY\" \\\n                -H \"Content-Type: application/json\" \\\n                \"$BASE_URL$endpoint\")\n        else\n            response=$(curl -s -w \"\\n%{http_code}\" \\\n                -X \"$method\" \\\n                -H \"Authorization: Bearer $API_KEY\" \\\n                -H \"Content-Type: application/json\" \\\n                -d \"$data\" \\\n                \"$BASE_URL$endpoint\")\n        fi\n        \n        # Extract HTTP status code (last line) and response body\n        http_code=$(echo \"$response\" | tail -n1)\n        response_body=$(echo \"$response\" | head -n -1)\n        \n        case $http_code in\n            200|201|204)\n                echo \"Success: $response_body\"\n                return 0\n                ;;\n            429)\n                echo \"Rate limit exceeded. Waiting ${delay}s before retry...\"\n                sleep $delay\n                delay=$((delay * 2))  # Exponential backoff\n                retry_count=$((retry_count + 1))\n                ;;\n            401)\n                echo \"Error: Unauthorized. Please check your API key.\"\n                return 1\n                ;;\n            403)\n                echo \"Error: Forbidden. Insufficient permissions.\"\n                return 1\n                ;;\n            404)\n                echo \"Error: Resource not found.\"\n                return 1\n                ;;\n            *)\n                echo \"Error: HTTP $http_code - $response_body\"\n                return 1\n                ;;\n        esac\n    done\n    \n    echo \"Failed after $MAX_RETRIES attempts\"\n    return 1\n}\n\n# Example usage\necho \"Fetching users...\"\nmake_api_request \"/users\"\n\necho \"\\nCreating a new user...\"\nuser_data='{\"name\": \"John Doe\", \"email\": \"john.doe@example.com\"}'\nmake_api_request \"/users\" \"POST\" \"$user_data\"\n```",
+      "status": "published",
+      "visibility": "public"
+    }
+  ]
+}

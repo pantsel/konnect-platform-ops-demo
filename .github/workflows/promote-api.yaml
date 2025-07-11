@@ -10,7 +10,6 @@ on:
       environment:
         description: "Environment to deploy to"
         type: choice
-        default: "dev"
         options:
           - "dev"
           - "tst"
@@ -38,13 +37,6 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: kong/setup-deck@v1
-
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
       - name: Install extra rulesets for Spectral
         run: |

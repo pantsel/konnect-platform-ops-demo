@@ -63,18 +63,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
-
       - name: Install MinIO Client
         uses: ./.github/actions/setup-minio-client
 
       - name: Install vault cli
-        uses: eLco/setup-vault@v1
+        uses: ./.github/actions/setup-vault-client
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -103,7 +96,7 @@ jobs:
           terraform init -upgrade \
           -backend-config=config.s3.tfbackend \
           -backend-config="bucket=$KONNECT_TEAM_RESOURCES_S3_BUCKET_PREFIX.$TEAM_NAME_NORMALIZED" \
-          -backend-config="key=tfstate" \
+          -backend-config="key=${{ inputs.environment }}.tfstate" \
           -backend-config="region=main" \
           -backend-config="access_key=${{ secrets.S3_ACCESS_KEY }}" \
           -backend-config="secret_key=${{ secrets.S3_SECRET_KEY }}"
@@ -125,13 +118,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
-
       - name: Provision Konnect Teams
         uses: ./.github/actions/konnect-teams   
         with:
@@ -142,3 +128,4 @@ jobs:
           vault_token: ${{ secrets.VAULT_TOKEN }}
           vault_address: ${{env.VAULT_ADDR}}
           konnect_token: ${{ secrets.KONNECT_PAT }}
+          environment: ${{ inputs.environment }}

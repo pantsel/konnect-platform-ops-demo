@@ -1,7 +1,7 @@
 name: Provision Konnect Team resources
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       config:
         description: 'Path to the provisioning config file'
@@ -9,12 +9,20 @@ on:
         required: true
       action:
         description: 'Action to perform'
-        type: string
+        required: true
+        type: choice
         default: 'provision'
+        options:
+          - 'provision'
+          - 'destroy'
       environment:
         description: 'Environment to provision'
-        type: string
-        default: 'dev'
+        type: choice
+        options:
+          - 'dev'
+          - 'tst'
+          - 'acc'
+          - 'prd'
 
 jobs:
   provision-konnect:
@@ -23,13 +31,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Load environment configuration
-        uses: ./.github/actions/load-config
-        with:
-          environment: ${{ inputs.environment }}
-        env:
-          KONNECT_PAT: ${{ secrets.KONNECT_PAT }}
 
       - name: Provision Konnect Resources
         uses: ./.github/actions/konnect-team-resources
@@ -41,3 +42,4 @@ jobs:
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           konnect_token: ${{ secrets.KONNECT_PAT }}
+          environment: ${{ inputs.environment }}

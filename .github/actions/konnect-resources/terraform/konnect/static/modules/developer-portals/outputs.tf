@@ -1,1 +1,0 @@
-// Outputs of the developer portals module

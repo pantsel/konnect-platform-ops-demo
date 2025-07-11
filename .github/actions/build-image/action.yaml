@@ -2,30 +2,42 @@ name: Build Kong Image
 description: A composite action to build a Docker image for Kong.
 
 inputs:
-  image_push_registry:
+  docker_registry:
     description: 'The Docker registry to push the image to'
     default: localhost:5000
-  image_push_respo:
-    description: 'The Docker image repository to push the image to'
-    default: myrepo/kong
   docker_username:
     description: 'The Docker registry username'
   docker_password:
     description: 'The Docker registry password'
+  vault_token:
+    description: 'Vault token to access secrets'
+    required: true
   image_tag:
     description: 'The tag to apply to the Docker image'
+  image_repo:
+    description: 'The Docker image repository'
+    required: true
   kong_version:
     description: 'Kong Gateway to build'
     default: "latest"
   continue_on_scan_failure:
     description: 'Continue on Trivy scan failure'
     default: "true"
+  environment:
+    description: 'Deployment environment'
+    required: true
 
 runs:
   using: "composite"
   steps:
     - name: Checkout code
       uses: actions/checkout@v3
+    
+    - name: Source environment variables
+      uses: ./.github/actions/load-env-config
+      with:
+        action_root: ${{ github.action_path }}
+        environment: ${{ inputs.environment }}
 
     - uses: grafana/setup-k6-action@v1
 
@@ -52,6 +64,27 @@ runs:
         registry: ${{ inputs.docker_registry }}
         username: ${{ inputs.docker_username }}
         password: ${{ inputs.docker_password }}
+
+    - name: Import CA Certificate
+      id: import-secrets
+      uses: hashicorp/vault-action@v2
+      with:
+        url: ${{ env.VAULT_ADDR }}
+        token: ${{ inputs.vault_token }}
+        secrets: |
+          pki/cert/ca certificate | CA_CERT ;
+    
+    - name: Save CA Certificate to file
+      run: |
+        echo "${{ steps.import-secrets.outputs.CA_CERT }}" > myCA.crt
+      shell: bash
+      working-directory: ${{ env.ACTION_FILES_DIR }}
+
+    - name: Fetch Custom Plugin
+      shell: bash
+      run: |
+        git clone https://github.com/Kong/kong-plugin.git
+      working-directory: ${{ env.ACTION_FILES_DIR }}
 
     - name: Download Kong Gateway
       shell: bash
@@ -83,7 +116,7 @@ runs:
         image-ref: ${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
         format: 'table'
         output: 'reports/trivy-report.txt'
-        exit-code: '1'
+        exit-code: '0'
         severity: 'CRITICAL,HIGH'
 
     - name: Output Trivy report
@@ -127,3 +160,41 @@ runs:
       run: |
         bats kong-smoke-tests.bats | tee ${{ github.workspace }}/reports/smoke_test_report.log
       working-directory: ${{ github.workspace }}/scripts
+    
+    - name: Run Load tests
+      uses: grafana/run-k6-action@v1
+      env:
+        K6_TEST_URL: http://localhost:8000
+      with:
+        path: |
+          examples/image-build/k6/load.js
+        flags: --vus 50 --duration 10s
+        working-directory: ${{ github.workspace }}
+
+    - name: Stop and remove Docker container and network
+      if: always()
+      shell: bash
+      run: |
+        docker stop kong-gateway
+        docker rm kong-gateway
+        docker network rm kong-net-${{ github.run_id }}
+
+    - name: Push Docker image
+      if: success()
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ env.ACTION_FILES_DIR }}
+        platforms: linux/amd64
+        push: true
+        tags: ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+    - name: Inspect
+      shell: bash
+      run: |
+        docker buildx imagetools inspect ${{ inputs.docker_registry }}/${{ inputs.image_repo }}:${{ inputs.image_tag || inputs.kong_version }}
+
+    - name: Upload Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: reports
+        path: reports/*

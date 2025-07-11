@@ -13,7 +13,7 @@ resource "konnect_api" "this" {
   name = var.name
 
   # Optional fields
-  deprecated   = var.deprecated
+  #deprecated   = var.deprecated
   description  = var.description
   labels       = var.labels
   slug         = var.slug

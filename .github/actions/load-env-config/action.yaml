@@ -1,0 +1,46 @@
+name: Load Environment Configuration
+description: A composite action to load environment-specific configuration.
+
+inputs:
+  environment:
+    description: 'Deployment environment (dev, staging, prod)'
+    required: true
+    default: 'dev'
+  action_root:
+    description: 'Root directory of the caller action'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Load environment configuration
+      id: load_config
+      shell: bash
+      env:
+        ENV_FILE: .github/env/${{ inputs.environment }}.yaml
+      run: |
+        echo "::group::Sourcing environment variable files"
+
+        files=(
+          "${{ inputs.action_root }}/env/common.sh"
+          "${{ inputs.action_root }}/env/${{ inputs.environment }}.sh"
+        )
+
+        for file in "${files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "Sourcing $file"
+            set -a
+            source "$file"
+            set +a
+          else
+            echo "No environment file found for $file. Skipping."
+          fi
+        done
+
+        # Export environment variables to GITHUB_ENV
+        while IFS='=' read -r key value; do
+          echo "$key=$value" >> "$GITHUB_ENV"
+        done < <(env)
+
+        echo "::endgroup::"

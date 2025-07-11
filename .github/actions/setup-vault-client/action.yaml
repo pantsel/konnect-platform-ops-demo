@@ -1,0 +1,22 @@
+name: "Install Vault Client"
+description: "Installs Vault CLI on the runner"
+runs:
+  using: "composite"
+  steps:
+    - name: Install Vault CLI
+      shell: bash
+      run: |
+        if [ -f "/vault-cache/vault" ]; then
+          echo "Using cached Vault CLI"
+          cp /vault-cache/vault /usr/local/bin/vault
+        else
+          echo "Downloading Vault CLI"
+          wget -v https://releases.hashicorp.com/vault/1.20.0/vault_1.20.0_linux_amd64.zip -O /usr/local/bin/vault.zip
+          unzip /usr/local/bin/vault.zip -d /usr/local/bin/
+        fi
+        chmod +x /usr/local/bin/vault
+        echo "Vault CLI installed successfully"
+
+    - name: Verify Vault CLI Installation
+      shell: bash
+      run: vault --version

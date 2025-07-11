@@ -23,7 +23,6 @@ inputs:
   konnect_token:  
     description: "Konnect token"
     required: true
-  
 
 runs:
   using: "composite"
@@ -32,12 +31,18 @@ runs:
       uses: ./.github/actions/setup-minio-client
 
     - name: Install vault cli
-      uses: eLco/setup-vault@v1
+      uses: ./.github/actions/setup-vault-client
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: "latest"
+
+    - name: Source environment variables
+      uses: ./.github/actions/load-env-config
+      with:
+        action_root: ${{ github.action_path }}
+        environment: "dev" # Assume teams as cross environment entities, so we use a default environment.
 
     - name: Validate config
       run: |
@@ -98,7 +103,7 @@ runs:
         terraform init -upgrade \
           -backend-config=config.s3.tfbackend \
           -backend-config="bucket=$RESOURCE_TYPE" \
-          -backend-config="key=tfstate" \
+          -backend-config="key=${{ inputs.environment }}.tfstate" \
           -backend-config="region=main" \
           -backend-config="access_key=${{ inputs.s3_access_key }}" \
           -backend-config="secret_key=${{ inputs.s3_secret_key }}"
